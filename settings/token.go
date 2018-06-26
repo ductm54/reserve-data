@@ -86,3 +86,19 @@ func (setting *Settings) MustCreateTokenPair(base, quote string) common.TokenPai
 func (setting *Settings) UpdateToken(t common.Token) error {
 	return setting.Tokens.Storage.UpdateToken(t)
 }
+
+func (setting *Settings) ApplyTokenWithExchangeSetting(tokens []common.Token, exSetting map[ExchangeName]*common.CompositeExchangeSetting) error {
+	return setting.Tokens.Storage.UpdateTokenWithExchangeSetting(tokens, exSetting)
+}
+
+func (setting *Settings) UpdatePendingTokenListings(trs map[string]common.TokenListing) error {
+	return setting.Tokens.Storage.StorePendingTokenListings(trs)
+}
+
+func (setting *Settings) GetPendingTokenListings() (map[string]common.TokenListing, error) {
+	return setting.Tokens.Storage.GetPendingTokenListings()
+}
+
+func (setting *Settings) RemovePendingTokenListings() error {
+	return setting.Tokens.Storage.RemovePendingTokenListings()
+}

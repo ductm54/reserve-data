@@ -20,6 +20,7 @@ type Exchange interface {
 	MarshalText() (text []byte, err error)
 	GetInfo() (ExchangeInfo, error)
 	GetExchangeInfo(TokenPairID) (ExchangePrecisionLimit, error)
+	GetLiveExchangeInfo(TokenPairID) (ExchangePrecisionLimit, error)
 	GetFee() (ExchangeFees, error)
 	GetMinDeposit() (ExchangesMinDeposit, error)
 	TokenAddresses() (map[string]ethereum.Address, error)
@@ -43,4 +44,20 @@ func MustGetExchange(id string) Exchange {
 		panic(err)
 	}
 	return result
+}
+
+type CompositeExchangeSetting struct {
+	ExDepositAddress ExchangeAddresses
+	ExMinDeposit     ExchangesMinDeposit
+	ExFee            ExchangeFees
+	ExInfo           ExchangeInfo
+}
+
+func NewCompositeExchangeSetting(depoAddr ExchangeAddresses, minDep ExchangesMinDeposit, fee ExchangeFees, info ExchangeInfo) *CompositeExchangeSetting {
+	return &CompositeExchangeSetting{
+		ExDepositAddress: depoAddr,
+		ExMinDeposit:     minDep,
+		ExFee:            fee,
+		ExInfo:           info,
+	}
 }

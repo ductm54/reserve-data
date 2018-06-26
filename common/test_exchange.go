@@ -49,6 +49,6 @@ func (self TestExchange) GetTradeHistory(fromTime, toTime uint64) (ExchangeTrade
 	return ExchangeTradeHistory{}, nil
 }
 
-func (self TestExchange) Pairs() []TokenPair {
-	return nil
+func (self TestExchange) GetLiveExchangeInfo(pairID TokenPairID) (ExchangePrecisionLimit, error) {
+	return ExchangePrecisionLimit{}, nil
 }
