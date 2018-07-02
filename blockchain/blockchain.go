@@ -480,7 +480,7 @@ func (self *Blockchain) GetRawLogs(fromBlock uint64, toBlock uint64) ([]types.Lo
 		to        = big.NewInt(int64(toBlock))
 		addresses []ethereum.Address
 	)
-	
+
 	addresses = append(addresses, self.networkAddr, self.burnerAddr, self.whitelistAddr)
 	addresses = append(addresses, self.oldNetworks...)
 	addresses = append(addresses, self.oldBurners...)
