@@ -14,7 +14,6 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/boltutil"
 	"github.com/KyberNetwork/reserve-data/common"
-	"github.com/KyberNetwork/reserve-data/metric"
 	"github.com/boltdb/bolt"
 )
 
@@ -811,7 +810,7 @@ func (self *BoltStorage) HasPendingDeposit(token common.Token, exchange common.E
 }
 
 //StoreMetric store metric info
-func (self *BoltStorage) StoreMetric(data *metric.MetricEntry, timepoint uint64) error {
+func (self *BoltStorage) StoreMetric(data *common.MetricEntry, timepoint uint64) error {
 	var err error
 	err = self.db.Update(func(tx *bolt.Tx) error {
 		var dataJSON []byte
@@ -828,10 +827,10 @@ func (self *BoltStorage) StoreMetric(data *metric.MetricEntry, timepoint uint64)
 }
 
 //GetMetric return metric data
-func (self *BoltStorage) GetMetric(tokens []common.Token, fromTime, toTime uint64) (map[string]metric.MetricList, error) {
-	imResult := map[string]*metric.MetricList{}
+func (self *BoltStorage) GetMetric(tokens []common.Token, fromTime, toTime uint64) (map[string]common.MetricList, error) {
+	imResult := map[string]*common.MetricList{}
 	for _, tok := range tokens {
-		imResult[tok.ID] = &metric.MetricList{}
+		imResult[tok.ID] = &common.MetricList{}
 	}
 
 	var err error
@@ -842,7 +841,7 @@ func (self *BoltStorage) GetMetric(tokens []common.Token, fromTime, toTime uint6
 		max := boltutil.Uint64ToBytes(toTime)
 
 		for k, v := c.Seek(min); k != nil && bytes.Compare(k, max) <= 0; k, v = c.Next() {
-			data := metric.MetricEntry{}
+			data := common.MetricEntry{}
 			err = json.Unmarshal(v, &data)
 			if err != nil {
 				return err
@@ -850,7 +849,7 @@ func (self *BoltStorage) GetMetric(tokens []common.Token, fromTime, toTime uint6
 			for tok, m := range data.Data {
 				metricList, found := imResult[tok]
 				if found {
-					*metricList = append(*metricList, metric.TokenMetricResponse{
+					*metricList = append(*metricList, common.TokenMetricResponse{
 						Timestamp: data.Timestamp,
 						AfpMid:    m.AfpMid,
 						Spread:    m.Spread,
@@ -860,7 +859,7 @@ func (self *BoltStorage) GetMetric(tokens []common.Token, fromTime, toTime uint6
 		}
 		return nil
 	})
-	result := map[string]metric.MetricList{}
+	result := map[string]common.MetricList{}
 	for k, v := range imResult {
 		result[k] = *v
 	}
@@ -868,9 +867,9 @@ func (self *BoltStorage) GetMetric(tokens []common.Token, fromTime, toTime uint6
 }
 
 //GetPendingTargetQty return pending target quantity if available
-func (self *BoltStorage) GetPendingTargetQty() (metric.TokenTargetQty, error) {
+func (self *BoltStorage) GetPendingTargetQty() (common.TokenTargetQty, error) {
 	var err error
-	var tokenTargetQty metric.TokenTargetQty
+	var tokenTargetQty common.TokenTargetQty
 	err = self.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(PENDING_TARGET_QUANTITY))
 		_, data := b.Cursor().Last()
@@ -889,7 +888,7 @@ func (self *BoltStorage) GetPendingTargetQty() (metric.TokenTargetQty, error) {
 func (self *BoltStorage) StorePendingTargetQty(data, dataType string) error {
 	var err error
 	timepoint := common.GetTimepoint()
-	tokenTargetQty := metric.TokenTargetQty{}
+	tokenTargetQty := common.TokenTargetQty{}
 	err = self.db.Update(func(tx *bolt.Tx) error {
 		var (
 			uErr     error
@@ -945,9 +944,9 @@ func (self *BoltStorage) CurrentTargetQtyVersion(timepoint uint64) (common.Versi
 }
 
 //GetTokenTargetQty get target quantity
-func (self *BoltStorage) GetTokenTargetQty() (metric.TokenTargetQty, error) {
+func (self *BoltStorage) GetTokenTargetQty() (common.TokenTargetQty, error) {
 	var (
-		tokenTargetQty = metric.TokenTargetQty{}
+		tokenTargetQty = common.TokenTargetQty{}
 		err            error
 	)
 	err = self.db.View(func(tx *bolt.Tx) error {
@@ -971,7 +970,7 @@ func (self *BoltStorage) GetTokenTargetQty() (metric.TokenTargetQty, error) {
 func (self *BoltStorage) StoreTokenTargetQty(id, data string) error {
 	var (
 		err            error
-		tokenTargetQty metric.TokenTargetQty
+		tokenTargetQty common.TokenTargetQty
 		dataJSON       []byte
 	)
 	err = self.db.Update(func(tx *bolt.Tx) error {
@@ -1018,14 +1017,14 @@ func (self *BoltStorage) StoreTokenTargetQty(id, data string) error {
 	return self.RemovePendingTargetQty()
 }
 
-func (self *BoltStorage) GetRebalanceControl() (metric.RebalanceControl, error) {
+func (self *BoltStorage) GetRebalanceControl() (common.RebalanceControl, error) {
 	var err error
-	var result metric.RebalanceControl
+	var result common.RebalanceControl
 	err = self.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(ENABLE_REBALANCE))
 		_, data := b.Cursor().First()
 		if data == nil {
-			result = metric.RebalanceControl{
+			result = common.RebalanceControl{
 				Status: false,
 			}
 			return self.StoreRebalanceControl(false)
@@ -1053,7 +1052,7 @@ func (self *BoltStorage) StoreRebalanceControl(status bool) error {
 		}
 
 		// add new data
-		data := metric.RebalanceControl{
+		data := common.RebalanceControl{
 			Status: status,
 		}
 		if dataJSON, uErr = json.Marshal(data); uErr != nil {
@@ -1065,14 +1064,14 @@ func (self *BoltStorage) StoreRebalanceControl(status bool) error {
 	return err
 }
 
-func (self *BoltStorage) GetSetrateControl() (metric.SetrateControl, error) {
+func (self *BoltStorage) GetSetrateControl() (common.SetrateControl, error) {
 	var err error
-	var result metric.SetrateControl
+	var result common.SetrateControl
 	err = self.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(SETRATE_CONTROL))
 		_, data := b.Cursor().First()
 		if data == nil {
-			result = metric.SetrateControl{
+			result = common.SetrateControl{
 				Status: false,
 			}
 			return self.StoreSetrateControl(false)
@@ -1100,7 +1099,7 @@ func (self *BoltStorage) StoreSetrateControl(status bool) error {
 		}
 
 		// add new data
-		data := metric.SetrateControl{
+		data := common.SetrateControl{
 			Status: status,
 		}
 
@@ -1116,7 +1115,7 @@ func (self *BoltStorage) StoreSetrateControl(status bool) error {
 func (self *BoltStorage) StorePendingPWIEquation(data string) error {
 	var err error
 	timepoint := common.GetTimepoint()
-	saveData := metric.PWIEquation{}
+	saveData := common.PWIEquation{}
 	err = self.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(PENDING_PWI_EQUATION))
 		c := b.Cursor()
@@ -1136,9 +1135,9 @@ func (self *BoltStorage) StorePendingPWIEquation(data string) error {
 	return err
 }
 
-func (self *BoltStorage) GetPendingPWIEquation() (metric.PWIEquation, error) {
+func (self *BoltStorage) GetPendingPWIEquation() (common.PWIEquation, error) {
 	var err error
-	var result metric.PWIEquation
+	var result common.PWIEquation
 	err = self.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(PENDING_PWI_EQUATION))
 		c := b.Cursor()
@@ -1162,7 +1161,7 @@ func (self *BoltStorage) StorePWIEquation(data string) error {
 		}
 		p := tx.Bucket([]byte(PWI_EQUATION))
 		idByte := boltutil.Uint64ToBytes(common.GetTimepoint())
-		pending := metric.PWIEquation{}
+		pending := common.PWIEquation{}
 		if uErr := json.Unmarshal(v, &pending); uErr != nil {
 			return uErr
 		}
@@ -1181,9 +1180,9 @@ func (self *BoltStorage) StorePWIEquation(data string) error {
 	return err
 }
 
-func (self *BoltStorage) GetPWIEquation() (metric.PWIEquation, error) {
+func (self *BoltStorage) GetPWIEquation() (common.PWIEquation, error) {
 	var err error
-	var result metric.PWIEquation
+	var result common.PWIEquation
 	err = self.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(PWI_EQUATION))
 		c := b.Cursor()
@@ -1317,7 +1316,7 @@ func (self *BoltStorage) RemovePendingStableTokenParams() error {
 func (self *BoltStorage) StorePendingTargetQtyV2(value []byte) error {
 	var (
 		err         error
-		pendingData metric.TokenTargetQtyV2
+		pendingData common.TokenTargetQtyV2
 	)
 
 	if err = json.Unmarshal(value, &pendingData); err != nil {
@@ -1335,8 +1334,8 @@ func (self *BoltStorage) StorePendingTargetQtyV2(value []byte) error {
 }
 
 //GetPendingTargetQtyV2 return current pending target quantity
-func (self *BoltStorage) GetPendingTargetQtyV2() (metric.TokenTargetQtyV2, error) {
-	result := metric.TokenTargetQtyV2{}
+func (self *BoltStorage) GetPendingTargetQtyV2() (common.TokenTargetQtyV2, error) {
+	result := common.TokenTargetQtyV2{}
 	err := self.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(PENDING_TARGET_QUANTITY_V2))
 		k := []byte("current_pending_target_qty")
@@ -1352,7 +1351,7 @@ func (self *BoltStorage) GetPendingTargetQtyV2() (metric.TokenTargetQtyV2, error
 //ConfirmTargetQtyV2 check if confirm data match pending data and save it to confirm bucket
 //remove pending data from pending bucket
 func (self *BoltStorage) ConfirmTargetQtyV2(value []byte) error {
-	confirmTargetQty := metric.TokenTargetQtyV2{}
+	confirmTargetQty := common.TokenTargetQtyV2{}
 	err := json.Unmarshal(value, &confirmTargetQty)
 	if err != nil {
 		return fmt.Errorf("Rejected: Data could not be unmarshalled to defined format: %s", err)
@@ -1389,8 +1388,8 @@ func (self *BoltStorage) RemovePendingTargetQtyV2() error {
 }
 
 // GetTargetQtyV2 return the current target quantity
-func (self *BoltStorage) GetTargetQtyV2() (metric.TokenTargetQtyV2, error) {
-	result := metric.TokenTargetQtyV2{}
+func (self *BoltStorage) GetTargetQtyV2() (common.TokenTargetQtyV2, error) {
+	result := common.TokenTargetQtyV2{}
 	err := self.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(TARGET_QUANTITY_V2))
 		k := []byte("current_target_qty")
@@ -1409,7 +1408,7 @@ func (self *BoltStorage) GetTargetQtyV2() (metric.TokenTargetQtyV2, error) {
 	// we need to get current target quantity from v1 bucket and return it as v2 form.
 	if len(result) == 0 {
 		// target qty v1
-		var targetQty metric.TokenTargetQty
+		var targetQty common.TokenTargetQty
 		targetQty, err = self.GetTokenTargetQty()
 		if err != nil {
 			return result, err
@@ -1425,8 +1424,8 @@ func (self *BoltStorage) GetTargetQtyV2() (metric.TokenTargetQtyV2, error) {
 // while token is a string, it is validated before it saved then no need to validate again here
 // totalTarget, reserveTarget, rebalanceThreshold and transferThreshold are float numbers
 // and they are also no need to check to error here also (so we can ignore as below)
-func convertTargetQtyV1toV2(target metric.TokenTargetQty) metric.TokenTargetQtyV2 {
-	result := metric.TokenTargetQtyV2{}
+func convertTargetQtyV1toV2(target common.TokenTargetQty) common.TokenTargetQtyV2 {
+	result := common.TokenTargetQtyV2{}
 	strTargets := strings.Split(target.Data, "|")
 	for _, target := range strTargets {
 		elements := strings.Split(target, "_")
@@ -1438,8 +1437,8 @@ func convertTargetQtyV1toV2(target metric.TokenTargetQty) metric.TokenTargetQtyV
 		reserveTarget, _ := strconv.ParseFloat(elements[2], 10)
 		rebalance, _ := strconv.ParseFloat(elements[3], 10)
 		withdraw, _ := strconv.ParseFloat(elements[4], 10)
-		result[token] = metric.TargetQtyV2{
-			SetTarget: metric.TargetQtySet{
+		result[token] = common.TargetQtyV2{
+			SetTarget: common.TargetQtySet{
 				TotalTarget:        totalTarget,
 				ReserveTarget:      reserveTarget,
 				RebalanceThreshold: rebalance,
@@ -1466,10 +1465,10 @@ func (self *BoltStorage) StorePendingPWIEquationV2(data []byte) error {
 }
 
 // GetPendingPWIEquationV2 returns the stored PWIEquationRequestV2 in database.
-func (self *BoltStorage) GetPendingPWIEquationV2() (metric.PWIEquationRequestV2, error) {
+func (self *BoltStorage) GetPendingPWIEquationV2() (common.PWIEquationRequestV2, error) {
 	var (
 		err    error
-		result metric.PWIEquationRequestV2
+		result common.PWIEquationRequestV2
 	)
 
 	err = self.db.View(func(tx *bolt.Tx) error {
@@ -1509,11 +1508,11 @@ func (self *BoltStorage) StorePWIEquationV2(data string) error {
 		if v == nil {
 			return errors.New("There is no pending equation")
 		}
-		confirmData := metric.PWIEquationRequestV2{}
+		confirmData := common.PWIEquationRequestV2{}
 		if err := json.Unmarshal([]byte(data), &confirmData); err != nil {
 			return err
 		}
-		currentData := metric.PWIEquationRequestV2{}
+		currentData := common.PWIEquationRequestV2{}
 		if err := json.Unmarshal(v, &currentData); err != nil {
 			return err
 		}
@@ -1530,8 +1529,8 @@ func (self *BoltStorage) StorePWIEquationV2(data string) error {
 	return err
 }
 
-func convertPWIEquationV1toV2(data string) (metric.PWIEquationRequestV2, error) {
-	result := metric.PWIEquationRequestV2{}
+func convertPWIEquationV1toV2(data string) (common.PWIEquationRequestV2, error) {
+	result := common.PWIEquationRequestV2{}
 	for _, dataConfig := range strings.Split(data, "|") {
 		dataParts := strings.Split(dataConfig, "_")
 		if len(dataParts) != 4 {
@@ -1550,12 +1549,12 @@ func convertPWIEquationV1toV2(data string) (metric.PWIEquationRequestV2, error) 
 		if err != nil {
 			return nil, err
 		}
-		eq := metric.PWIEquationV2{
+		eq := common.PWIEquationV2{
 			A: a,
 			B: b,
 			C: c,
 		}
-		result[dataParts[0]] = metric.PWIEquationTokenV2{
+		result[dataParts[0]] = common.PWIEquationTokenV2{
 			"bid": eq,
 			"ask": eq,
 		}
@@ -1563,8 +1562,8 @@ func convertPWIEquationV1toV2(data string) (metric.PWIEquationRequestV2, error) 
 	return result, nil
 }
 
-func pwiEquationV1toV2(tx *bolt.Tx) (metric.PWIEquationRequestV2, error) {
-	var eqv1 metric.PWIEquation
+func pwiEquationV1toV2(tx *bolt.Tx) (common.PWIEquationRequestV2, error) {
+	var eqv1 common.PWIEquation
 	b := tx.Bucket([]byte(PWI_EQUATION))
 	c := b.Cursor()
 	_, v := c.Last()
@@ -1578,10 +1577,10 @@ func pwiEquationV1toV2(tx *bolt.Tx) (metric.PWIEquationRequestV2, error) {
 }
 
 // GetPWIEquationV2 returns the current PWI equations from database.
-func (self *BoltStorage) GetPWIEquationV2() (metric.PWIEquationRequestV2, error) {
+func (self *BoltStorage) GetPWIEquationV2() (common.PWIEquationRequestV2, error) {
 	var (
 		err    error
-		result metric.PWIEquationRequestV2
+		result common.PWIEquationRequestV2
 	)
 	err = self.db.View(func(tx *bolt.Tx) error {
 		var vErr error // convert pwi v1 to v2 error
@@ -1615,8 +1614,8 @@ func (self *BoltStorage) StorePendingRebalanceQuadratic(data []byte) error {
 }
 
 //GetPendingRebalanceQuadratic return pending rebalance quadratic equation
-func (self *BoltStorage) GetPendingRebalanceQuadratic() (metric.RebalanceQuadraticRequest, error) {
-	var result metric.RebalanceQuadraticRequest
+func (self *BoltStorage) GetPendingRebalanceQuadratic() (common.RebalanceQuadraticRequest, error) {
+	var result common.RebalanceQuadraticRequest
 	err := self.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(PENDING_REBALANCE_QUADRATIC))
 		c := b.Cursor()
@@ -1639,11 +1638,11 @@ func (self *BoltStorage) ConfirmRebalanceQuadratic(data []byte) error {
 		if v == nil {
 			return errors.New("there is no pending rebalance quadratic equation")
 		}
-		confirmData := metric.RebalanceQuadraticRequest{}
+		confirmData := common.RebalanceQuadraticRequest{}
 		if err := json.Unmarshal(data, &confirmData); err != nil {
 			return err
 		}
-		currentData := metric.RebalanceQuadraticRequest{}
+		currentData := common.RebalanceQuadraticRequest{}
 		if err := json.Unmarshal(v, &currentData); err != nil {
 			return err
 		}
@@ -1676,8 +1675,8 @@ func (self *BoltStorage) RemovePendingRebalanceQuadratic() error {
 }
 
 //GetRebalanceQuadratic return current confirm rebalance quadratic equation
-func (self *BoltStorage) GetRebalanceQuadratic() (metric.RebalanceQuadraticRequest, error) {
-	var result metric.RebalanceQuadraticRequest
+func (self *BoltStorage) GetRebalanceQuadratic() (common.RebalanceQuadraticRequest, error) {
+	var result common.RebalanceQuadraticRequest
 	err := self.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(REBALANCE_QUADRATIC))
 		c := b.Cursor()

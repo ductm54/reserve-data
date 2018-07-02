@@ -548,7 +548,7 @@ func (self *HTTPServer) ImmediatePendingActivities(c *gin.Context) {
 }
 
 func (self *HTTPServer) Metrics(c *gin.Context) {
-	response := metric.MetricResponse{
+	response := common.MetricResponse{
 		Timestamp: common.GetTimepoint(),
 	}
 	log.Printf("Getting metrics")
@@ -602,9 +602,9 @@ func (self *HTTPServer) StoreMetrics(c *gin.Context) {
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	}
-	metricEntry := metric.MetricEntry{}
+	metricEntry := common.MetricEntry{}
 	metricEntry.Timestamp = timestamp
-	metricEntry.Data = map[string]metric.TokenMetric{}
+	metricEntry.Data = map[string]common.TokenMetric{}
 	// data must be in form of <token>_afpmid_spread|<token>_afpmid_spread|...
 	for _, tokenData := range strings.Split(dataParam, "|") {
 		var (
@@ -630,7 +630,7 @@ func (self *HTTPServer) StoreMetrics(c *gin.Context) {
 			httputil.ResponseFailure(c, httputil.WithReason("Spread "+spreadStr+" is not float64"))
 			return
 		}
-		metricEntry.Data[token] = metric.TokenMetric{
+		metricEntry.Data[token] = common.TokenMetric{
 			AfpMid: afpmid,
 			Spread: spread,
 		}
@@ -1646,7 +1646,7 @@ func (self *HTTPServer) SetTargetQtyV2(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithReason(errDataSizeExceed.Error()))
 		return
 	}
-	var tokenTargetQty metric.TokenTargetQtyV2
+	var tokenTargetQty common.TokenTargetQtyV2
 	if err := json.Unmarshal(value, &tokenTargetQty); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return

@@ -9,7 +9,7 @@ import (
 
 	"reflect"
 
-	"github.com/KyberNetwork/reserve-data/metric"
+	"github.com/KyberNetwork/reserve-data/common"
 )
 
 type assertFn func(t *testing.T, resp *httptest.ResponseRecorder)
@@ -26,14 +26,14 @@ func newAssertGetEquation(expectedData []byte) assertFn {
 	return func(t *testing.T, resp *httptest.ResponseRecorder) {
 		t.Helper()
 
-		var expected metric.PWIEquationRequestV2
+		var expected common.PWIEquationRequestV2
 		if resp.Code != http.StatusOK {
 			t.Fatalf("wrong return code, expected: %d, got: %d", http.StatusOK, resp.Code)
 		}
 
 		type responseBody struct {
 			Success bool
-			Data    metric.PWIEquationRequestV2
+			Data    common.PWIEquationRequestV2
 		}
 
 		decoded := responseBody{}
