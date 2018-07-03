@@ -1606,43 +1606,97 @@ on failure:
  "reason":<error>}
 ```
 
-### list token - (signing required) Prepare token listing and store the request as pending
+### set token listing - (signing required) Prepare token listing and store the request as pending
 POST request 
 Post form: {"data" : "JSON enconding of token listing Object"}
-Note: This data is in the form of a map tokenID:TokenListing which allows mutiple token listing at once
-      The only params that allow null is TokenListing.Exchange.Info, which can be queried from exchange. 
-      If TokenListing.Exchange.Info is avaible, it will be prioritize over the exchange queried data.
 ```
-<host>:8000/list-token
+<host>:8000/set-token-listing
 ```
+**Note**: 
+- This data is in the form of a map tokenID:TokenListing which allows mutiple token listings at once
+- It also allows mutiple requests, for example, one request listing OMG, the other listing KNC. Both these 
+requests will be aggregate in to a list of token to be listed. These can be overwritten as well : if there 
+are two requests listing KNC, the later will overwite the ealier.  
+- If a token is marked as internal, it will be required to come with exchange setting( fee, min deposit, 
+exchange precision limit, deposit address) , and metric settings (pwis, targetQty and rebalanceQuadratic)
+- If exchange precision limit (TokenListing.Exchange.Info) is null, It can be queried from exchange and 
+set automatically for the pair (token-ETH). If this data is available in the request,
+it will be prioritize over the exchange queried data.
+- In addition, if the listing contain any Internal token, that token must be available in Smart contract
+in order to update its indices. 
 
-eg 
+Example: This request will list token OMG and NEO. OMG is internal, NEO is external. 
 
-```curl -X "POST" "http://localhost:8000/list-token" \
+``` 
+curl -X "POST" "http://localhost:8000/set-token-listings" \
      -H 'Content-Type: application/x-www-form-urlencoded'
      --data-urlencode "data={  
-      \"AST\": {
-        \"Token\": {
-          \"id\": \"AST\",
-          \"name\": \"AirSwap\",
-          \"address\": \"0x27054b13b1b798b345b591a4d22e6562d47ea75a\",
+      \"OMG\": {
+        \"token\": {
+          \"id\": \"OMG\",
+          \"name\": \"OmisexGO\",
           \"decimals\": 18,
-          \"active\": True,
-          \"internal\": False,
-          \"minimal_record_resolution\" : \"10\",
-          \"max_per_block_imbalance\" : \"1925452883\",
-          \"max_total_imbalance\" : \"1925452883\",
+          \"address\": \"0xd26114cd6EE289AccF82350c8d8487fedB8A0C07\",
+          \"minimal_record_resolution\": \"1000000000000000\",
+          \"max_per_block_imbalance\": \"439794468212403470336\",
+          \"max_total_imbalance\": \"722362414038872621056\",
+          \"internal\": true,
+          \"active\": true
         },
-        \"Exchange\": {
+        \"exchanges\": {
           \"binance\": {
-            \"DepositAddress\": \"0x111111111111111111111111\",
+            \"DepositAddress\": \"0x22222222222222222222222222222222222\",
             \"Fee\": {
-              \"Trading\": 2,
-              \"WithDraw\": 3,
-              \"Deposit\": 4
+              \"Trading\": 0.1,
+              \"WithDraw\": 0.2,
+              \"Deposit\": 0.3
             },
-            \"MinDeposit\": 15.04
+            \"MinDeposit\": 4
           }
+        },
+        \"pwis_equation\": {
+          \"ask\": {
+            \"a\": 800,
+            \"b\": 600,
+            \"c\": 0,
+            \"min_min_spread\": 0,
+            \"price_multiply_factor\": 0
+          },
+          \"bid\": {
+            \"a\": 750,
+            \"b\": 500,
+            \"c\": 0,
+            \"min_min_spread\": 0,
+            \"price_multiply_factor\": 0
+          }
+        },
+        \"target_qty\": {
+          \"set_target\": {
+            \"total_target\": 0,
+            \"reserve_target\": 0,
+            \"rebalance_threshold\": 0,
+            \"transfer_threshold\": 0
+          }
+        },
+        \"rebalance_quadratic\": {
+          \"rebalance_quadratic\": {
+            \"a\": 1,
+            \"b\": 2,
+            \"c\": 3
+          }
+        }
+      },
+      \"NEO\": {
+        \"Token\": {
+          \"id\": \"NEO\",
+          \"name\": \"Request\",
+          \"decimals\": 18,
+          \"address\": \"0x8f8221afbb33998d8584a2b05749ba73c37a938a\",
+          \"minimalRecordResolution\": \"1000000000000000\",
+          \"maxPerBlockImbalance\": \"27470469074054960644096\",
+          \"maxTotalImbalance\": \"33088179999699195920384\",
+          \"internal\": false,
+          \"active\": true
         }
       }
     }"
@@ -1665,8 +1719,9 @@ GET request
 <host>:8000/pending-token-listing
 ```
 
-eg
-```curl -X "GET" "http://localhost:8000/pending-token-listing"
+Example
+``` 
+curl -X "GET" "http://localhost:8000/pending-token-listing"
 ```
 
 response 
@@ -1727,52 +1782,114 @@ Note: This data is similar to token Listing, but all field must be the same as t
 <host>:8000/confirm-token-listing
 ```
 
-eg 
+Example 
 
-```curl -X "POST" "http://localhost:8000/confirm-token-listing" \
+``` 
+curl -X "POST" "http://localhost:8000/confirm-token-listing" \
      -H 'Content-Type: application/x-www-form-urlencoded'
-     --data-urlencode "data={  
-      \"AST\": {
-        \"Token\": {
-          \"id\": \"AST\",
-          \"name\": \"AirSwap\",
-          \"address\": \"0x27054b13b1b798b345b591a4d22e6562d47ea75a\",
-          \"decimals\": 18,
-          \"active\": True,
-          \"internal\": False,
-          \"minimal_record_resolution\" : \"10\",
-          \"max_per_block_imbalance\" : \"1925452883\",
-          \"max_total_imbalance\" : \"1925452883\",
+     --data-urlencode "data={    
+        \"NEO\": {
+          \"token\": {
+            \"id\": \"NEO\",
+            \"name\": \"Request\",
+            \"address\": \"0x8f8221afbb33998d8584a2b05749ba73c37a938a\",
+            \"decimals\": 18,
+            \"active\": true,
+            \"internal\": false,
+            \"minimal_record_resolution\": \"\",
+            \"max_total_imbalance\": \"\",
+            \"max_per_block_imbalance\": \"\"
+          },
+          \"exchanges\": null,
+          \"pwis_equation\": null,
+          \"target_qty\": {
+            \"set_target\": {
+              \"total_target\": 0,
+              \"reserve_target\": 0,
+              \"rebalance_threshold\": 0,
+              \"transfer_threshold\": 0
+            }
+          },
+          \"QuadraticEq\": {
+            \"rebalance_quadratic\": {
+              \"a\": 0,
+              \"b\": 0,
+              \"c\": 0
+            }
+          }
         },
-        \"Exchange\": {
-          \"binance\": {
-            \"DepositAddress\": \"0x111111111111111111111111\",
-            \"Fee\": {
-              \"Trading\": 2,
-              \"WithDraw\": 3,
-              \"Deposit\": 4
-            },
-              \"PrecisionLimit\": {
-                \"AST-ETH\": {
+        \"OMG\": {
+          \"token\": {
+            \"id\": \"OMG\",
+            \"name\": \"OmisexGO\",
+            \"address\": \"0xd26114cd6EE289AccF82350c8d8487fedB8A0C07\",
+            \"decimals\": 18,
+            \"active\": true,
+            \"internal\": true,
+            \"minimal_record_resolution\": \"1000000000000000\",
+            \"max_total_imbalance\": \"722362414038872621056\",
+            \"max_per_block_imbalance\": \"439794468212403470336\"
+          },
+          \"exchanges\": {
+            \"binance\": {
+              \"DepositAddress\": \"0x22222222222222222222222222222222222\",
+              \"Info\": {
+                \"OMG-ETH\": {
                   \"Precision\": {
-                    \"Amount\": 0,
-                    \"Price\": 7
+                    \"Amount\": 2,
+                    \"Price\": 6
                   },
                   \"AmountLimit\": {
-                    \"Min\": 1,
+                    \"Min\": 0.01,
                     \"Max\": 90000000
                   },
                   \"PriceLimit\": {
-                    \"Min\": 1e-7,
+                    \"Min\": 0.000001,
                     \"Max\": 100000
                   },
                   \"MinNotional\": 0.01
                 }
               },
-            \"MinDeposit\": 15.04
+              \"Fee\": {
+                \"Trading\": 0.1,
+                \"WithDraw\": 0.2,
+                \"Deposit\": 0.3
+              },
+              \"MinDeposit\": 4
+            }
+          },
+          \"pwis_equation\": {
+            \"ask\": {
+              \"a\": 800,
+              \"b\": 600,
+              \"c\": 0,
+              \"min_min_spread\": 0,
+              \"price_multiply_factor\": 0
+            },
+            \"bid\": {
+              \"a\": 750,
+              \"b\": 500,
+              \"c\": 0,
+              \"min_min_spread\": 0,
+              \"price_multiply_factor\": 0
+            }
+          },
+          \"target_qty\": {
+            \"set_target\": {
+              \"total_target\": 0,
+              \"reserve_target\": 0,
+              \"rebalance_threshold\": 0,
+              \"transfer_threshold\": 0
+            }
+          },
+          \"QuadraticEq\": {
+            \"rebalance_quadratic\": {
+              \"a\": 0,
+              \"b\": 0,
+              \"c\": 0
+            }
           }
         }
-      }
     }"
 
 ```
@@ -1793,7 +1910,7 @@ POST request
 <host>:8000/reject-token-listing
 ```
 
-eg
+Example
 
 ```
 curl -X "POST" "http://localhost:8000/reject-token-listing" \
@@ -1817,8 +1934,9 @@ GET request
 <host>:8000/token-settings
 ```
 
-eg
-```curl -X "GET" "http://localhost:8000/token-settings"
+Example
+```
+curl -X "GET" "http://localhost:8000/token-settings"
 ```
 
 response 
@@ -1850,9 +1968,10 @@ Note: This is used to update single address object. For list of address object, 
 <host>:8000/update-address
 ```
 
-eg 
+Example 
 
-```curl -X "POST" "http://localhost:8000/update-address" \
+```
+curl -X "POST" "http://localhost:8000/update-address" \
      -H 'Content-Type: application/x-www-form-urlencoded'
      --data-urlencode "name = \"reserve\",
       address = \"0x123456789aabbcceeeddff\"
@@ -1877,7 +1996,7 @@ Post form: {"setname" : "Name of the address set(oldBurners etc...)",
 <host>:8000/add-address-to-set
 ```
 
-eg 
+Example 
 
 ```curl -X "POST" "http://localhost:8000/add-address-to-set" \
      -H 'Content-Type: application/x-www-form-urlencoded'
