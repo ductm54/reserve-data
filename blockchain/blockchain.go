@@ -65,6 +65,7 @@ type Blockchain struct {
 	pricingAddr   ethereum.Address
 	burnerAddr    ethereum.Address
 	networkAddr   ethereum.Address
+	internalAddr  ethereum.Address
 	whitelistAddr ethereum.Address
 	oldNetworks   []ethereum.Address
 	oldBurners    []ethereum.Address
@@ -481,7 +482,7 @@ func (self *Blockchain) GetRawLogs(fromBlock uint64, toBlock uint64) ([]types.Lo
 		addresses []ethereum.Address
 	)
 
-	addresses = append(addresses, self.networkAddr, self.burnerAddr, self.whitelistAddr)
+	addresses = append(addresses, self.networkAddr, self.internalAddr, self.burnerAddr, self.whitelistAddr)
 	addresses = append(addresses, self.oldNetworks...)
 	addresses = append(addresses, self.oldBurners...)
 
@@ -624,7 +625,7 @@ func (self *Blockchain) GetPricingMethod(inputData string) (*abi.Method, error) 
 func NewBlockchain(
 	base *blockchain.BaseBlockchain,
 	wrapperAddr, pricingAddr, burnerAddr,
-	networkAddr, reserveAddr, whitelistAddr ethereum.Address) (*Blockchain, error) {
+	networkAddr, internalAddr, reserveAddr, whitelistAddr ethereum.Address) (*Blockchain, error) {
 	log.Printf("wrapper address: %s", wrapperAddr.Hex())
 	wrapper := blockchain.NewContract(
 		wrapperAddr,
@@ -659,6 +660,7 @@ func NewBlockchain(
 		pricingAddr:   pricingAddr,
 		burnerAddr:    burnerAddr,
 		networkAddr:   networkAddr,
+		internalAddr:  internalAddr,
 		whitelistAddr: whitelistAddr,
 		oldNetworks:   []ethereum.Address{},
 		oldBurners:    []ethereum.Address{},
