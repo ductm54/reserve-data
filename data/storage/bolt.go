@@ -1450,6 +1450,7 @@ func convertTargetQtyV1toV2(target common.TokenTargetQty) common.TokenTargetQtyV
 }
 
 // StorePendingPWIEquationV2 stores the given PWIs equation data for later approval.
+// Return error if occur or there is no pending PWIEquation
 func (self *BoltStorage) StorePendingPWIEquationV2(data []byte) error {
 	timepoint := common.GetTimepoint()
 	err := self.db.Update(func(tx *bolt.Tx) error {
@@ -1614,6 +1615,7 @@ func (self *BoltStorage) StorePendingRebalanceQuadratic(data []byte) error {
 }
 
 //GetPendingRebalanceQuadratic return pending rebalance quadratic equation
+//Return err if occur, or if the DB is empty
 func (self *BoltStorage) GetPendingRebalanceQuadratic() (common.RebalanceQuadraticRequest, error) {
 	var result common.RebalanceQuadraticRequest
 	err := self.db.View(func(tx *bolt.Tx) error {
@@ -1687,4 +1689,110 @@ func (self *BoltStorage) GetRebalanceQuadratic() (common.RebalanceQuadraticReque
 		return json.Unmarshal(v, &result)
 	})
 	return result, err
+}
+
+func (self *BoltStorage) StoreJSONByteArray(tx *bolt.Tx, bucketName string, key, value []byte) error {
+	b := tx.Bucket([]byte(bucketName))
+	if b == nil {
+		return fmt.Errorf("Bucket %s hasn't existed yet", bucketName)
+	}
+	c := b.Cursor()
+	_, v := c.First()
+	if v != nil {
+		return fmt.Errorf("Bucket %s has a pending record", bucketName)
+	}
+	return b.Put(key, value)
+}
+
+func (self *BoltStorage) StorePendingTokenListingInfo(tarQty common.TokenTargetQtyV2, pwi common.PWIEquationRequestV2, quadEq common.RebalanceQuadraticRequest) error {
+	timeStampkey := boltutil.Uint64ToBytes(common.GetTimepoint())
+	err := self.db.Update(func(tx *bolt.Tx) error {
+		dataJSON, vErr := json.Marshal(tarQty)
+		if vErr != nil {
+			return vErr
+		}
+		if uErr := self.StoreJSONByteArray(tx, PENDING_TARGET_QUANTITY_V2, []byte("current_pending_target_qty"), dataJSON); uErr != nil {
+			return uErr
+		}
+		dataJSON, vErr = json.Marshal(pwi)
+		if vErr != nil {
+			return vErr
+		}
+		if uErr := self.StoreJSONByteArray(tx, PENDING_PWI_EQUATION_V2, timeStampkey, dataJSON); uErr != nil {
+			return uErr
+		}
+		dataJSON, vErr = json.Marshal(quadEq)
+		if vErr != nil {
+			return vErr
+		}
+		return self.StoreJSONByteArray(tx, PENDING_REBALANCE_QUADRATIC, timeStampkey, dataJSON)
+	})
+	return err
+}
+
+func (self *BoltStorage) deleteTheOnlyObjectFromBucket(tx *bolt.Tx, bucketName string) error {
+	b := tx.Bucket([]byte(bucketName))
+	if b == nil {
+		return fmt.Errorf("Bucket %s hasn't existed yet", bucketName)
+	}
+	c := b.Cursor()
+	k, _ := c.First()
+	if k == nil {
+		return fmt.Errorf("Bucket %s is empty", bucketName)
+	}
+	return b.Delete(k)
+}
+
+func (self *BoltStorage) RemovePendingTokenListingInfo() error {
+	err := self.db.Update(func(tx *bolt.Tx) error {
+		if uErr := self.deleteTheOnlyObjectFromBucket(tx, PENDING_TARGET_QUANTITY_V2); uErr != nil {
+			return uErr
+		}
+		if uErr := self.deleteTheOnlyObjectFromBucket(tx, PENDING_PWI_EQUATION_V2); uErr != nil {
+			return uErr
+		}
+		if uErr := self.deleteTheOnlyObjectFromBucket(tx, PENDING_REBALANCE_QUADRATIC); uErr != nil {
+			return uErr
+		}
+		return nil
+	})
+	return err
+}
+
+func (self *BoltStorage) ConfirmTokenListingInfo(tarQty common.TokenTargetQtyV2, pwi common.PWIEquationRequestV2, quadEq common.RebalanceQuadraticRequest) error {
+	timeStampkey := boltutil.Uint64ToBytes(common.GetTimepoint())
+	err := self.db.Update(func(tx *bolt.Tx) error {
+		dataJSON, vErr := json.Marshal(tarQty)
+		if vErr != nil {
+			return vErr
+		}
+		if uErr := self.StoreJSONByteArray(tx, TARGET_QUANTITY_V2, []byte("current_target_qty"), dataJSON); uErr != nil {
+			return uErr
+		}
+		dataJSON, vErr = json.Marshal(pwi)
+		if vErr != nil {
+			return vErr
+		}
+		if uErr := self.StoreJSONByteArray(tx, PWI_EQUATION_V2, timeStampkey, dataJSON); uErr != nil {
+			return uErr
+		}
+		dataJSON, vErr = json.Marshal(quadEq)
+		if vErr != nil {
+			return vErr
+		}
+		if uErr := self.StoreJSONByteArray(tx, REBALANCE_QUADRATIC, timeStampkey, dataJSON); uErr != nil {
+			return uErr
+		}
+		if uErr := self.deleteTheOnlyObjectFromBucket(tx, PENDING_TARGET_QUANTITY_V2); uErr != nil {
+			return uErr
+		}
+		if uErr := self.deleteTheOnlyObjectFromBucket(tx, PENDING_PWI_EQUATION_V2); uErr != nil {
+			return uErr
+		}
+		if uErr := self.deleteTheOnlyObjectFromBucket(tx, PENDING_REBALANCE_QUADRATIC); uErr != nil {
+			return uErr
+		}
+		return nil
+	})
+	return err
 }

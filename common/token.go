@@ -11,8 +11,11 @@ type TokenExchangeSetting struct {
 }
 
 type TokenListing struct {
-	Token    Token
-	Exchange map[string]TokenExchangeSetting
+	Token       Token                           `json:"token"`
+	Exchange    map[string]TokenExchangeSetting `json:"exchanges"`
+	PWIEq       PWIEquationTokenV2              `json:"pwis_equation"`
+	TargetQty   TargetQtyV2                     `json:"target_qty"`
+	QuadraticEq RebalanceQuadraticEquation      `json:""rebalance_quadratic"`
 }
 
 type TokenFee struct {

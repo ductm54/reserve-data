@@ -48,4 +48,9 @@ type MetricStorage interface {
 	ConfirmRebalanceQuadratic(data []byte) error
 	RemovePendingRebalanceQuadratic() error
 	GetRebalanceQuadratic() (common.RebalanceQuadraticRequest, error)
+	// StorePendingTokenListingInfo will attempt to store targetquanty v2. PWIequation V2 and RebalanceQuadracticRequest into database
+	// it returns error if occur.
+	StorePendingTokenListingInfo(common.TokenTargetQtyV2, common.PWIEquationRequestV2, common.RebalanceQuadraticRequest) error
+	ConfirmTokenListingInfo(common.TokenTargetQtyV2, common.PWIEquationRequestV2, common.RebalanceQuadraticRequest) error
+	RemovePendingTokenListingInfo() error
 }

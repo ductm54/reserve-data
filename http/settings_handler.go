@@ -150,36 +150,60 @@ func (self *HTTPServer) ConfirmTokenListing(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("cant not unmarshall token request %s", err.Error())))
 		return
 	}
-	pdPWI, err := self.metric.GetPendingPWIEquationV2()
-	if err != nil {
-		log.Printf("WARNING: can not get Pending PWIEquation v2, this will only allow listing non-internal token")
-	}
-	targetQty, err := self.metric.GetPendingTargetQtyV2()
-	if err != nil {
-		log.Printf("WARNING: can not get Pending TargetQty v2, this will only allow listing non-internal token")
+	var (
+		pws    common.PWIEquationRequestV2
+		tarQty common.TokenTargetQtyV2
+		quadEq common.RebalanceQuadraticRequest
+		err    error
+	)
+	hasInternal := thereIsInternal(tokenListings)
+	//If there is internal token in the listing, query for related informations.
+	if hasInternal {
+		pws, err = self.metric.GetPendingPWIEquationV2()
+		if err != nil {
+			httputil.ResponseFailure(c, httputil.WithReason("To confirm internal token listing there must be pendingPWIEquation"))
+			return
+		}
+		tarQty, err = self.metric.GetPendingTargetQtyV2()
+		if err != nil {
+			httputil.ResponseFailure(c, httputil.WithReason("To confirm internal token listing there must be pendingTargetQty"))
+			return
+		}
+		quadEq, err = self.metric.GetPendingRebalanceQuadratic()
+		if err != nil {
+			httputil.ResponseFailure(c, httputil.WithReason("To confirm internal token listing there must be pendingRebalanceQuadratic"))
+			return
+		}
 	}
 	pendingTLs, err := self.setting.GetPendingTokenListings()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Can not get pending token listing (%s)", err.Error())))
+		return
 	}
 
+	//Prepare all the object to update core setting to newly listed token
 	preparedExchangeSetting := make(map[settings.ExchangeName]*common.ExchangeSetting)
 	preparedToken := []common.Token{}
-
 	for tokenID, tokenListing := range tokenListings {
 		token := tokenListing.Token
 		preparedToken = append(preparedToken, token)
-		//check if there is the token in pending PWIequation
-		if _, ok := pdPWI[token.ID]; (token.Internal) && (!ok) {
-			httputil.ResponseFailure(c, httputil.WithReason("The Token is not in current pendingPWIEquation "))
-			return
+		if token.Internal {
+			//check if there is the token in pending PWIequation
+			if _, ok := pws[token.ID]; !ok {
+				httputil.ResponseFailure(c, httputil.WithReason("The Token is not in current pendingPWIEquation "))
+				return
+			}
+			//check if there is the token in pending targetqty
+			if _, ok := tarQty[token.ID]; !ok {
+				httputil.ResponseFailure(c, httputil.WithReason("The Token is not in current PendingTargetQty "))
+				return
+			}
+			//check if there is the token in quadratic euqation
+			if _, ok := quadEq[token.ID]; !ok {
+				httputil.ResponseFailure(c, httputil.WithReason("The Token is not in current quadratic reblance equation"))
+				return
+			}
 		}
-		//check if there is the token in pending targetqty
-		if _, ok := targetQty[token.ID]; (token.Internal) && (!ok) {
-			httputil.ResponseFailure(c, httputil.WithReason("The Token is not in current PendingTargetQty "))
-			return
-		}
-
 		//check if the token is available in pending token listing and is deep equal to it.
 		pendingTL, avail := pendingTLs[tokenID]
 		if !avail {
@@ -196,10 +220,15 @@ func (self *HTTPServer) ConfirmTokenListing(c *gin.Context) {
 		}
 	}
 
-	//reload token indices if the token is Internal
-	if err = self.updateInternalTokensIndices(tokenListings); err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
+	//reload token indices and apply metric changes if the token is Internal
+	if hasInternal {
+		if err = self.updateInternalTokensIndices(tokenListings); err != nil {
+			httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Can not update internal token indices (%s)", err.Error())))
+			return
+		}
+		if err = self.metric.ConfirmTokenListingInfo(tarQty, pws, quadEq); err != nil {
+			httputil.ResponseFailure(c, httputil.WithError(err))
+		}
 	}
 
 	// Apply the change into setting database
@@ -209,13 +238,23 @@ func (self *HTTPServer) ConfirmTokenListing(c *gin.Context) {
 	}
 
 	httputil.ResponseSuccess(c)
-
 }
 
 func (self *HTTPServer) RejectTokenListing(c *gin.Context) {
 	_, ok := self.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
 	if !ok {
 		return
+	}
+	listings, err := self.setting.GetPendingTokenListings()
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("there is no pending token listing (%s)", err.Error())))
+		return
+	}
+	if thereIsInternal(listings) {
+		if err := self.metric.RemovePendingTokenListingInfo(); err != nil {
+			httputil.ResponseFailure(c, httputil.WithError(err))
+			return
+		}
 	}
 	if err := self.setting.RemovePendingTokenListings(); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -264,6 +303,30 @@ func (self *HTTPServer) getInfosFromExchangeEndPoint(tokenListings map[string]co
 	return result, nil
 }
 
+// hasPending return true if currently there is a pending request on Metric data
+// This is to ensure that token listing operations does not conflict with metric operations
+func (self *HTTPServer) hasMetricPending() bool {
+	if _, err := self.metric.GetPendingPWIEquationV2(); err == nil {
+		return true
+	}
+	if _, err := self.metric.GetPendingRebalanceQuadratic(); err == nil {
+		return true
+	}
+	if _, err := self.metric.GetPendingTargetQtyV2(); err == nil {
+		return true
+	}
+	return false
+}
+
+func thereIsInternal(tokenListings map[string]common.TokenListing) bool {
+	for _, tokenListing := range tokenListings {
+		if tokenListing.Token.Internal {
+			return true
+		}
+	}
+	return false
+}
+
 // ListToken will pre-process the token request and put into pending token request
 // It will not apply any change to DB
 func (self *HTTPServer) ListToken(c *gin.Context) {
@@ -272,70 +335,90 @@ func (self *HTTPServer) ListToken(c *gin.Context) {
 		return
 	}
 	data := []byte(postForm.Get("data"))
-	TokenListings := make(map[string]common.TokenListing)
-	if err := json.Unmarshal(data, &TokenListings); err != nil {
+	tokenListings := make(map[string]common.TokenListing)
+	if err := json.Unmarshal(data, &tokenListings); err != nil {
 		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("cant not unmarshall token request %s", err.Error())))
 		return
 	}
 
-	pdPWI, err := self.metric.GetPendingPWIEquationV2()
-	if err != nil {
-		log.Printf("WARNING: can not get Pending PWIEquation v2, this will only allow listing non-internal token")
+	var (
+		pws     common.PWIEquationRequestV2
+		tarQty  common.TokenTargetQtyV2
+		quadEq  common.RebalanceQuadraticRequest
+		exInfos map[string]common.ExchangeInfo
+		err     error
+	)
+	hasInternal := thereIsInternal(tokenListings)
+	if hasInternal {
+		if self.hasMetricPending() {
+			httputil.ResponseFailure(c, httputil.WithReason("There is currently pending action on metrics. Call reject API first"))
+			return
+		}
+		pws, err = self.metric.GetPWIEquationV2()
+		if err != nil {
+			log.Printf("WARNING: There is no current PWS equation in database, creating new instance...")
+			pws = make(common.PWIEquationRequestV2)
+		}
+		tarQty, err = self.metric.GetTargetQtyV2()
+		if err != nil {
+			log.Printf("WARNING: There is no current target quantity in database, creating new instance...")
+			tarQty = make(common.TokenTargetQtyV2)
+		}
+		quadEq, err = self.metric.GetRebalanceQuadratic()
+		if err != nil {
+			log.Printf("WARNING: There is no current quadratic equation in database, creating new instance...")
+			quadEq = make(common.RebalanceQuadraticRequest)
+		}
+		// verify exchange status and exchange precision limit for each exchange
+		exInfos, err = self.getInfosFromExchangeEndPoint(tokenListings)
+		if err != nil {
+			httputil.ResponseFailure(c, httputil.WithError(err))
+		}
 	}
-	targetQty, err := self.metric.GetPendingTargetQtyV2()
-	if err != nil {
-		log.Printf("WARNING: can not get Pending TargetQty v2, this will only allow listing non-internal token")
-	}
-
-	// verify exchange status and exchange precision limit for each exchange
-	exInfos, err := self.getInfosFromExchangeEndPoint(TokenListings)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-	}
-
 	// prepare each TokenListing instance for individual token
-	for tokenID, TokenListing := range TokenListings {
-		token := TokenListing.Token
+	for tokenID, tokenlisting := range tokenListings {
+		token := tokenlisting.Token
 		// To list token, its active status must be true
 		token.Active = true
-		//check if there is the token in pending PWIequation
-		if _, ok := pdPWI[token.ID]; (token.Internal) && (!ok) {
-			httputil.ResponseFailure(c, httputil.WithReason("The Token is not in current pendingPWIEquation "))
-			return
-		}
+		// if the token is internal, it must come with PWIEq, targetQty and QuadraticEquation and exchange setting
+		if token.Internal {
+			pws[tokenID] = tokenlisting.PWIEq
+			tarQty[tokenID] = tokenlisting.TargetQty
+			quadEq[tokenID] = tokenlisting.QuadraticEq
 
-		//check if there is the token in pending targetqty
-		if _, ok := targetQty[token.ID]; (token.Internal) && (!ok) {
-			httputil.ResponseFailure(c, httputil.WithReason("The Token is not in current PendingTargetQty "))
-			return
-		}
-
-		for ex, tokExSett := range TokenListing.Exchange {
-			//query exchangeprecisionlimit from exchange for the pair token-ETH
-			pairID := common.NewTokenPairID(token.ID, "ETH")
-
-			// If the pair is not in current token listing request, get its result from exchange
-			_, ok1 := tokExSett.Info[pairID]
-			if !ok1 {
-				if tokExSett.Info == nil {
-					tokExSett.Info = make(common.ExchangeInfo)
+			for ex, tokExSett := range tokenlisting.Exchange {
+				//query exchangeprecisionlimit from exchange for the pair token-ETH
+				pairID := common.NewTokenPairID(token.ID, "ETH")
+				// If the pair is not in current token listing request, get its result from exchange
+				_, ok1 := tokExSett.Info[pairID]
+				if !ok1 {
+					if tokExSett.Info == nil {
+						tokExSett.Info = make(common.ExchangeInfo)
+					}
+					epl, ok2 := exInfos[ex].GetData()[pairID]
+					if !ok2 {
+						httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Pair ID %s on exchange %s couldn't be queried for exchange presicion limit", pairID, ex)))
+						return
+					}
+					tokExSett.Info[pairID] = epl
 				}
-				epl, ok2 := exInfos[ex].GetData()[pairID]
-				if !ok2 {
-					httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Pair ID %s on exchange %s couldn't be queried for exchange presicion limit", pairID, ex)))
-				}
-				tokExSett.Info[pairID] = epl
+				tokenlisting.Exchange[ex] = tokExSett
 			}
-			TokenListing.Exchange[ex] = tokExSett
 		}
-		TokenListings[tokenID] = TokenListing
+		tokenListings[tokenID] = tokenlisting
 	}
-	if err := self.setting.UpdatePendingTokenListings(TokenListings); err != nil {
+
+	if hasInternal {
+		if err = self.metric.StorePendingTokenListingInfo(tarQty, pws, quadEq); err != nil {
+			httputil.ResponseFailure(c, httputil.WithError(err))
+			return
+		}
+	}
+	if err = self.setting.UpdatePendingTokenListings(tokenListings); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
 	httputil.ResponseSuccess(c)
-	return
 }
 
 func (self *HTTPServer) GetPendingTokenListings(c *gin.Context) {
