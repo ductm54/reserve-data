@@ -1973,9 +1973,10 @@ Example
 ```
 curl -X "POST" "http://localhost:8000/update-address" \
      -H 'Content-Type: application/x-www-form-urlencoded'
-     --data-urlencode "name = \"reserve\",
-      address = \"0x123456789aabbcceeeddff\"
-    }" 
+     --data-urlencode "
+      name=\"reserve\",
+      address=\"0x123456789aabbcceeeddff\"
+    " 
 
 ```
 response
@@ -2001,9 +2002,9 @@ Example
 ```curl -X "POST" "http://localhost:8000/add-address-to-set" \
      -H 'Content-Type: application/x-www-form-urlencoded'
      --data-urlencode "
-      setname = "oldBurner",
-      address = "0x123456789aabbcceeeddff"
-    } 
+        setname=\"oldBurner\",
+        address=\"0x123456789aabbcceeeddff\"
+      " 
 
 ```
 response
