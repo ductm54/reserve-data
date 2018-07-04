@@ -23,7 +23,12 @@ import (
 )
 
 const (
-	STARTING_BLOCK uint64 = 5069586
+	// startingBlockProduction is the block the first version of
+	// production network contract is created.
+	startingBlockProduction = 5069586
+	// startingBlockStaging is the block the first version of
+	// staging network contract is created.
+	startingBlockStaging = 5042909
 )
 
 func backupLog(arch archive.Archive) {
@@ -184,9 +189,13 @@ func CreateDataCore(config *configuration.Config, kyberENV string, bc *blockchai
 
 func CreateStat(config *configuration.Config, kyberENV string, bc *blockchain.Blockchain) *stat.ReserveStats {
 	var deployBlock uint64
-	if kyberENV == common.MAINNET_MODE || kyberENV == common.PRODUCTION_MODE || kyberENV == common.DEV_MODE {
-		deployBlock = STARTING_BLOCK
+	switch kyberENV {
+	case common.MAINNET_MODE, common.PRODUCTION_MODE, common.DEV_MODE:
+		deployBlock = startingBlockProduction
+	case common.STAGING_MODE:
+		deployBlock = startingBlockStaging
 	}
+
 	statFetcher := stat.NewFetcher(
 		config.StatStorage,
 		config.LogStorage,
