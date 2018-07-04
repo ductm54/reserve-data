@@ -1575,7 +1575,7 @@ response
 POST request
 Post form: {"data" : "JSON enconding of token Object"}
 ```
-<host>:8000/update-token
+<host>:8000/setting/update-token
 ```
 
 eg
@@ -1610,7 +1610,7 @@ on failure:
 POST request 
 Post form: {"data" : "JSON enconding of token listing Object"}
 ```
-<host>:8000/set-token-listing
+<host>:8000/setting/set-token-listing
 ```
 **Note**: 
 - This data is in the form of a map tokenID:TokenListing which allows mutiple token listings at once
@@ -1628,7 +1628,7 @@ in order to update its indices.
 Example: This request will list token OMG and NEO. OMG is internal, NEO is external. 
 
 ``` 
-curl -X "POST" "http://localhost:8000/set-token-listings" \
+curl -X "POST" "http://localhost:8000/setting/set-token-listings" \
      -H 'Content-Type: application/x-www-form-urlencoded'
      --data-urlencode "data={  
       \"OMG\": {
@@ -1716,12 +1716,12 @@ on failure:
 GET request
 
 ``` 
-<host>:8000/pending-token-listing
+<host>:8000/setting/pending-token-listing
 ```
 
 Example
 ``` 
-curl -X "GET" "http://localhost:8000/pending-token-listing"
+curl -X "GET" "http://localhost:8000/setting/pending-token-listing"
 ```
 
 response 
@@ -1779,13 +1779,13 @@ POST request
 Post form: {"data" : "JSON enconding of token listing Object"}
 Note: This data is similar to token Listing, but all field must be the same as the current pending. 
 ```
-<host>:8000/confirm-token-listing
+<host>:8000/setting/confirm-token-listing
 ```
 
 Example 
 
 ``` 
-curl -X "POST" "http://localhost:8000/confirm-token-listing" \
+curl -X "POST" "http://localhost:8000/setting/confirm-token-listing" \
      -H 'Content-Type: application/x-www-form-urlencoded'
      --data-urlencode "data={    
         \"NEO\": {
@@ -1907,7 +1907,7 @@ on failure:
 POST request
 
 ```
-<host>:8000/reject-token-listing
+<host>:8000/setting/reject-token-listing
 ```
 
 Example
@@ -1931,12 +1931,12 @@ on failure:
 GET request
 
 ``` 
-<host>:8000/token-settings
+<host>:8000/setting/token-settings
 ```
 
 Example
 ```
-curl -X "GET" "http://localhost:8000/token-settings"
+curl -X "GET" "http://localhost:8000/setting/token-settings"
 ```
 
 response 
@@ -1965,7 +1965,7 @@ Post form: {"name" : "Name of the address (reserve, deposit etc...)",
             "address" : "Hex form of the new address"}
 Note: This is used to update single address object. For list of address object, use add-address-to-set instead
 ```
-<host>:8000/update-address
+<host>:8000/setting/update-address
 ```
 
 Example 
@@ -1994,7 +1994,7 @@ POST request
 Post form: {"setname" : "Name of the address set(oldBurners etc...)",
             "address" : "Hex form of the new address"}
 ```
-<host>:8000/add-address-to-set
+<host>:8000/setting/add-address-to-set
 ```
 
 Example 

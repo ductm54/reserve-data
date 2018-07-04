@@ -1739,18 +1739,19 @@ func (self *HTTPServer) GetFeeSetRateByDay(c *gin.Context) {
 }
 
 func (self *HTTPServer) register() {
-	self.r.POST("/update-token", self.UpdateToken)
-	self.r.POST("/set-token-listing", self.ListToken)
-	self.r.GET("/pending-token-listing", self.GetPendingTokenListings)
-	self.r.POST("/confirm-token-listing", self.ConfirmTokenListing)
-	self.r.POST("/reject-token-listing", self.RejectTokenListing)
-	self.r.GET("/token-settings", self.TokenSettings)
-	self.r.POST("/update-address", self.UpdateAddress)
-	self.r.POST("/add-address-to-set", self.AddAddressToSet)
-	self.r.POST("/update-exchange-fee", self.UpdateExchangeFee)
-	self.r.POST("/update-exchange-mindeposit", self.UpdateExchangeMinDeposit)
-	self.r.POST("/update-deposit-address", self.UpdateDepositAddress)
-	self.r.POST("/update-exchange-info", self.UpdateExchangeInfo)
+	stt := self.r.Group("/setting")
+	stt.POST("/update-token", self.UpdateToken)
+	stt.POST("/set-token-listing", self.ListToken)
+	stt.GET("/pending-token-listing", self.GetPendingTokenListings)
+	stt.POST("/confirm-token-listing", self.ConfirmTokenListing)
+	stt.POST("/reject-token-listing", self.RejectTokenListing)
+	stt.GET("/token-settings", self.TokenSettings)
+	stt.POST("/update-address", self.UpdateAddress)
+	stt.POST("/add-address-to-set", self.AddAddressToSet)
+	stt.POST("/update-exchange-fee", self.UpdateExchangeFee)
+	stt.POST("/update-exchange-mindeposit", self.UpdateExchangeMinDeposit)
+	stt.POST("/update-deposit-address", self.UpdateDepositAddress)
+	stt.POST("/update-exchange-info", self.UpdateExchangeInfo)
 
 	if self.core != nil && self.app != nil {
 		v2 := self.r.Group("/v2")
