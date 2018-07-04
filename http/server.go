@@ -1752,6 +1752,7 @@ func (self *HTTPServer) register() {
 	stt.POST("/update-exchange-mindeposit", self.UpdateExchangeMinDeposit)
 	stt.POST("/update-deposit-address", self.UpdateDepositAddress)
 	stt.POST("/update-exchange-info", self.UpdateExchangeInfo)
+	stt.GET("/all-settings", self.GetAllSetting)
 
 	if self.core != nil && self.app != nil {
 		v2 := self.r.Group("/v2")

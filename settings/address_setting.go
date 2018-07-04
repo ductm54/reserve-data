@@ -6,18 +6,18 @@ import (
 )
 
 // AddressName is the name of ethereum address used in core.
-//go:generate stringer -type=AddressName
+//go:generate stringer -type=AddressName -linecomment
 type AddressName int
 
 const (
-	Reserve AddressName = iota
-	Burner
-	Bank
-	Network
-	Wrapper
-	Pricing
-	Whitelist
-	SetRate
+	Reserve   AddressName = iota //reserve
+	Burner                       //burner
+	Bank                         //bank
+	Network                      //network
+	Wrapper                      //wrapper
+	Pricing                      //pricing
+	Whitelist                    //whitelist
+	SetRate                      //setrate
 )
 
 var addressNameValues = map[string]AddressName{
@@ -38,13 +38,13 @@ func AddressNameValues() map[string]AddressName {
 }
 
 // AddressSetName is the name of ethereum address set used in core.
-//go:generate stringer -type=AddressSetName
+//go:generate stringer -type=AddressSetName -linecomment
 type AddressSetName int
 
 const (
-	ThirdPartyReserves AddressSetName = iota
-	OldNetWorks
-	OldBurners
+	ThirdPartyReserves AddressSetName = iota //third_party_reserves
+	OldNetWorks                              //old_networks
+	OldBurners                               //old_burners
 )
 
 var addressSetNameValues = map[string]AddressSetName{

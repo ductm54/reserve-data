@@ -17,6 +17,11 @@ func (setting *Settings) GetAddress(name AddressName) (ethereum.Address, error) 
 	return ethereum.HexToAddress(addr), err
 }
 
+// GetAllAddress return all the address setting in cores
+func (setting *Settings) GetAllAddresses() (map[string]interface{}, error) {
+	return setting.Address.Storage.GetAllAddresses()
+}
+
 func (setting *Settings) AddAddressToSet(setName AddressSetName, address ethereum.Address) error {
 	return setting.Address.Storage.AddAddressToSet(setName, address.Hex())
 }

@@ -913,3 +913,17 @@ type FeeSetRate struct {
 	GasUsed       *big.Float `json:"gasUsed"`
 	TotalGasSpent *big.Float `json:"totalGasSpent"`
 }
+
+type AllSettings struct {
+	Addresses map[string]interface{}
+	Tokens    []Token
+	Exchanges map[string]*ExchangeSetting
+}
+
+func NewAllSettings(addrs map[string]interface{}, toks []Token, exs map[string]*ExchangeSetting) *AllSettings {
+	return &AllSettings{
+		Addresses: addrs,
+		Tokens:    toks,
+		Exchanges: exs,
+	}
+}

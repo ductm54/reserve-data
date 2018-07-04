@@ -13,14 +13,14 @@ import (
 )
 
 // ExchangeName is the name of exchanges of which core will use to rebalance.
-//go:generate stringer -type=ExchangeName
+//go:generate stringer -type=ExchangeName -linecomment
 type ExchangeName int
 
 const (
-	Binance ExchangeName = iota
-	Bittrex
-	Huobi
-	StableExchange
+	Binance        ExchangeName = iota //binance
+	Bittrex                            //bittrex
+	Huobi                              //huobi
+	StableExchange                     //stable_exchange
 )
 const exchangeEnv string = "KYBER_EXCHANGES"
 

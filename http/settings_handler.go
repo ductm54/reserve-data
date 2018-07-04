@@ -464,7 +464,6 @@ func (self *HTTPServer) UpdateToken(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-
 	httputil.ResponseSuccess(c)
 }
 
@@ -479,7 +478,6 @@ func (self *HTTPServer) TokenSettings(c *gin.Context) {
 		return
 	}
 	httputil.ResponseSuccess(c, httputil.WithData(data))
-	return
 }
 
 func (self *HTTPServer) UpdateAddress(c *gin.Context) {
@@ -497,6 +495,7 @@ func (self *HTTPServer) UpdateAddress(c *gin.Context) {
 	addr := ethereum.HexToAddress(addrStr)
 	if err := self.setting.UpdateAddress(addressName, addr); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
 	}
 	httputil.ResponseSuccess(c)
 }
@@ -516,6 +515,7 @@ func (self *HTTPServer) AddAddressToSet(c *gin.Context) {
 	}
 	if err := self.setting.AddAddressToSet(addrSetName, addr); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
 	}
 	httputil.ResponseSuccess(c)
 }
@@ -539,6 +539,7 @@ func (self *HTTPServer) UpdateExchangeFee(c *gin.Context) {
 	}
 	if err := self.setting.UpdateFee(exName, exFee); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
 	}
 	httputil.ResponseSuccess(c)
 }
@@ -562,6 +563,7 @@ func (self *HTTPServer) UpdateExchangeMinDeposit(c *gin.Context) {
 	}
 	if err := self.setting.UpdateMinDeposit(exName, exMinDeposit); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
 	}
 	httputil.ResponseSuccess(c)
 }
@@ -585,6 +587,7 @@ func (self *HTTPServer) UpdateDepositAddress(c *gin.Context) {
 	}
 	if err := self.setting.UpdateDepositAddress(exName, exDepositAddress); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
 	}
 	httputil.ResponseSuccess(c)
 }
@@ -608,6 +611,41 @@ func (self *HTTPServer) UpdateExchangeInfo(c *gin.Context) {
 	}
 	if err := self.setting.UpdateExchangeInfo(exName, exInfo); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
 	}
 	httputil.ResponseSuccess(c)
+}
+
+func (self *HTTPServer) GetAllSetting(c *gin.Context) {
+	_, ok := self.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
+	if !ok {
+		return
+	}
+	tokenSettings, err := self.setting.GetAllTokens()
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	addressSettings, err := self.setting.GetAllAddresses()
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	exchangeSettings := make(map[string]*common.ExchangeSetting)
+	for exID := range common.SupportedExchanges {
+		exName, vErr := self.ensureRunningExchange(string(exID))
+		if vErr != nil {
+			httputil.ResponseFailure(c, httputil.WithError(vErr))
+			return
+		}
+		exSett, vErr := self.getExchangeSetting(exName)
+		if vErr != nil {
+			httputil.ResponseFailure(c, httputil.WithError(vErr))
+			return
+		}
+		exchangeSettings[string(exID)] = exSett
+	}
+
+	allSetting := common.NewAllSettings(addressSettings, tokenSettings, exchangeSettings)
+	httputil.ResponseSuccess(c, httputil.WithData(allSetting))
 }

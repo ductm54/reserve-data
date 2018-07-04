@@ -30,4 +30,5 @@ type Setting interface {
 	ApplyTokenWithExchangeSetting([]common.Token, map[settings.ExchangeName]*common.ExchangeSetting) error
 	GetPendingTokenListings() (map[string]common.TokenListing, error)
 	RemovePendingTokenListings() error
+	GetAllAddresses() (map[string]interface{}, error)
 }

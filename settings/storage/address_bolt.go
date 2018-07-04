@@ -10,6 +10,53 @@ import (
 	"github.com/boltdb/bolt"
 )
 
+func (boltSettingStorage *BoltSettingStorage) GetAllAddresses() (map[string]interface{}, error) {
+	result := make(map[string]interface{})
+	err := boltSettingStorage.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(ADDRESS_SETTING_BUCKET))
+		if b == nil {
+			return fmt.Errorf("Bucket %s has not existed yet", ADDRESS_SETTING_BUCKET)
+		}
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			keyName := settings.AddressName(boltutil.BytesToUint64(k)).String()
+			result[keyName] = string(v)
+		}
+		b = tx.Bucket([]byte(ADDRESS_SET_SETTING_BUCKET))
+		if b == nil {
+			return fmt.Errorf("Bucket %s has not existed yet", ADDRESS_SET_SETTING_BUCKET)
+		}
+		c = b.Cursor()
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			nestedBuck := b.Bucket(k)
+			keyName := settings.AddressSetName(boltutil.BytesToUint64(k)).String()
+			if nestedBuck == nil {
+				return fmt.Errorf("Nested bucket error: key %s is not a bucket of addresses", keyName)
+			}
+			var adrset []string
+			nC := nestedBuck.Cursor()
+			for nK, _ := nC.First(); nK != nil; nK, _ = nC.Next() {
+				adrset = append(adrset, string(nK))
+			}
+			result[keyName] = adrset
+		}
+		return nil
+	})
+	return result, err
+}
+
+func (boltSettingStorage *BoltSettingStorage) UpdateOneAddress(name settings.AddressName, address string) error {
+	address = strings.ToLower(address)
+	err := boltSettingStorage.db.Update(func(tx *bolt.Tx) error {
+		b, uErr := tx.CreateBucketIfNotExists([]byte(ADDRESS_SETTING_BUCKET))
+		if uErr != nil {
+			return uErr
+		}
+		return b.Put(boltutil.Uint64ToBytes(uint64(name)), []byte(address))
+	})
+	return err
+}
+
 func (boltSettingStorage *BoltSettingStorage) GetAddress(add settings.AddressName) (string, error) {
 	var address string
 	err := boltSettingStorage.db.View(func(tx *bolt.Tx) error {

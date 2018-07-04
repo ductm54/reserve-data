@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/KyberNetwork/reserve-data/boltutil"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/settings"
 	"github.com/boltdb/bolt"
@@ -196,18 +195,6 @@ func (boltSettingStorage *BoltSettingStorage) GetInternalTokenByAddress(Addr eth
 
 func (boltSettingStorage *BoltSettingStorage) GetExternalTokenByAddress(Addr ethereum.Address) (common.Token, error) {
 	return boltSettingStorage.getTokenByAddressWithFiltering(Addr.Hex(), isExternal)
-}
-
-func (boltSettingStorage *BoltSettingStorage) UpdateOneAddress(name settings.AddressName, address string) error {
-	address = strings.ToLower(address)
-	err := boltSettingStorage.db.Update(func(tx *bolt.Tx) error {
-		b, uErr := tx.CreateBucketIfNotExists([]byte(ADDRESS_SETTING_BUCKET))
-		if uErr != nil {
-			return uErr
-		}
-		return b.Put(boltutil.Uint64ToBytes(uint64(name)), []byte(address))
-	})
-	return err
 }
 
 // UpdateTokenWithExchangeSetting will attempt to apply all the token and exchange settings
