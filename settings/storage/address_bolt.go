@@ -28,8 +28,8 @@ func (boltSettingStorage *BoltSettingStorage) GetAllAddresses() (map[string]inte
 		}
 		c = b.Cursor()
 		for k, _ := c.First(); k != nil; k, _ = c.Next() {
-			nestedBuck := b.Bucket(k)
 			keyName := settings.AddressSetName(boltutil.BytesToUint64(k)).String()
+			nestedBuck := b.Bucket(k)
 			if nestedBuck == nil {
 				return fmt.Errorf("Nested bucket error: key %s is not a bucket of addresses", keyName)
 			}

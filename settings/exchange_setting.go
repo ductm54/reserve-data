@@ -45,7 +45,7 @@ func RunningExchanges() []string {
 	return exchanges
 }
 
-func ExchangTypeValues() map[string]ExchangeName {
+func ExchangeTypeValues() map[string]ExchangeName {
 	return exchangeNameValue
 }
 

@@ -99,11 +99,11 @@ func (self *Huobi) GetLiveExchangeInfos(tokenPairIDs []common.TokenPairID) (comm
 		return result, err
 	}
 	for _, pairID := range tokenPairIDs {
-		epl, ok := self.getPrecisionLimitFromSymbols(pairID, exchangeInfo)
+		exchangePrecisionLimit, ok := self.getPrecisionLimitFromSymbols(pairID, exchangeInfo)
 		if !ok {
 			return result, fmt.Errorf("Huobi Exchange Info reply doesn't contain token pair %s", string(pairID))
 		}
-		result[pairID] = epl
+		result[pairID] = exchangePrecisionLimit
 	}
 	return result, nil
 }
@@ -138,11 +138,11 @@ func (self *Huobi) UpdatePairsPrecision() error {
 		return errors.New("Exchange info of Huobi is nil")
 	}
 	for pair := range exInfo.GetData() {
-		epl, exist := self.getPrecisionLimitFromSymbols(pair, exchangeInfo)
+		exchangePrecisionLimit, exist := self.getPrecisionLimitFromSymbols(pair, exchangeInfo)
 		if !exist {
 			return fmt.Errorf("Huobi Exchange Info reply doesn't contain token pair %s", pair)
 		}
-		exInfo[pair] = epl
+		exInfo[pair] = exchangePrecisionLimit
 	}
 	return self.setting.UpdateExchangeInfo(settings.Huobi, exInfo)
 }

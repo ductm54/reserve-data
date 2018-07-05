@@ -91,8 +91,8 @@ func (setting *Settings) ApplyTokenWithExchangeSetting(tokens []common.Token, ex
 	return setting.Tokens.Storage.UpdateTokenWithExchangeSetting(tokens, exSetting)
 }
 
-func (setting *Settings) UpdatePendingTokenListings(trs map[string]common.TokenListing) error {
-	return setting.Tokens.Storage.StorePendingTokenListings(trs)
+func (setting *Settings) UpdatePendingTokenListings(tokenListings map[string]common.TokenListing) error {
+	return setting.Tokens.Storage.StorePendingTokenListings(tokenListings)
 }
 
 func (setting *Settings) GetPendingTokenListings() (map[string]common.TokenListing, error) {

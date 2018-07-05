@@ -49,8 +49,8 @@ const (
 
 var addressSetNameValues = map[string]AddressSetName{
 	"third_party_reserves": ThirdPartyReserves,
-	"oldNetworks":          OldNetWorks,
-	"oldBurners":           OldBurners,
+	"old_networks":         OldNetWorks,
+	"old_burners":          OldBurners,
 }
 
 // AddressSetNameValues returns the mapping of the string presentation

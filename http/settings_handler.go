@@ -64,7 +64,7 @@ func (self *HTTPServer) updateInternalTokensIndices(tokenListings map[string]com
 
 // ensureRunningExchange makes sure that the exchange input is avaialbe in current deployment
 func (self *HTTPServer) ensureRunningExchange(ex string) (settings.ExchangeName, error) {
-	exName, ok := settings.ExchangTypeValues()[ex]
+	exName, ok := settings.ExchangeTypeValues()[ex]
 	if !ok {
 		return exName, fmt.Errorf("Exchange %s is not in current deployment", ex)
 	}
@@ -127,9 +127,8 @@ func (self *HTTPServer) prepareExchangeSetting(token common.Token, tokExSetts ma
 		}
 
 		//Update Exchange Fee for ExchangeSetting
-		comExSet.Fee.Trading[token.ID] = tokExSett.Fee.Trading
 		comExSet.Fee.Funding.Deposit[token.ID] = tokExSett.Fee.Deposit
-		comExSet.Fee.Funding.Withdraw[token.ID] = tokExSett.Fee.WithDraw
+		comExSet.Fee.Funding.Withdraw[token.ID] = tokExSett.Fee.Withdraw
 
 		//Update Exchange Min deposit for ExchangeSetting
 		comExSet.MinDeposit[token.ID] = tokExSett.MinDeposit
@@ -214,7 +213,7 @@ func (self *HTTPServer) ConfirmTokenListing(c *gin.Context) {
 			httputil.ResponseFailure(c, httputil.WithReason("Confirm and pending token listing request are not equal"))
 			return
 		}
-		if uErr := self.prepareExchangeSetting(token, tokenListing.Exchange, preparedExchangeSetting); uErr != nil {
+		if uErr := self.prepareExchangeSetting(token, tokenListing.Exchanges, preparedExchangeSetting); uErr != nil {
 			httputil.ResponseFailure(c, httputil.WithError(uErr))
 			return
 		}
@@ -270,7 +269,7 @@ func (self *HTTPServer) getInfosFromExchangeEndPoint(tokenListings map[string]co
 	exTokenPairIDs := make(map[string]([]common.TokenPairID))
 	result := make(map[string]common.ExchangeInfo)
 	for tokenID, TokenListing := range tokenListings {
-		for ex, exSetting := range TokenListing.Exchange {
+		for ex, exSetting := range TokenListing.Exchanges {
 			_, err := self.ensureRunningExchange(ex)
 			if err != nil {
 				return result, err
@@ -386,7 +385,7 @@ func (self *HTTPServer) ListToken(c *gin.Context) {
 			tarQty[tokenID] = tokenlisting.TargetQty
 			quadEq[tokenID] = tokenlisting.QuadraticEq
 
-			for ex, tokExSett := range tokenlisting.Exchange {
+			for ex, tokExSett := range tokenlisting.Exchanges {
 				//query exchangeprecisionlimit from exchange for the pair token-ETH
 				pairID := common.NewTokenPairID(token.ID, "ETH")
 				// If the pair is not in current token listing request, get its result from exchange
@@ -395,14 +394,14 @@ func (self *HTTPServer) ListToken(c *gin.Context) {
 					if tokExSett.Info == nil {
 						tokExSett.Info = make(common.ExchangeInfo)
 					}
-					epl, ok2 := exInfos[ex].GetData()[pairID]
+					exchangePrecisionLimit, ok2 := exInfos[ex].GetData()[pairID]
 					if !ok2 {
 						httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Pair ID %s on exchange %s couldn't be queried for exchange presicion limit", pairID, ex)))
 						return
 					}
-					tokExSett.Info[pairID] = epl
+					tokExSett.Info[pairID] = exchangePrecisionLimit
 				}
-				tokenlisting.Exchange[ex] = tokExSett
+				tokenlisting.Exchanges[ex] = tokExSett
 			}
 		}
 		tokenListings[tokenID] = tokenlisting
@@ -501,13 +500,13 @@ func (self *HTTPServer) UpdateAddress(c *gin.Context) {
 }
 
 func (self *HTTPServer) AddAddressToSet(c *gin.Context) {
-	postForm, ok := self.Authenticated(c, []string{"setname", "address"}, []Permission{RebalancePermission, ConfigurePermission})
+	postForm, ok := self.Authenticated(c, []string{"name", "address"}, []Permission{RebalancePermission, ConfigurePermission})
 	if !ok {
 		return
 	}
 	addrStr := postForm.Get("address")
 	addr := ethereum.HexToAddress(addrStr)
-	setName := postForm.Get("setname")
+	setName := postForm.Get("name")
 	addrSetName, ok := settings.AddressSetNameValues()[setName]
 	if !ok {
 		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("invalid address set name: %s", setName)))
@@ -526,7 +525,7 @@ func (self *HTTPServer) UpdateExchangeFee(c *gin.Context) {
 		return
 	}
 	name := postForm.Get("name")
-	exName, ok := settings.ExchangTypeValues()[name]
+	exName, ok := settings.ExchangeTypeValues()[name]
 	if !ok {
 		httputil.ResponseFailure(c, httputil.WithError(fmt.Errorf("Exchange %s is not in current deployment", name)))
 		return
@@ -550,7 +549,7 @@ func (self *HTTPServer) UpdateExchangeMinDeposit(c *gin.Context) {
 		return
 	}
 	name := postForm.Get("name")
-	exName, ok := settings.ExchangTypeValues()[name]
+	exName, ok := settings.ExchangeTypeValues()[name]
 	if !ok {
 		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Exchange %s is not in current deployment", name)))
 		return
@@ -574,16 +573,22 @@ func (self *HTTPServer) UpdateDepositAddress(c *gin.Context) {
 		return
 	}
 	name := postForm.Get("name")
-	exName, ok := settings.ExchangTypeValues()[name]
+	exName, ok := settings.ExchangeTypeValues()[name]
 	if !ok {
 		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Exchange %s is not in current deployment", name)))
 		return
 	}
 	data := []byte(postForm.Get("data"))
-	var exDepositAddress common.ExchangeAddresses
-	if err := json.Unmarshal(data, &exDepositAddress); err != nil {
+	var exDepositAddressStr map[string]string
+	if err := json.Unmarshal(data, &exDepositAddressStr); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
+	}
+	exDepositAddress := make(common.ExchangeAddresses)
+	for tokenID, addrStr := range exDepositAddressStr {
+		log.Printf("addrstr is %s", addrStr)
+		exDepositAddress[tokenID] = ethereum.HexToAddress(addrStr)
+		log.Printf(exDepositAddress[tokenID].Hex())
 	}
 	if err := self.setting.UpdateDepositAddress(exName, exDepositAddress); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -598,7 +603,7 @@ func (self *HTTPServer) UpdateExchangeInfo(c *gin.Context) {
 		return
 	}
 	name := postForm.Get("name")
-	exName, ok := settings.ExchangTypeValues()[name]
+	exName, ok := settings.ExchangeTypeValues()[name]
 	if !ok {
 		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Exchange %s is not in current deployment", name)))
 		return

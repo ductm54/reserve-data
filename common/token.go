@@ -12,16 +12,15 @@ type TokenExchangeSetting struct {
 
 type TokenListing struct {
 	Token       Token                           `json:"token"`
-	Exchange    map[string]TokenExchangeSetting `json:"exchanges"`
+	Exchanges   map[string]TokenExchangeSetting `json:"exchanges"`
 	PWIEq       PWIEquationTokenV2              `json:"pwis_equation"`
 	TargetQty   TargetQtyV2                     `json:"target_qty"`
 	QuadraticEq RebalanceQuadraticEquation      `json:"rebalance_quadratic"`
 }
 
 type TokenFee struct {
-	Trading  float64
-	WithDraw float64
-	Deposit  float64
+	Withdraw float64 `json:"Withdraw"`
+	Deposit  float64 `json:"Deposit"`
 }
 
 type Token struct {

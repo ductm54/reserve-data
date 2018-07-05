@@ -263,11 +263,11 @@ func (boltSettingStorage *BoltSettingStorage) GetPendingTokenListings() (map[str
 		}
 		c := b.Cursor()
 		for k, v := c.First(); k != nil; k, v = c.Next() {
-			var tr common.TokenListing
-			if uErr := json.Unmarshal(v, &tr); uErr != nil {
-				return uErr
+			var tokenListing common.TokenListing
+			if vErr := json.Unmarshal(v, &tokenListing); vErr != nil {
+				return vErr
 			}
-			result[string(k)] = tr
+			result[string(k)] = tokenListing
 		}
 		return nil
 	})

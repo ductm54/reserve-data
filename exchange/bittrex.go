@@ -89,11 +89,11 @@ func (self *Bittrex) GetLiveExchangeInfos(tokenPairIDs []common.TokenPairID) (co
 	}
 	symbols := exchangeInfo.Pairs
 	for _, pairID := range tokenPairIDs {
-		epl, ok := self.getPrecisionLimitFromSymbols(pairID, symbols)
+		exchangePrecisionLimit, ok := self.getPrecisionLimitFromSymbols(pairID, symbols)
 		if !ok {
 			return result, fmt.Errorf("Bittrex Exchange Info reply doesn't contain token pair %s", string(pairID))
 		}
-		result[pairID] = epl
+		result[pairID] = exchangePrecisionLimit
 	}
 	return result, nil
 }
@@ -132,11 +132,11 @@ func (self *Bittrex) UpdatePairsPrecision() error {
 		return errors.New("Exchange info of Bittrex is nil")
 	}
 	for pair := range exInfo.GetData() {
-		epl, exist := self.getPrecisionLimitFromSymbols(pair, symbols)
+		exchangePrecisionLimit, exist := self.getPrecisionLimitFromSymbols(pair, symbols)
 		if !exist {
 			return fmt.Errorf("Bittrex Exchange Info reply doesn't contain token pair %s", pair)
 		}
-		exInfo[pair] = epl
+		exInfo[pair] = exchangePrecisionLimit
 	}
 	return self.setting.UpdateExchangeInfo(settings.Binance, exInfo)
 }
