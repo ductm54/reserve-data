@@ -1711,14 +1711,14 @@ func (self *BoltStorage) StorePendingTokenListingInfo(tarQty common.TokenTargetQ
 		if uErr != nil {
 			return uErr
 		}
-		if uErr := self.storeJSONByteArray(tx, PENDING_TARGET_QUANTITY_V2, []byte("current_pending_target_qty"), dataJSON); uErr != nil {
+		if uErr = self.storeJSONByteArray(tx, PENDING_TARGET_QUANTITY_V2, []byte("current_pending_target_qty"), dataJSON); uErr != nil {
 			return uErr
 		}
 		dataJSON, uErr = json.Marshal(pwi)
 		if uErr != nil {
 			return uErr
 		}
-		if uErr := self.storeJSONByteArray(tx, PENDING_PWI_EQUATION_V2, timeStampKey, dataJSON); uErr != nil {
+		if uErr = self.storeJSONByteArray(tx, PENDING_PWI_EQUATION_V2, timeStampKey, dataJSON); uErr != nil {
 			return uErr
 		}
 		dataJSON, uErr = json.Marshal(quadEq)
@@ -1766,33 +1766,30 @@ func (self *BoltStorage) ConfirmTokenListingInfo(tarQty common.TokenTargetQtyV2,
 		if uErr != nil {
 			return uErr
 		}
-		if uErr := self.storeJSONByteArray(tx, TARGET_QUANTITY_V2, []byte("current_target_qty"), dataJSON); uErr != nil {
+		if uErr = self.storeJSONByteArray(tx, TARGET_QUANTITY_V2, []byte("current_target_qty"), dataJSON); uErr != nil {
 			return uErr
 		}
 		dataJSON, uErr = json.Marshal(pwi)
 		if uErr != nil {
 			return uErr
 		}
-		if uErr := self.storeJSONByteArray(tx, PWI_EQUATION_V2, timeStampKey, dataJSON); uErr != nil {
+		if uErr = self.storeJSONByteArray(tx, PWI_EQUATION_V2, timeStampKey, dataJSON); uErr != nil {
 			return uErr
 		}
 		dataJSON, uErr = json.Marshal(quadEq)
 		if uErr != nil {
 			return uErr
 		}
-		if uErr := self.storeJSONByteArray(tx, REBALANCE_QUADRATIC, timeStampKey, dataJSON); uErr != nil {
+		if uErr = self.storeJSONByteArray(tx, REBALANCE_QUADRATIC, timeStampKey, dataJSON); uErr != nil {
 			return uErr
 		}
-		if uErr := self.deleteTheOnlyObjectFromBucket(tx, PENDING_TARGET_QUANTITY_V2); uErr != nil {
+		if uErr = self.deleteTheOnlyObjectFromBucket(tx, PENDING_TARGET_QUANTITY_V2); uErr != nil {
 			return uErr
 		}
-		if uErr := self.deleteTheOnlyObjectFromBucket(tx, PENDING_PWI_EQUATION_V2); uErr != nil {
+		if uErr = self.deleteTheOnlyObjectFromBucket(tx, PENDING_PWI_EQUATION_V2); uErr != nil {
 			return uErr
 		}
-		if uErr := self.deleteTheOnlyObjectFromBucket(tx, PENDING_REBALANCE_QUADRATIC); uErr != nil {
-			return uErr
-		}
-		return nil
+		return self.deleteTheOnlyObjectFromBucket(tx, PENDING_REBALANCE_QUADRATIC)
 	})
 	return err
 }
