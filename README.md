@@ -2258,7 +2258,7 @@ Response
         }
       },
       "huobi": {
-        "exchange_addresses": {
+        "deposit_address": {
           "ABT": "0x0c8fd73eaf6089ef1b91231d0a07d0d2ca2b9d66",
           "CVC": "0x0c8fd73eaf6089ef1b91231d0a07d0d2ca2b9d66",
           "EDU": "0x0c8fd73eaf6089ef1b91231d0a07d0d2ca2b9d66",
