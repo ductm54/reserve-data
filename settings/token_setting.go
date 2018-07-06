@@ -10,7 +10,7 @@ import (
 type token struct {
 	Address                 string `json:"address"`
 	Name                    string `json:"name"`
-	Decimal                 int64  `json:"decimals"`
+	Decimals                int64  `json:"decimals"`
 	Active                  bool   `json:"internal use"`
 	Internal                bool   `json:"listed"`
 	MinimalRecordResolution string `json:"minimalRecordResolution"`
@@ -41,7 +41,7 @@ func (setting *Settings) loadTokenFromFile(filePath string) error {
 		return err
 	}
 	for id, t := range tokens.Tokens {
-		token := common.NewToken(id, t.Name, t.Address, t.Decimal, t.Active, t.Internal, t.MinimalRecordResolution, t.MaxPerBlockImbalance, t.MaxTotalImbalance)
+		token := common.NewToken(id, t.Name, t.Address, t.Decimals, t.Active, t.Internal, t.MinimalRecordResolution, t.MaxPerBlockImbalance, t.MaxTotalImbalance)
 		if err = setting.UpdateToken(token); err != nil {
 			return err
 		}

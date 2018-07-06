@@ -1570,7 +1570,746 @@ response
     "success": true,
   }
 ```
+### Setting APIs
+#### Token related APIs
+##### Update token - (signing required)
+POST request
+Post form: {"data" : "JSON enconding of token Object"}
+```
+<host>:8000/setting/update-token
+```
+**Note**: all the fields has to be provide, since this API will overwrite the old token with new token. Any missing field will
+be replaced by default value. 
+eg
 
+```
+curl -X "POST" "http://localhost:8000/update-token" \
+     -H 'Content-Type: application/x-www-form-urlencoded'\
+     --data-urlencode "data={ 
+      \"id\" :\"LXXX\",
+      \"name\": \"Chain Link\",
+      \"decimals\": 18,
+      \"address\": \"0x514910771xf9ca656af840dff83e8264ecf986ca\",
+      \"minimal_record_resolution\" : \"10\",
+      \"max_per_block_imbalance\" : \"1925452883\",
+      \"max_total_imbalance\" : \"1925452883\",
+      \"internal\": True,
+      \"listed\": True 
+      }"
+```
+
+response
+
+```
+on success:
+{"success":true}
+on failure:
+{"success":false,
+ "reason":<error>}
+```
+
+##### Set token listing - (signing required) Prepare token listing and store the request as pending
+POST request 
+Post form: {"data" : "JSON enconding of token listing Object"}
+```
+<host>:8000/setting/set-token-listing
+```
+**Note**: 
+- This data is in the form of a map tokenID:TokenListing which allows mutiple token listings at once
+- It also allows mutiple requests, for example, one request listing OMG, the other listing KNC. Both these 
+requests will be aggregate in to a list of token to be listed. These can be overwritten as well : if there 
+are two requests listing KNC, the later will overwite the ealier.  
+- If a token is marked as internal, it will be required to come with exchange setting( fee, min deposit, 
+exchange precision limit, deposit address) , and metric settings (pwis, targetQty and rebalanceQuadratic)
+- If exchange precision limit (TokenListing.Exchange.Info) is null, It can be queried from exchange and 
+set automatically for the pair (token-ETH). If this data is available in the request,
+it will be prioritize over the exchange queried data.
+- In addition, if the listing contain any Internal token, that token must be available in Smart contract
+in order to update its indices. 
+
+Example: This request will list token OMG and NEO. OMG is internal, NEO is external. 
+
+``` 
+curl -X "POST" "http://localhost:8000/setting/set-token-listing" \
+     -H 'Content-Type: application/x-www-form-urlencoded'\
+     --data-urlencode "data={  
+      \"OMG\": {
+        \"token\": {
+          \"id\": \"OMG\",
+          \"name\": \"OmisexGO\",
+          \"decimals\": 18,
+          \"address\": \"0xd26114cd6EE289AccF82350c8d8487fedB8A0C07\",
+          \"minimal_record_resolution\": \"1000000000000000\",
+          \"max_per_block_imbalance\": \"439794468212403470336\",
+          \"max_total_imbalance\": \"722362414038872621056\",
+          \"internal\": true,
+          \"active\": true
+        },
+        \"exchanges\": {
+          \"binance\": {
+            \"deposit_address\": \"0x22222222222222222222222222222222222\",
+            \"fee\": {
+              \"withdraw\": 0.2,
+              \"deposit\": 0.3
+            },
+            \"min_deposit\": 4
+          }
+        },
+        \"pwis_equation\": {
+          \"ask\": {
+            \"a\": 800,
+            \"b\": 600,
+            \"c\": 0,
+            \"min_min_spread\": 0,
+            \"price_multiply_factor\": 0
+          },
+          \"bid\": {
+            \"a\": 750,
+            \"b\": 500,
+            \"c\": 0,
+            \"min_min_spread\": 0,
+            \"price_multiply_factor\": 0
+          }
+        },
+        \"target_qty\": {
+          \"set_target\": {
+            \"total_target\": 0,
+            \"reserve_target\": 0,
+            \"rebalance_threshold\": 0,
+            \"transfer_threshold\": 0
+          }
+        },
+        \"rebalance_quadratic\": {
+          \"rebalance_quadratic\": {
+            \"a\": 1,
+            \"b\": 2,
+            \"c\": 3
+          }
+        }
+      },
+      \"NEO\": {
+        \"Token\": {
+          \"id\": \"NEO\",
+          \"name\": \"Request\",
+          \"decimals\": 18,
+          \"address\": \"0x8f8221afbb33998d8584a2b05749ba73c37a938a\",
+          \"minimal_record_resolution\": \"1000000000000000\",
+          \"max_per_block_imbalance\": \"439794468212403470336\",
+          \"max_total_imbalance\": \"722362414038872621056\",
+          \"internal\": false,
+          \"active\": true
+        }
+      }
+    }"
+
+```
+response
+
+```
+on success:
+{"success":true}
+on failure:
+{"success":false,
+ "reason":<error>}
+```
+
+##### Get pending token listing - (singing required) Return the current pending token listings information
+GET request
+
+``` 
+<host>:8000/setting/pending-token-listing
+```
+
+Example
+``` 
+curl -X "GET" "http://localhost:8000/setting/pending-token-listing"
+```
+
+response 
+```
+{data : {
+  "AST": {
+        "token": {
+          "id": "AST",
+          "name": "AirSwap",
+          "address": "0x27054b13b1b798b345b591a4d22e6562d47ea75a",
+          "decimals": 18,
+          "active": True,
+          "internal": False,
+          "minimal_record_resolution": "10",
+          "max_total_imbalance": "1925452883",
+          "max_per_block_imbalance": "1925452883"
+        },
+        "exchanges": {
+          "binance": {
+            "deposit_address": "0x111111111111111111111111",
+            "PrecisionLimit": {
+              "AST-ETH": {
+                "Precision": {
+                  "Amount": 0,
+                  "Price": 7
+                },
+                "AmountLimit": {
+                  "Min": 1,
+                  "Max": 90000000
+                },
+                "PriceLimit": {
+                  "Min": 1e-7,
+                  "Max": 100000
+                },
+                "MinNotional": 0.01
+              }
+            },
+            "Fee": {
+              "WithDraw": 3,
+              "Deposit": 4
+            },
+            "MinDeposit": 15.04
+          }
+        }
+    }
+  }
+  "success" : {
+    true
+  }
+```
+
+##### Confirm token listing - (signing required) Confirm token listing and apply all the change to core.
+POST request 
+Post form: {"data" : "JSON enconding of token listing Object"}
+Note: This data is similar to token Listing, but all field must be the same as the current pending. 
+```
+<host>:8000/setting/confirm-token-listing
+```
+
+Example 
+
+``` 
+curl -X "POST" "http://localhost:8000/setting/confirm-token-listing" \
+     -H 'Content-Type: application/x-www-form-urlencoded'\
+     --data-urlencode "data={    
+        \"NEO\": {
+          \"token\": {
+            \"id\": \"NEO\",
+            \"name\": \"Request\",
+            \"address\": \"0x8f8221afbb33998d8584a2b05749ba73c37a938a\",
+            \"decimals\": 18,
+            \"active\": true,
+            \"internal\": false,
+            \"minimal_record_resolution\": \"\",
+            \"max_total_imbalance\": \"\",
+            \"max_per_block_imbalance\": \"\"
+          },
+          \"exchanges\": null,
+          \"pwis_equation\": null,
+          \"target_qty\": {
+            \"set_target\": {
+              \"total_target\": 0,
+              \"reserve_target\": 0,
+              \"rebalance_threshold\": 0,
+              \"transfer_threshold\": 0
+            }
+          },
+          \"rebalance_quadratic\": {
+            \"rebalance_quadratic\": {
+              \"a\": 0,
+              \"b\": 0,
+              \"c\": 0
+            }
+          }
+        },
+        \"OMG\": {
+          \"token\": {
+            \"id\": \"OMG\",
+            \"name\": \"OmisexGO\",
+            \"address\": \"0xd26114cd6EE289AccF82350c8d8487fedB8A0C07\",
+            \"decimals\": 18,
+            \"active\": true,
+            \"internal\": true,
+            \"minimal_record_resolution\": \"1000000000000000\",
+            \"max_total_imbalance\": \"722362414038872621056\",
+            \"max_per_block_imbalance\": \"439794468212403470336\"
+          },
+          \"exchanges\": {
+            \"binance\": {
+              \"deposit_address\": \"0x22222222222222222222222222222222222\",
+              \"exchange_info\": {
+                \"OMG-ETH\": {
+                  \"precision\": {
+                    \"amount\": 2,
+                    \"price\": 6
+                  },
+                  \"amount_limit\": {
+                    \"min\": 0.01,
+                    \"max\": 90000000
+                  },
+                  \"price_limit\": {
+                    \"min\": 0.000001,
+                    \"max\": 100000
+                  },
+                  \"min_notional\": 0.01
+                }
+              },
+              \"fee\": {
+                \"withdraw\": 0.2,
+                \"deposit\": 0.3
+              },
+              \"min_deposit\": 4
+            }
+          },
+          \"pwis_equation\": {
+            \"ask\": {
+              \"a\": 800,
+              \"b\": 600,
+              \"c\": 0,
+              \"min_min_spread\": 0,
+              \"price_multiply_factor\": 0
+            },
+            \"bid\": {
+              \"a\": 750,
+              \"b\": 500,
+              \"c\": 0,
+              \"min_min_spread\": 0,
+              \"price_multiply_factor\": 0
+            }
+          },
+          \"target_qty\": {
+            \"set_target\": {
+              \"total_target\": 0,
+              \"reserve_target\": 0,
+              \"rebalance_threshold\": 0,
+              \"transfer_threshold\": 0
+            }
+          },
+          \"rebalance_quadratic\": {
+            \"rebalance_quadratic\": {
+              \"a\": 0,
+              \"b\": 0,
+              \"c\": 0
+            }
+          }
+        }
+    }"
+
+```
+response
+
+```
+on success:
+{"success":true}
+on failure:
+{"success":false,
+ "reason":<error>}
+```
+
+##### Reject pending token listing - (signing required) reject the listing and remove the current pending listing
+POST request
+
+```
+<host>:8000/setting/reject-token-listing
+```
+
+Example
+
+```
+curl -X "POST" "http://localhost:8000/setting/reject-token-listing" \
+     -H 'Content-Type: application/x-www-form-urlencoded'
+```
+
+response
+
+```
+on success:
+{"success":true}
+on failure:
+{"success":false,
+ "reason":<error>}
+```
+
+##### Get Token settings - (signing required) get current token settings of core.
+GET request
+
+``` 
+<host>:8000/setting/token-settings
+```
+
+Example
+```
+curl -X "GET" "http://localhost:8000/setting/token-settings"
+```
+
+response 
+```
+{
+  "data": [
+    {
+      "id": "ABT",
+      "name": "",
+      "address": "0xb98d4c97425d9908e66e53a6fdf673acca0be986",
+      "decimals": 18,
+      "active": true,
+      "internal": true,
+      "minimal_record_resolution": "100000000000000",
+      "max_total_imbalance": "6043192343824681664512",
+      "max_per_block_imbalance": "5461044951947117854720"
+    }
+  ],
+  "success": true
+}
+```
+#### Address related APIs
+
+##### Update address - (signing required) update a single address
+POST request 
+Post form: {"name" : "Name of the address (reserve, deposit etc...)",
+            "address" : "Hex form of the new address"}
+Note: This is used to update single address object. For list of address object, use add-address-to-set instead
+```
+<host>:8000/setting/update-address
+```
+
+Example 
+
+```
+curl -X "POST" "http://localhost:8000/setting/update-address" \
+     -H 'Content-Type: application/x-www-form-urlencoded'\
+     --data-urlencode "name=bank"\
+     --data-urlencode "address=0x123456789aabbcceeeddff" 
+
+```
+response
+
+```
+on success:
+{"success":true}
+on failure:
+{"success":false,
+ "reason":<error>}
+```
+
+##### Add address to set- (signing required) add address to a list of address
+POST request 
+Post form: {"name" : <Name of the address set(oldBurners etc...)>,
+            "address" : <Hex form of the new address>}
+```
+<host>:8000/setting/add-address-to-set
+```
+
+Example 
+
+```
+curl -X "POST" "http://localhost:8000/setting/add-address-to-set" \
+     -H 'Content-Type: application/x-www-form-urlencoded'\
+     --data-urlencode "name="third_party_reserves"\
+     --data-urlencode "address=0x123456789aabbcceeeddff" 
+
+```
+response
+
+```
+on success:
+{"success":true}
+on failure:
+{"success":false,
+ "reason":<error>}
+```
+
+#### Exchange related APIs
+
+##### Update exchange fee - (signing required) update one exchange fee setting
+POST request 
+Post form: {"name" : <Name of the exchange (binance, huobi etc...)>,
+            "data" : <JSON encoded form of fee setting >}
+**Note**: 
+UpdateFee will merge the new fee setting to the current fee setting,
+Any different key will be overwriten from new fee to current fee. This allows update
+one single token's exchange fee on a destined exchange.
+```
+<host>:8000/setting/update-exchange-fee
+```
+
+Example 
+
+```
+  curl -X "POST" "http://localhost:8000/setting/update-exchange-fee" \
+     -H 'Content-Type: application/x-www-form-urlencoded'\
+     --data-urlencode "name=binance"\
+     --data-urlencode "data= {
+      \"Trading\": {
+        \"maker\": 0.001,
+        \"taker\": 0.001
+      },
+      \"Funding\": {
+        \"Withdraw\": {
+          \"ZEC\": 0.005,
+          \"ZIL\": 100,
+          \"ZRX\": 5.8
+        },
+        \"Deposit\": {
+          \"ZEC\": 0,
+          \"ZIL\": 0,
+          \"ZRX\": 2
+        }
+      }
+    }"
+```
+##### Update exchange mindeposit - (signing required) update one exchange min deposit
+POST request 
+Post form: {"name" : <Name of the exchange (binance, huobi etc...)>,
+            "data" : <JSON encoded form of min deposit>}
+**Note**: 
+Update Exchange minDeposit will merge the new minDeposit setting to the current minDeposit setting,
+Any different key will be overwriten from new minDeposit to current minDeposit. This allows update
+one single token's exchange minDeposit on a destined exchange.
+```
+<host>:8000/setting/update-exchange-mindeposit
+```
+
+Example 
+
+```
+  curl -X "POST" "http://localhost:8000/setting/update-exchange-mindeposit" \
+     -H 'Content-Type: application/x-www-form-urlencoded'\
+     --data-urlencode "name=binance"\
+     --data-urlencode "data= {
+      \"POWR\": 0.1,
+      \"MANA\": 0.2
+    }"
+```
+
+#####  Update exchange deposit address - (signing required) update one exchange deposit address
+POST request 
+Post form: {"name" : <Name of the exchange (binance, huobi etc...)>,
+            "data" : <JSON encoded form of a map of token : depositaddress >}
+**Note**: 
+Update Exchange deposit address will merge the new deposit address setting to the current deposit address setting,
+Any different key will be overwriten from new deposit address to current deposit address. This allows update
+one single tokenpair's exchange precision limit on a destined exchange.
+```
+<host>:8000/setting/update-deposit-address
+```
+
+Example 
+
+```
+  curl -X "POST" "http://localhost:8000/setting/update-deposit-address" \
+     -H 'Content-Type: application/x-www-form-urlencoded'\
+     --data-urlencode "name=binance"\
+     --data-urlencode "data= {
+      \"POWR\": \"0x778599Dd7893C8166D313F0F9B5F6cbF7536c293\"
+    }"
+```
+
+#####  Update exchange info - (signing required) update one exchange's info
+POST request 
+Post form: {"name" : <Name of the exchange (binance, huobi etc...)>,
+            "data" : <JSON encoded form of exchange info >}
+**Note**: 
+Update Exchange minDeposit will merge the new exchange info setting to the current exchange info setting,
+Any different key will be overwriten from new exchange info to current exchange info. This allows update
+one single token's exchange minDeposit on a destined exchange.
+```
+<host>:8000/setting/update-exchange-info
+```
+
+Example 
+
+```
+  curl -X "POST" "http://localhost:8000/setting/update-exchange-info" \
+     -H 'Content-Type: application/x-www-form-urlencoded'\
+     --data-urlencode "name=binance"\
+     --data-urlencode "data= {
+      \"LINK-ETH\": {
+        \"precision\": {
+          \"amount\": 0,
+          \"price\": 8
+        },
+        \"amount_limit\": {
+          \"min\": 1,
+          \"max\": 90000000
+        },
+        \"price_limit\": {
+          \"min\": 1e-8,
+          \"max\": 120000
+        },
+        \"min_notional\": 0.01
+      }
+    }"
+```
+
+##### Get all settings - (signing required) return all current running setting of core
+GET request
+
+``` 
+<host>:8000/setting/all-setings
+```
+
+Example
+```
+curl -X "GET" "http://localhost:8000/setting/all-settings"
+```
+
+Response
+```
+{
+  "data": {
+    "Addresses": {
+      "bank": "",
+      "burner": "0x07f6e905f2a1559cd9fd43cb92f8a1062a3ca706",
+      "network": "0x964f35fae36d75b1e72770e244f6595b68508cf5",
+      "old_burners": [
+        "0x4e89bc8484b2c454f2f7b25b612b648c45e14a8e"
+      ],
+      "pricing": "0x798abda6cc246d0edba912092a2a3dbd3d11191b",
+      "reserve": "0x63825c174ab367968ec60f061753d3bbd36a0d8f",
+      "setrate": "",
+      "third_party_reserves": [
+        "0x2aab2b157a03915c8a73adae735d0cf51c872f31",
+        "0x4d864b5b4f866f65f53cbaad32eb9574760865e6",
+        "0x6f50e41885fdc44dbdf7797df0393779a9c0a3a6"
+      ],
+      "whitelist": "0x6e106a75d369d09a9ea1dcc16da844792aa669a3",
+      "wrapper": "0x6172afc8c00c46e0d07ce3af203828198194620a"
+    },
+    "Tokens": [
+      {
+        "id": "ABT",
+        "name": "",
+        "address": "0xb98d4c97425d9908e66e53a6fdf673acca0be986",
+        "decimals": 18,
+        "active": true,
+        "internal": true,
+        "minimal_record_resolution": "100000000000000",
+        "max_total_imbalance": "6043192343824681664512",
+        "max_per_block_imbalance": "5461044951947117854720"
+      },
+      {
+        "id": "ZIL",
+        "name": "",
+        "address": "0x05f4a42e251f2d52b8ed15e9fedaacfcef1fad27",
+        "decimals": 12,
+        "active": true,
+        "internal": true,
+        "minimal_record_resolution": "10",
+        "max_total_imbalance": "1925452883",
+        "max_per_block_imbalance": "1925452883"
+      }
+    ],
+    "Exchanges": {
+      "binance": {
+        "echange_addresses": {
+          "AE": "0x44d34a119ba21a42167ff8b77a88f0fc7bb2db90",
+          "ZIL": "0x44d34a119ba21a42167ff8b77a88f0fc7bb2db90"
+        },
+        "min_deposit": {
+          "YOYO": 0,
+          "ZEC": 0,
+          "ZIL": 0,
+          "ZRX": 0
+        },
+        "fee": {
+          "Trading": {
+            "maker": 0.001,
+            "taker": 0.001
+          },
+          "Funding": {
+            "Withdraw": {
+              "ZEC": 0.005,
+              "ZIL": 100,
+              "ZRX": 5.8
+            },
+            "Deposit": {
+              "ZIL": 0,
+              "ZRX": 2
+            }
+          }
+        },
+        "info": {
+          "AE-ETH": {
+            "precision": {
+              "amount": 2,
+              "price": 6
+            },
+            "amount_limit": {
+              "min": 0.01,
+              "max": 90000000
+            },
+            "price_limit": {
+              "min": 0.000001,
+              "max": 100000
+            },
+            "min_notional": 0.01
+          },
+          "AION-ETH": {
+            "precision": {
+              "amount": 2,
+              "price": 6
+            },
+            "amount_limit": {
+              "min": 0.01,
+              "max": 90000000
+            },
+            "price_limit": {
+              "min": 0.000001,
+              "max": 100000
+            },
+            "min_notional": 0.01
+          }
+        }
+      },
+      "huobi": {
+        "deposit_address": {
+          "ABT": "0x0c8fd73eaf6089ef1b91231d0a07d0d2ca2b9d66",
+          "CVC": "0x0c8fd73eaf6089ef1b91231d0a07d0d2ca2b9d66",
+          "EDU": "0x0c8fd73eaf6089ef1b91231d0a07d0d2ca2b9d66",
+         
+        },
+        "min_deposit": {
+          "ABT": 2,
+          "APPC": 0.5,
+          "AST": 5,
+          "SNT": 50,
+          "ZIL": 100
+        },
+        "fee": {
+          "Trading": {
+            "maker": 0.002,
+            "taker": 0.002
+          },
+          "Funding": {
+            "Withdraw": {
+              "ABT": 2,
+              "ZRX": 5
+            },
+            "Deposit": {
+              "ABT": 0,
+              "ZRX": 0
+            }
+          }
+        },
+        "info": {
+          "POLY-ETH": {
+            "precision": {
+              "amount": 4,
+              "price": 6
+            },
+            "amount_limit": {
+              "min": 0,
+              "max": 0
+            },
+            "price_limit": {
+              "min": 0,
+              "max": 0
+            },
+            "min_notional": 0.02
+          }
+        }
+      }
+    }
+  },
+  "success": true
+}
+```
 ## Authentication
 All APIs that are marked with (signing required) must follow authentication mechanism below:
 

@@ -77,7 +77,8 @@ func (setting *Settings) GetExchangeInfo(ex ExchangeName) (common.ExchangeInfo, 
 	return setting.Exchange.Storage.GetExchangeInfo(ex)
 }
 
-// UpdateExchangeInfo updates exchange info object using exchangeName as key
+// UpdateExchangeInfo will merge the new exchange info into current exchange info , the
+// updates exchange info object using exchangeName as key
 // returns error if occur
 func (setting *Settings) UpdateExchangeInfo(exName ExchangeName, exInfo common.ExchangeInfo) error {
 	currExInfo, err := setting.GetExchangeInfo(exName)

@@ -90,19 +90,39 @@ func (self *Huobi) UpdateDepositAddress(token common.Token, address string) erro
 	return self.setting.UpdateDepositAddress(settings.Huobi, *addrs)
 }
 
-func (self *Huobi) UpdatePrecisionLimit(pair common.TokenPairID, symbols HuobiExchangeInfo, exInfo *common.ExchangeInfo) {
+// GetLiveExchangeInfos querry the Exchange Endpoint for exchange precision and limit of a list of tokenPairIDs
+// It return error if occurs.
+func (self *Huobi) GetLiveExchangeInfos(tokenPairIDs []common.TokenPairID) (common.ExchangeInfo, error) {
+	var result common.ExchangeInfo
+	exchangeInfo, err := self.interf.GetExchangeInfo()
+	if err != nil {
+		return result, err
+	}
+	for _, pairID := range tokenPairIDs {
+		exchangePrecisionLimit, ok := self.getPrecisionLimitFromSymbols(pairID, exchangeInfo)
+		if !ok {
+			return result, fmt.Errorf("Huobi Exchange Info reply doesn't contain token pair %s", string(pairID))
+		}
+		result[pairID] = exchangePrecisionLimit
+	}
+	return result, nil
+}
+
+// getPrecisionLimitFromSymbols find the pairID amongs symbols from exchanges,
+// return ExchangePrecisionLimit of that pair and true if the pairID exist amongs symbols, false if otherwise
+func (self *Huobi) getPrecisionLimitFromSymbols(pair common.TokenPairID, symbols HuobiExchangeInfo) (common.ExchangePrecisionLimit, bool) {
+	var result common.ExchangePrecisionLimit
 	pairName := strings.ToUpper(strings.Replace(string(pair), "-", "", 1))
 	for _, symbol := range symbols.Data {
 		symbolName := strings.ToUpper(symbol.Base + symbol.Quote)
 		if symbolName == pairName {
-			exchangePrecisionLimit := common.ExchangePrecisionLimit{}
-			exchangePrecisionLimit.Precision.Amount = symbol.AmountPrecision
-			exchangePrecisionLimit.Precision.Price = symbol.PricePrecision
-			exchangePrecisionLimit.MinNotional = 0.02
-			(*exInfo)[pair] = exchangePrecisionLimit
-			break
+			result.Precision.Amount = symbol.AmountPrecision
+			result.Precision.Price = symbol.PricePrecision
+			result.MinNotional = 0.02
+			return result, true
 		}
 	}
+	return result, false
 }
 
 func (self *Huobi) UpdatePairsPrecision() error {
@@ -118,7 +138,11 @@ func (self *Huobi) UpdatePairsPrecision() error {
 		return errors.New("Exchange info of Huobi is nil")
 	}
 	for pair := range exInfo.GetData() {
-		self.UpdatePrecisionLimit(pair, exchangeInfo, &exInfo)
+		exchangePrecisionLimit, exist := self.getPrecisionLimitFromSymbols(pair, exchangeInfo)
+		if !exist {
+			return fmt.Errorf("Huobi Exchange Info reply doesn't contain token pair %s", pair)
+		}
+		exInfo[pair] = exchangePrecisionLimit
 	}
 	return self.setting.UpdateExchangeInfo(settings.Huobi, exInfo)
 }
@@ -498,7 +522,7 @@ func (self *Huobi) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTrad
 }
 
 func (self *Huobi) Send2ndTransaction(amount float64, token common.Token, exchangeAddress ethereum.Address) (*types.Transaction, error) {
-	IAmount := common.FloatToBigInt(amount, token.Decimal)
+	IAmount := common.FloatToBigInt(amount, token.Decimals)
 	// Check balance, removed from huobi's blockchain object.
 	// currBalance := self.blockchain.CheckBalance(token)
 	// log.Printf("current balance of token %s is %d", token.ID, currBalance)

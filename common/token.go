@@ -2,16 +2,37 @@ package common
 
 import ethereum "github.com/ethereum/go-ethereum/common"
 
+// TokenExchangeSetting contains necessary information on exchange to List a token on the fly
+type TokenExchangeSetting struct {
+	DepositAddress string       `json:"deposit_address"`
+	Info           ExchangeInfo `json:"exchange_info"`
+	Fee            TokenFee     `json:"fee"`
+	MinDeposit     float64      `json:"min_deposit"`
+}
+
+type TokenListing struct {
+	Token       Token                           `json:"token"`
+	Exchanges   map[string]TokenExchangeSetting `json:"exchanges"`
+	PWIEq       PWIEquationTokenV2              `json:"pwis_equation"`
+	TargetQty   TargetQtyV2                     `json:"target_qty"`
+	QuadraticEq RebalanceQuadraticEquation      `json:"rebalance_quadratic"`
+}
+
+type TokenFee struct {
+	Withdraw float64 `json:"withdraw"`
+	Deposit  float64 `json:"deposit"`
+}
+
 type Token struct {
-	ID                      string
-	Name                    string
-	Address                 string
-	Decimal                 int64
-	Active                  bool
-	Internal                bool
-	MinimalRecordResolution string
-	MaxTotalImbalance       string
-	MaxPerBlockImbalance    string
+	ID                      string `json:"id"`
+	Name                    string `json:"name"`
+	Address                 string `json:"address"`
+	Decimals                int64  `json:"decimals"`
+	Active                  bool   `json:"active"`
+	Internal                bool   `json:"internal"`
+	MinimalRecordResolution string `json:"minimal_record_resolution"`
+	MaxTotalImbalance       string `json:"max_total_imbalance"`
+	MaxPerBlockImbalance    string `json:"max_per_block_imbalance"`
 }
 
 // NewToken creates a new Token.
@@ -19,7 +40,7 @@ func NewToken(id, name, address string, decimal int64, active, internal bool, mi
 	return Token{
 		ID:                      id,
 		Address:                 address,
-		Decimal:                 decimal,
+		Decimals:                decimal,
 		Active:                  active,
 		Internal:                internal,
 		MinimalRecordResolution: miminalrr,

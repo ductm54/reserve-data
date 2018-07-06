@@ -154,7 +154,7 @@ func (self ReserveCore) Deposit(
 		err         error
 		ok          bool
 		tx          *types.Transaction
-		amountFloat = common.BigToFloat(amount, token.Decimal)
+		amountFloat = common.BigToFloat(amount, token.Decimals)
 	)
 
 	uidGenerator := func(txhex string) common.ActivityID {
@@ -251,7 +251,7 @@ func (self ReserveCore) Withdraw(
 			map[string]interface{}{
 				"exchange":  exchange,
 				"token":     token,
-				"amount":    strconv.FormatFloat(common.BigToFloat(amount, token.Decimal), 'f', -1, 64),
+				"amount":    strconv.FormatFloat(common.BigToFloat(amount, token.Decimals), 'f', -1, 64),
 				"timepoint": timepoint,
 			}, map[string]interface{}{
 				"error": common.ErrorToString(err),
@@ -494,7 +494,7 @@ func sanityCheckAmount(exchange common.Exchange, token common.Token, amount *big
 	}
 	amountFloat := big.NewFloat(0).SetInt(amount)
 	feeWithdrawing := exchangeFee.Funding.GetTokenFee(string(token.ID))
-	expDecimal := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(token.Decimal), nil)
+	expDecimal := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(token.Decimals), nil)
 	minAmountWithdraw := big.NewFloat(0)
 
 	minAmountWithdraw.Mul(big.NewFloat(feeWithdrawing), big.NewFloat(0).SetInt(expDecimal))

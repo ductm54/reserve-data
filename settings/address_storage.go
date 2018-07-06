@@ -22,4 +22,8 @@ type AddressStorage interface {
 	//CountAddress return number of address in address setting
 	//If there is error, it will return 0
 	CountAddress() (uint64, error)
+
+	//GetAllAddresses return all the address setting currently in core
+	//Return error if occur.
+	GetAllAddresses() (map[string]interface{}, error)
 }

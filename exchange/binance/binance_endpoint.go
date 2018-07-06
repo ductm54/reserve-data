@@ -323,7 +323,7 @@ func (self *BinanceEndpoint) Withdraw(token common.Token, amount *big.Int, addre
 			"asset":   token.ID,
 			"address": address.Hex(),
 			"name":    "reserve",
-			"amount":  strconv.FormatFloat(common.BigToFloat(amount, token.Decimal), 'f', -1, 64),
+			"amount":  strconv.FormatFloat(common.BigToFloat(amount, token.Decimals), 'f', -1, 64),
 		},
 		true,
 		common.GetTimepoint(),

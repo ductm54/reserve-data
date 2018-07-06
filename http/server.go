@@ -548,7 +548,7 @@ func (self *HTTPServer) ImmediatePendingActivities(c *gin.Context) {
 }
 
 func (self *HTTPServer) Metrics(c *gin.Context) {
-	response := metric.MetricResponse{
+	response := common.MetricResponse{
 		Timestamp: common.GetTimepoint(),
 	}
 	log.Printf("Getting metrics")
@@ -602,9 +602,9 @@ func (self *HTTPServer) StoreMetrics(c *gin.Context) {
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	}
-	metricEntry := metric.MetricEntry{}
+	metricEntry := common.MetricEntry{}
 	metricEntry.Timestamp = timestamp
-	metricEntry.Data = map[string]metric.TokenMetric{}
+	metricEntry.Data = map[string]common.TokenMetric{}
 	// data must be in form of <token>_afpmid_spread|<token>_afpmid_spread|...
 	for _, tokenData := range strings.Split(dataParam, "|") {
 		var (
@@ -630,7 +630,7 @@ func (self *HTTPServer) StoreMetrics(c *gin.Context) {
 			httputil.ResponseFailure(c, httputil.WithReason("Spread "+spreadStr+" is not float64"))
 			return
 		}
-		metricEntry.Data[token] = metric.TokenMetric{
+		metricEntry.Data[token] = common.TokenMetric{
 			AfpMid: afpmid,
 			Spread: spread,
 		}
@@ -1646,7 +1646,7 @@ func (self *HTTPServer) SetTargetQtyV2(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithReason(errDataSizeExceed.Error()))
 		return
 	}
-	var tokenTargetQty metric.TokenTargetQtyV2
+	var tokenTargetQty common.TokenTargetQtyV2
 	if err := json.Unmarshal(value, &tokenTargetQty); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -1739,14 +1739,20 @@ func (self *HTTPServer) GetFeeSetRateByDay(c *gin.Context) {
 }
 
 func (self *HTTPServer) register() {
-	self.r.POST("/update-token", self.UpdateToken)
-	self.r.GET("/token-settings", self.TokenSettings)
-	self.r.POST("/update-address", self.UpdateAddress)
-	self.r.POST("/add-address-to-set", self.AddAddressToSet)
-	self.r.POST("/update-exchange-fee", self.UpdateExchangeFee)
-	self.r.POST("/update-exchange-mindeposit", self.UpdateExchangeMinDeposit)
-	self.r.POST("/update-deposit-address", self.UpdateDepositAddress)
-	self.r.POST("/update-exchange-info", self.UpdateExchangeInfo)
+	stt := self.r.Group("/setting")
+	stt.POST("/update-token", self.UpdateToken)
+	stt.POST("/set-token-listing", self.ListToken)
+	stt.GET("/pending-token-listing", self.GetPendingTokenListings)
+	stt.POST("/confirm-token-listing", self.ConfirmTokenListing)
+	stt.POST("/reject-token-listing", self.RejectTokenListing)
+	stt.GET("/token-settings", self.TokenSettings)
+	stt.POST("/update-address", self.UpdateAddress)
+	stt.POST("/add-address-to-set", self.AddAddressToSet)
+	stt.POST("/update-exchange-fee", self.UpdateExchangeFee)
+	stt.POST("/update-exchange-mindeposit", self.UpdateExchangeMinDeposit)
+	stt.POST("/update-deposit-address", self.UpdateDepositAddress)
+	stt.POST("/update-exchange-info", self.UpdateExchangeInfo)
+	stt.GET("/all-settings", self.GetAllSetting)
 
 	if self.core != nil && self.app != nil {
 		v2 := self.r.Group("/v2")

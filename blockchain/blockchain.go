@@ -104,7 +104,7 @@ func (self *Blockchain) GetAddresses() (*common.Addresses, error) {
 	for _, t := range tokenSettings {
 		tokens[t.ID] = common.TokenInfo{
 			Address:  ethereum.HexToAddress(t.Address),
-			Decimals: t.Decimal,
+			Decimals: t.Decimals,
 		}
 	}
 	wrapperAddr, err := self.setting.GetAddress(settings.Wrapper)
@@ -146,7 +146,7 @@ func (self *Blockchain) LoadAndSetTokenIndices(tokenAddrs []ethereum.Address) er
 	self.mu.Lock()
 	defer self.mu.Unlock()
 	self.tokenIndices = map[string]tbindex{}
-	// this is not really needed. Just a safe guard. Use a very big indices so it is does not exist.
+	// this is not really needed. Just a safe guard. Use a very big indices so it would not exist.
 	self.tokenIndices[ethereum.HexToAddress(self.setting.ETHToken().Address).Hex()] = tbindex{1000000, 1000000}
 	opts := self.GetCallOpts(0)
 	pricingAddr, err := self.setting.GetAddress(settings.Pricing)

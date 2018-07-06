@@ -211,7 +211,7 @@ func (self *BittrexEndpoint) Withdraw(token common.Token, amount *big.Int, addre
 		addPath(self.interf.AccountEndpoint(), "withdraw"),
 		map[string]string{
 			"currency": strings.ToUpper(token.ID),
-			"quantity": strconv.FormatFloat(common.BigToFloat(amount, token.Decimal), 'f', -1, 64),
+			"quantity": strconv.FormatFloat(common.BigToFloat(amount, token.Decimals), 'f', -1, 64),
 			"address":  address.Hex(),
 		},
 		true,

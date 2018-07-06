@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/KyberNetwork/reserve-data/boltutil"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/settings"
 	"github.com/boltdb/bolt"
@@ -198,14 +197,100 @@ func (boltSettingStorage *BoltSettingStorage) GetExternalTokenByAddress(Addr eth
 	return boltSettingStorage.getTokenByAddressWithFiltering(Addr.Hex(), isExternal)
 }
 
-func (boltSettingStorage *BoltSettingStorage) UpdateOneAddress(name settings.AddressName, address string) error {
-	address = strings.ToLower(address)
+// UpdateTokenWithExchangeSetting will attempt to apply all the token and exchange settings
+// as well as remove pending Token listing in one TX. reroll and return err if occur
+func (boltSettingStorage *BoltSettingStorage) UpdateTokenWithExchangeSetting(tokens []common.Token, exSetting map[settings.ExchangeName]*common.ExchangeSetting) error {
 	err := boltSettingStorage.db.Update(func(tx *bolt.Tx) error {
-		b, uErr := tx.CreateBucketIfNotExists([]byte(ADDRESS_SETTING_BUCKET))
+		//Apply tokens setting
+		for _, t := range tokens {
+			if uErr := addTokenByID(tx, t); uErr != nil {
+				return uErr
+			}
+			if uErr := addTokenByAddress(tx, t); uErr != nil {
+				return uErr
+			}
+		}
+		//Apply exchanges setting
+		for exName, exSett := range exSetting {
+			if uErr := putDepositAddress(tx, exName, exSett.DepositAddress); uErr != nil {
+				return uErr
+			}
+			if uErr := putExchangeInfo(tx, exName, exSett.Info); uErr != nil {
+				return uErr
+			}
+			if uErr := putFee(tx, exName, exSett.Fee); uErr != nil {
+				return uErr
+			}
+			if uErr := putMinDeposit(tx, exName, exSett.MinDeposit); uErr != nil {
+				return uErr
+			}
+		}
+		//delete pending token listings
+		if uErr := deletePendingTokenListings(tx); uErr != nil {
+			return uErr
+		}
+		return nil
+	})
+	return err
+}
+
+func (boltSettingStorage *BoltSettingStorage) StorePendingTokenListings(trs map[string]common.TokenListing) error {
+	err := boltSettingStorage.db.Update(func(tx *bolt.Tx) error {
+		b, uErr := tx.CreateBucketIfNotExists([]byte(PENDING_TOKEN_REQUEST))
 		if uErr != nil {
 			return uErr
 		}
-		return b.Put(boltutil.Uint64ToBytes(uint64(name)), []byte(address))
+		for tokenID, tr := range trs {
+			dataJSON, vErr := json.Marshal(tr)
+			if vErr != nil {
+				return vErr
+			}
+			if vErr = b.Put([]byte(tokenID), dataJSON); vErr != nil {
+				return vErr
+			}
+		}
+		return nil
+	})
+	return err
+}
+
+func (boltSettingStorage *BoltSettingStorage) GetPendingTokenListings() (map[string]common.TokenListing, error) {
+	result := make(map[string]common.TokenListing)
+	err := boltSettingStorage.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(PENDING_TOKEN_REQUEST))
+		if b == nil {
+			return fmt.Errorf("Bucket %s does not exist yet", PENDING_TOKEN_REQUEST)
+		}
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			var tokenListing common.TokenListing
+			if vErr := json.Unmarshal(v, &tokenListing); vErr != nil {
+				return vErr
+			}
+			result[string(k)] = tokenListing
+		}
+		return nil
+	})
+	return result, err
+}
+
+func deletePendingTokenListings(tx *bolt.Tx) error {
+	b := tx.Bucket([]byte(PENDING_TOKEN_REQUEST))
+	if b == nil {
+		return fmt.Errorf("Bucket %s does not exist yet", PENDING_TOKEN_REQUEST)
+	}
+	c := b.Cursor()
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		if err := b.Delete(k); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (boltSettingStorage *BoltSettingStorage) RemovePendingTokenListings() error {
+	err := boltSettingStorage.db.Update(func(tx *bolt.Tx) error {
+		return deletePendingTokenListings(tx)
 	})
 	return err
 }
