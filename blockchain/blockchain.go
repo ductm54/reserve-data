@@ -104,7 +104,7 @@ func (self *Blockchain) GetAddresses() (*common.Addresses, error) {
 	for _, t := range tokenSettings {
 		tokens[t.ID] = common.TokenInfo{
 			Address:  ethereum.HexToAddress(t.Address),
-			Decimals: t.Decimal,
+			Decimals: t.Decimals,
 		}
 	}
 	wrapperAddr, err := self.setting.GetAddress(settings.Wrapper)

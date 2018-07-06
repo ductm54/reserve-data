@@ -71,10 +71,10 @@ func (self ExchangeAddresses) GetData() map[string]ethereum.Address {
 // ExchangePrecisionLimit store the precision and limit of a certain token pair on an exchange
 // it is int the struct of [[int int], [float64 float64], [float64 float64], float64]
 type ExchangePrecisionLimit struct {
-	Precision   TokenPairPrecision
-	AmountLimit TokenPairAmountLimit
-	PriceLimit  TokenPairPriceLimit
-	MinNotional float64
+	Precision   TokenPairPrecision   `json:"precision"`
+	AmountLimit TokenPairAmountLimit `json:"amount_limit"`
+	PriceLimit  TokenPairPriceLimit  `json:"price_limit"`
+	MinNotional float64              `json:"min_notional"`
 }
 
 // ExchangeInfo is written and read concurrently
@@ -100,19 +100,19 @@ func (self ExchangeInfo) GetData() map[TokenPairID]ExchangePrecisionLimit {
 
 //TokenPairPrecision represent precision when trading a token pair
 type TokenPairPrecision struct {
-	Amount int
-	Price  int
+	Amount int `json:"amount"`
+	Price  int `json:"price"`
 }
 
 //TokenPairAmountLimit represent amount min and max when trade a token pair
 type TokenPairAmountLimit struct {
-	Min float64
-	Max float64
+	Min float64 `json:"min"`
+	Max float64 `json:"max"`
 }
 
 type TokenPairPriceLimit struct {
-	Min float64
-	Max float64
+	Min float64 `json:"min"`
+	Max float64 `json:"max"`
 }
 
 type TradingFee map[string]float64

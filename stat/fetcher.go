@@ -968,7 +968,7 @@ func (self *Fetcher) getTradeInfo(trade common.TradeLog) (float64, float64, floa
 	if err != nil {
 		log.Panicf("GetTradeInfo: can't get src Token (%s)", err)
 	}
-	srcAmount = common.BigToFloat(trade.SrcAmount, srcToken.Decimal)
+	srcAmount = common.BigToFloat(trade.SrcAmount, srcToken.Decimals)
 	if srcToken.IsETH() {
 		ethAmount = srcAmount
 	}
@@ -977,14 +977,14 @@ func (self *Fetcher) getTradeInfo(trade common.TradeLog) (float64, float64, floa
 	if err != nil {
 		log.Panicf("GetTradeInfo: can't get dest Token (%s)", err)
 	}
-	destAmount = common.BigToFloat(trade.DestAmount, destToken.Decimal)
+	destAmount = common.BigToFloat(trade.DestAmount, destToken.Decimals)
 	if destToken.IsETH() {
 		ethAmount = destAmount
 	}
 
 	eth := self.setting.ETHToken()
 	if trade.BurnFee != nil {
-		burnFee = common.BigToFloat(trade.BurnFee, eth.Decimal)
+		burnFee = common.BigToFloat(trade.BurnFee, eth.Decimals)
 	}
 
 	return srcAmount, destAmount, ethAmount, burnFee
@@ -1096,7 +1096,7 @@ func (self *Fetcher) aggregateBurnFeeStats(trade common.TradeLog, burnFeeStats m
 	var walletFee float64
 	eth := self.setting.ETHToken()
 	if trade.WalletFee != nil {
-		walletFee = common.BigToFloat(trade.WalletFee, eth.Decimal)
+		walletFee = common.BigToFloat(trade.WalletFee, eth.Decimals)
 	}
 	self.aggregateBurnfee(fmt.Sprintf("%s_%s", reserveAddr, walletAddr), walletFee, trade, burnFeeStats)
 	return nil
@@ -1112,7 +1112,7 @@ func (self *Fetcher) aggregateUserInfo(trade common.TradeLog, userInfos map[stri
 	if err != nil {
 		log.Panicf("AggregateUserInfo: can't get src Token (%s)", err)
 	}
-	srcAmount = common.BigToFloat(trade.SrcAmount, srcToken.Decimal)
+	srcAmount = common.BigToFloat(trade.SrcAmount, srcToken.Decimals)
 	if srcToken.IsETH() {
 		ethAmount = srcAmount
 	}
@@ -1121,7 +1121,7 @@ func (self *Fetcher) aggregateUserInfo(trade common.TradeLog, userInfos map[stri
 	if err != nil {
 		log.Panicf("GetTradeInfo: can't get dest Token (%s)", err)
 	}
-	destAmount = common.BigToFloat(trade.DestAmount, destToken.Decimal)
+	destAmount = common.BigToFloat(trade.DestAmount, destToken.Decimals)
 	if destToken.IsETH() {
 		ethAmount = destAmount
 	}

@@ -522,7 +522,7 @@ func (self *Huobi) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTrad
 }
 
 func (self *Huobi) Send2ndTransaction(amount float64, token common.Token, exchangeAddress ethereum.Address) (*types.Transaction, error) {
-	IAmount := common.FloatToBigInt(amount, token.Decimal)
+	IAmount := common.FloatToBigInt(amount, token.Decimals)
 	// Check balance, removed from huobi's blockchain object.
 	// currBalance := self.blockchain.CheckBalance(token)
 	// log.Printf("current balance of token %s is %d", token.ID, currBalance)

@@ -4,10 +4,10 @@ import ethereum "github.com/ethereum/go-ethereum/common"
 
 // TokenExchangeSetting contains necessary information on exchange to List a token on the fly
 type TokenExchangeSetting struct {
-	DepositAddress string
-	Info           ExchangeInfo
-	Fee            TokenFee
-	MinDeposit     float64
+	DepositAddress string       `json:"deposit_address"`
+	Info           ExchangeInfo `json:"exchange_info"`
+	Fee            TokenFee     `json:"fee"`
+	MinDeposit     float64      `json:"min_deposit"`
 }
 
 type TokenListing struct {
@@ -19,15 +19,15 @@ type TokenListing struct {
 }
 
 type TokenFee struct {
-	Withdraw float64 `json:"Withdraw"`
-	Deposit  float64 `json:"Deposit"`
+	Withdraw float64 `json:"withdraw"`
+	Deposit  float64 `json:"deposit"`
 }
 
 type Token struct {
 	ID                      string `json:"id"`
 	Name                    string `json:"name"`
 	Address                 string `json:"address"`
-	Decimal                 int64  `json:"decimals"`
+	Decimals                int64  `json:"decimals"`
 	Active                  bool   `json:"active"`
 	Internal                bool   `json:"internal"`
 	MinimalRecordResolution string `json:"minimal_record_resolution"`
@@ -40,7 +40,7 @@ func NewToken(id, name, address string, decimal int64, active, internal bool, mi
 	return Token{
 		ID:                      id,
 		Address:                 address,
-		Decimal:                 decimal,
+		Decimals:                decimal,
 		Active:                  active,
 		Internal:                internal,
 		MinimalRecordResolution: miminalrr,

@@ -1691,7 +1691,9 @@ func (self *BoltStorage) GetRebalanceQuadratic() (common.RebalanceQuadraticReque
 	return result, err
 }
 
-func (self *BoltStorage) storeJSONByteArray(tx *bolt.Tx, bucketName string, key, value []byte) error {
+//storeJSONByteArrayToPendingBucket store key-value into a bucket under one TX.
+//This function is use to store data to pendingbucket, it only update if the bucket is empty
+func (self *BoltStorage) storeJSONByteArrayToPendingBucket(tx *bolt.Tx, bucketName string, key, value []byte) error {
 	b := tx.Bucket([]byte(bucketName))
 	if b == nil {
 		return fmt.Errorf("Bucket %s hasn't existed yet", bucketName)
@@ -1704,6 +1706,20 @@ func (self *BoltStorage) storeJSONByteArray(tx *bolt.Tx, bucketName string, key,
 	return b.Put(key, value)
 }
 
+//storeJSONByteArray store key-value into a bucket under one TX.
+func (self *BoltStorage) storeJSONByteArray(tx *bolt.Tx, bucketName string, key, value []byte) error {
+	b := tx.Bucket([]byte(bucketName))
+	if b == nil {
+		return fmt.Errorf("Bucket %s hasn't existed yet", bucketName)
+	}
+	c := b.Cursor()
+	k, _ := c.First()
+	if k != nil {
+		return fmt.Errorf("Bucket %s has a pending record", bucketName)
+	}
+	return b.Put(key, value)
+}
+
 func (self *BoltStorage) StorePendingTokenListingInfo(tarQty common.TokenTargetQtyV2, pwi common.PWIEquationRequestV2, quadEq common.RebalanceQuadraticRequest) error {
 	timeStampKey := boltutil.Uint64ToBytes(common.GetTimepoint())
 	err := self.db.Update(func(tx *bolt.Tx) error {
@@ -1711,21 +1727,19 @@ func (self *BoltStorage) StorePendingTokenListingInfo(tarQty common.TokenTargetQ
 		if uErr != nil {
 			return uErr
 		}
-		if uErr = self.storeJSONByteArray(tx, PENDING_TARGET_QUANTITY_V2, []byte("current_pending_target_qty"), dataJSON); uErr != nil {
+		if uErr = self.storeJSONByteArrayToPendingBucket(tx, PENDING_TARGET_QUANTITY_V2, []byte("current_pending_target_qty"), dataJSON); uErr != nil {
 			return uErr
 		}
-		dataJSON, uErr = json.Marshal(pwi)
-		if uErr != nil {
+		if dataJSON, uErr = json.Marshal(pwi); uErr != nil {
 			return uErr
 		}
-		if uErr = self.storeJSONByteArray(tx, PENDING_PWI_EQUATION_V2, timeStampKey, dataJSON); uErr != nil {
+		if uErr = self.storeJSONByteArrayToPendingBucket(tx, PENDING_PWI_EQUATION_V2, timeStampKey, dataJSON); uErr != nil {
 			return uErr
 		}
-		dataJSON, uErr = json.Marshal(quadEq)
-		if uErr != nil {
+		if dataJSON, uErr = json.Marshal(quadEq); uErr != nil {
 			return uErr
 		}
-		return self.storeJSONByteArray(tx, PENDING_REBALANCE_QUADRATIC, timeStampKey, dataJSON)
+		return self.storeJSONByteArrayToPendingBucket(tx, PENDING_REBALANCE_QUADRATIC, timeStampKey, dataJSON)
 	})
 	return err
 }
@@ -1769,15 +1783,13 @@ func (self *BoltStorage) ConfirmTokenListingInfo(tarQty common.TokenTargetQtyV2,
 		if uErr = self.storeJSONByteArray(tx, TARGET_QUANTITY_V2, []byte("current_target_qty"), dataJSON); uErr != nil {
 			return uErr
 		}
-		dataJSON, uErr = json.Marshal(pwi)
-		if uErr != nil {
+		if dataJSON, uErr = json.Marshal(pwi); uErr != nil {
 			return uErr
 		}
 		if uErr = self.storeJSONByteArray(tx, PWI_EQUATION_V2, timeStampKey, dataJSON); uErr != nil {
 			return uErr
 		}
-		dataJSON, uErr = json.Marshal(quadEq)
-		if uErr != nil {
+		if dataJSON, uErr = json.Marshal(quadEq); uErr != nil {
 			return uErr
 		}
 		if uErr = self.storeJSONByteArray(tx, REBALANCE_QUADRATIC, timeStampKey, dataJSON); uErr != nil {

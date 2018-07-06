@@ -52,7 +52,7 @@ func MustGetExchange(id string) Exchange {
 // ExchangeSetting contain the composition of settings necessary for an exchange
 // It is use mainly to group all the setting for DB operations
 type ExchangeSetting struct {
-	DepositAddress ExchangeAddresses   `json:"deposit_address"`
+	DepositAddress ExchangeAddresses   `json:"exchange_addresses"`
 	MinDeposit     ExchangesMinDeposit `json:"min_deposit"`
 	Fee            ExchangeFees        `json:"fee"`
 	Info           ExchangeInfo        `json:"info"`

@@ -103,7 +103,7 @@ func (self ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponse, 
 				return result, fmt.Errorf("Can't get Internal token %s: (%s)", tokenID, uErr)
 			}
 			result.Data.ReserveBalances[tokenID] = balance.ToBalanceResponse(
-				token.Decimal,
+				token.Decimals,
 			)
 		}
 		return result, err

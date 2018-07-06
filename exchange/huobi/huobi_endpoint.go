@@ -269,7 +269,7 @@ func (self *HuobiEndpoint) Withdraw(token common.Token, amount *big.Int, address
 		self.interf.AuthenticatedEndpoint()+"/v1/dw/withdraw/api/create",
 		map[string]string{
 			"address":  address.Hex(),
-			"amount":   strconv.FormatFloat(common.BigToFloat(amount, token.Decimal), 'f', -1, 64),
+			"amount":   strconv.FormatFloat(common.BigToFloat(amount, token.Decimals), 'f', -1, 64),
 			"currency": strings.ToLower(token.ID),
 		},
 		true,
