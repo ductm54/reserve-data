@@ -4,13 +4,14 @@ import (
 	"log"
 )
 
+// Settings contains shared common settings between all components.
 type Settings struct {
 	Tokens   *TokenSetting
 	Address  *AddressSetting
 	Exchange *ExchangeSetting
 }
 
-// HandleEmptyToken will load the token settings from default file if the
+// WithHandleEmptyToken will load the token settings from default file if the
 // database is empty.
 func WithHandleEmptyToken(pathJSON string) SettingOption {
 	return func(setting *Settings) {
@@ -28,7 +29,7 @@ func WithHandleEmptyToken(pathJSON string) SettingOption {
 	}
 }
 
-// HandleEmptyAddress will load the address settings from default file if the
+// WithHandleEmptyAddress will load the address settings from default file if the
 // database is empty.
 func WithHandleEmptyAddress(pathJSON string) SettingOption {
 	return func(setting *Settings) {
