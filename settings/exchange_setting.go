@@ -189,7 +189,7 @@ func (setting *Settings) handleEmptyExchangeInfo() error {
 			return fmt.Errorf("Exchange %s is in KYBER_EXCHANGES, but not avail in current deployment", ex)
 		}
 		if _, err := setting.Exchange.Storage.GetExchangeInfo(exName); err != nil {
-			log.Printf("Exchange %s is in KYBER_EXCHANGES but can't load its exchangeInfo in Database (%s). atempt to init it", exName.String(), err.Error())
+			log.Printf("Exchange %s is in KYBER_EXCHANGES but can't load its exchangeInfo in Database (%s). attempt to init it", exName.String(), err.Error())
 			exInfo, err := setting.NewExchangeInfo(exName)
 			if err != nil {
 				return err

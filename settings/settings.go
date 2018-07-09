@@ -82,7 +82,7 @@ func WithHandleEmptyDepositAddress(pathJSON string) SettingOption {
 func WithHandleEmptyExchangeInfo() SettingOption {
 	return func(setting *Settings) {
 		if err := setting.handleEmptyExchangeInfo(); err != nil {
-			log.Panicf("Setting Init: cannot init Exchange infor %s, this will stop the core funcion", err.Error())
+			log.Panicf("Setting Init: cannot init Exchange info %s, this will stop the core function", err.Error())
 		}
 	}
 }

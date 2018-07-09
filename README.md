@@ -2141,7 +2141,7 @@ Example
 GET request
 
 ``` 
-<host>:8000/setting/all-setings
+<host>:8000/setting/all-settings
 ```
 
 Example
