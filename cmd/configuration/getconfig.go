@@ -15,9 +15,24 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
-const (
-	settingDBFileName string = "setting.db"
-)
+func GetSettingDBName(kyberENV string) string {
+	switch kyberENV {
+	case common.MAINNET_MODE, common.PRODUCTION_MODE:
+		return "mainnet_setting.db"
+	case common.DEV_MODE:
+		return "dev_setting.db"
+	case common.KOVAN_MODE:
+		return "kovan_setting.db"
+	case common.STAGING_MODE:
+		return "staging_setting.db"
+	case common.SIMULATION_MODE, common.ANALYTIC_DEV_MODE:
+		return "sim_setting.db"
+	case common.ROPSTEN_MODE:
+		return "ropsten_setting.db"
+	default:
+		return "dev_setting.db"
+	}
+}
 
 func GetChainType(kyberENV string) string {
 	switch kyberENV {
@@ -51,8 +66,8 @@ func GetConfigPaths(kyberENV string) SettingPaths {
 	return ConfigPaths[common.DEV_MODE]
 }
 
-func GetSetting(setPath SettingPaths) (*settings.Settings, error) {
-	boltSettingStorage, err := settingstorage.NewBoltSettingStorage(filepath.Join(common.CmdDirLocation(), settingDBFileName))
+func GetSetting(setPath SettingPaths, kyberENV string) (*settings.Settings, error) {
+	boltSettingStorage, err := settingstorage.NewBoltSettingStorage(filepath.Join(common.CmdDirLocation(), GetSettingDBName(kyberENV)))
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +105,7 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string, noCore, enable
 	}
 
 	hmac512auth := http.NewKNAuthenticationFromFile(setPath.secretPath)
-	setting, err := GetSetting(setPath)
+	setting, err := GetSetting(setPath, kyberENV)
 	if err != nil {
 		log.Panicf("Failed to create setting: %s", err.Error())
 	}
