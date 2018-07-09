@@ -294,13 +294,6 @@
       "internal use": false,
       "listed": true
     },
-    "ETH": {
-      "name": "Ethereum",
-      "decimals": 18,
-      "address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-      "internal use": true,
-      "listed": true
-    },
     "POLY": {
       "name": "Polymath",
       "decimals": 18,
@@ -328,6 +321,69 @@
       "address": "0x41e5560054824eA6B0732E656E3Ad64E20e94E45",
       "internal use": true,
       "listed": true
+    },
+    "WAX": {
+      "name": "Wax",
+      "decimals": 8,
+      "address": "0x39bb259f66e1c59d5abef88375979b4d20d98022",
+      "internal use": true,
+      "listed": true
+    },
+    "SUB": {
+      "name": "Substratum",
+      "decimals": 2,
+      "address": "0x12480e24eb5bec1a9d4369cab6a80cad3c0a377a",
+      "internal use": true,
+      "listed": true
+    },
+    "POE": {
+      "name": "Po.et",
+      "decimals": 8,
+      "address": "0x0e0989b1f9b8a38983c2ba8053269ca62ec9b195",
+      "internal use": true,
+      "listed": true
+    },
+    "PAY": {
+      "name": "TenX",
+      "decimals": 18,
+      "address": "0xB97048628DB6B661D4C2aA833e95Dbe1A905B280",
+      "internal use": true,
+      "listed": true
+    },
+    "CHAT": {
+      "name": "Chatcoin",
+      "decimals": 18,
+      "address": "0x442bc47357919446eabc18c7211e57a13d983469",
+      "internal use": true,
+      "listed": true
+    },
+    "REP": {
+      "name": "Augur",
+      "decimals": 18,
+      "address": "0xe94327d07fc17907b4db788e5adf2ed424addff6",
+      "internal use": true,
+      "listed": true
+    },
+    "DTA": {
+      "name": "Data",
+      "decimals": 18,
+      "address": "0x69b148395ce0015c13e36bffbad63f49ef874e03",
+      "internal use": true,
+      "listed": true
+    },
+    "BNT": {
+      "name": "Bancor",
+      "decimals": 18,
+      "address": "0x1f573d6fb3f13d689ff844b4ce37794d79a7ff1c",
+      "internal use": true,
+      "listed": true
+    },
+    "ETH": {
+      "name": "Ethereum",
+      "decimals": 18,
+      "address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "internal use": true,
+      "listed": true
     }
   },
   "exchanges": {
@@ -353,7 +409,12 @@
       "ENJ": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547",
       "AION": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547",
       "AE": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547",
-      "BLZ": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547"
+      "BLZ": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547",
+      "SUB": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547",
+      "POE": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547",
+      "CHAT": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547",
+      "REP": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547",
+      "BNT": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547"
     },
     "huobi": {
       "ETH": "0xb48ee85467bf613a22244084c1a46c2deac18dd0",
@@ -361,7 +422,10 @@
       "POLY": "0xb48ee85467bf613a22244084c1a46c2deac18dd0",
       "LBA": "0xb48ee85467bf613a22244084c1a46c2deac18dd0",
       "EDU": "0xb48ee85467bf613a22244084c1a46c2deac18dd0",
-      "CVC": "0xb48ee85467bf613a22244084c1a46c2deac18dd0"
+      "CVC": "0xb48ee85467bf613a22244084c1a46c2deac18dd0",
+      "WAX": "0xb48ee85467bf613a22244084c1a46c2deac18dd0",
+      "PAY": "0xb48ee85467bf613a22244084c1a46c2deac18dd0",
+      "DTA": "0xb48ee85467bf613a22244084c1a46c2deac18dd0"
     },
     "stable_exchange": {
       "ETH": "0xFDF28Bf25779ED4cA74e958d54653260af604C20",
