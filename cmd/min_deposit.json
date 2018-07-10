@@ -122,7 +122,8 @@
             "STRAT": 0,
             "STEEM": 0,
             "STORJ": 0,
-            "WINGS": 0
+            "WINGS": 0,
+            "REP": 0
         },
         "bittrex": {
             "ETH": 0.05,
@@ -174,7 +175,10 @@
             "POLY": 1,
             "LBA": 10,
             "EDU": 500,
-            "CVC": 2
+            "CVC": 2,
+            "WAX": 1,
+            "PAY": 0.5,
+            "DTA": 100
         },
         "stable_exchange": {
           "ETH": 0,
