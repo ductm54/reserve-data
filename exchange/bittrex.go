@@ -138,7 +138,7 @@ func (self *Bittrex) UpdatePairsPrecision() error {
 		}
 		exInfo[pair] = exchangePrecisionLimit
 	}
-	return self.setting.UpdateExchangeInfo(settings.Binance, exInfo)
+	return self.setting.UpdateExchangeInfo(settings.Bittrex, exInfo)
 }
 
 func (self *Bittrex) GetExchangeInfo(pair common.TokenPairID) (common.ExchangePrecisionLimit, error) {
