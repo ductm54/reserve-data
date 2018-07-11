@@ -378,6 +378,13 @@
       "internal use": true,
       "listed": true
     },
+    "TUSD": {
+      "name": "TrueUSD",
+      "decimals": 18,
+      "address": "0x8dd5fbce2f6a956c3022ba3663759011dd51e73e",
+      "internal use": true,
+      "listed": true
+    },
     "ETH": {
       "name": "Ethereum",
       "decimals": 18,
@@ -385,6 +392,9 @@
       "internal use": true,
       "listed": true
     }
+  },
+  "intermediate_operator": {
+    "huobi": "0x336c372c38ee12b3d009e421f273fea0e655fe41"
   },
   "exchanges": {
     "binance": {
@@ -414,7 +424,8 @@
       "POE": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547",
       "CHAT": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547",
       "REP": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547",
-      "BNT": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547"
+      "BNT": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547",
+      "TUSD": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547"
     },
     "huobi": {
       "ETH": "0xb48ee85467bf613a22244084c1a46c2deac18dd0",
