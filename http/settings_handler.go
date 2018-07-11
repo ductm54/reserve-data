@@ -379,6 +379,7 @@ func (self *HTTPServer) ListToken(c *gin.Context) {
 		exInfos, err = self.getInfosFromExchangeEndPoint(tokenListings)
 		if err != nil {
 			httputil.ResponseFailure(c, httputil.WithError(err))
+			return
 		}
 	}
 	// prepare each TokenListing instance for individual token
