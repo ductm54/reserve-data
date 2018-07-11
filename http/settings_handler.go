@@ -326,6 +326,24 @@ func thereIsInternal(tokenListings map[string]common.TokenListing) bool {
 	return false
 }
 
+func (self *HTTPServer) ensureInternalSetting(tokenlisting common.TokenListing) error {
+	token := tokenlisting.Token
+	if uErr := self.blockchain.CheckTokenIndices(ethereum.HexToAddress(token.Address)); uErr != nil {
+		return fmt.Errorf("cannot get token indice from smart contract (%s) ", uErr.Error())
+	}
+	if tokenlisting.Exchanges == nil {
+		return errors.New("there is no exchange setting")
+	}
+	if tokenlisting.PWIEq == nil {
+		return errors.New("there is no PWIS setting")
+	}
+	emptyTarget := common.TargetQtyV2{}
+	if reflect.DeepEqual(emptyTarget, tokenlisting.TargetQty) {
+		return errors.New("there is no target quantity setting or its values are all 0")
+	}
+	return nil
+}
+
 // ListToken will pre-process the token request and put into pending token request
 // It will not apply any change to DB
 func (self *HTTPServer) ListToken(c *gin.Context) {
@@ -381,6 +399,11 @@ func (self *HTTPServer) ListToken(c *gin.Context) {
 		token.Active = true
 		// if the token is internal, it must come with PWIEq, targetQty and QuadraticEquation and exchange setting
 		if token.Internal {
+			if uErr := self.ensureInternalSetting(tokenlisting); uErr != nil {
+				httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Token %s is internal, required more setting (%s)", token.ID, uErr.Error())))
+				return
+			}
+
 			pws[tokenID] = tokenlisting.PWIEq
 			tarQty[tokenID] = tokenlisting.TargetQty
 			quadEq[tokenID] = tokenlisting.QuadraticEq

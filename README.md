@@ -1620,12 +1620,14 @@ Post form: {"data" : "JSON enconding of token listing Object"}
 requests will be aggregate in to a list of token to be listed. These can be overwritten as well : if there 
 are two requests listing KNC, the later will overwite the ealier.  
 - If a token is marked as internal, it will be required to come with exchange setting( fee, min deposit, 
-exchange precision limit, deposit address) , and metric settings (pwis, targetQty and rebalanceQuadratic)
+exchange precision limit, deposit address) , and metric settings (pwis, targetQty). Since rebalance quadratic
+data can be zero value, it is optional. 
 - If exchange precision limit (TokenListing.Exchange.Info) is null, It can be queried from exchange and 
 set automatically for the pair (token-ETH). If this data is available in the request,
 it will be prioritize over the exchange queried data.
 - In addition, if the listing contain any Internal token, that token must be available in Smart contract
 in order to update its indices. 
+- For token listing, its active status will be automatically set to true.
 
 Example: This request will list token OMG and NEO. OMG is internal, NEO is external. 
 

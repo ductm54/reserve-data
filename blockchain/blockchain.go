@@ -142,6 +142,25 @@ func (self *Blockchain) GetAddresses() (*common.Addresses, error) {
 	), nil
 }
 
+func (self *Blockchain) CheckTokenIndices(tokenAddr ethereum.Address) error {
+	opts := self.GetCallOpts(0)
+	pricingAddr, err := self.setting.GetAddress(settings.Pricing)
+	if err != nil {
+		return err
+	}
+	tokenAddrs := []ethereum.Address{}
+	tokenAddrs = append(tokenAddrs, tokenAddr)
+	_, _, err = self.GeneratedGetTokenIndicies(
+		opts,
+		pricingAddr,
+		tokenAddrs,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (self *Blockchain) LoadAndSetTokenIndices(tokenAddrs []ethereum.Address) error {
 	self.mu.Lock()
 	defer self.mu.Unlock()
