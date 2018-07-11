@@ -68,17 +68,6 @@ func (self *HTTPServer) ensureRunningExchange(ex string) (settings.ExchangeName,
 	if !ok {
 		return exName, fmt.Errorf("Exchange %s is not in current deployment", ex)
 	}
-	exStatuses, err := self.setting.GetExchangeStatus()
-	if err != nil {
-		return exName, fmt.Errorf("Can not get Exchange status %s", err.Error())
-	}
-	status, ok := exStatuses[ex]
-	if !ok {
-		return exName, fmt.Errorf("Exchange %s is not in current running exchange", ex)
-	}
-	if !status.Status {
-		return exName, fmt.Errorf("Exchange %s is not currently active", ex)
-	}
 	return exName, nil
 }
 
