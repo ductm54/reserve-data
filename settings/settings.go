@@ -48,7 +48,7 @@ func WithHandleEmptyAddress(pathJSON string) SettingOption {
 }
 
 // WithHandleEmptyFee will load the Fee settings from default file
-// if the fee database is empty
+// if the fee database is empty. It will mutiply the Funding fee value by 2
 func WithHandleEmptyFee(pathJSON string) SettingOption {
 	return func(setting *Settings) {
 		if err := setting.loadFeeFromFile(pathJSON); err != nil {
@@ -58,7 +58,7 @@ func WithHandleEmptyFee(pathJSON string) SettingOption {
 }
 
 // WithHandleEmptyMinDeposit will load the MinDeposit setting from fefault file
-// if the Mindeposit database is empty
+// if the Mindeposit database is empty. It will mutiply the MinDeposit value by 2
 func WithHandleEmptyMinDeposit(pathJSON string) SettingOption {
 	return func(setting *Settings) {
 		if err := setting.loadMinDepositFromFile(pathJSON); err != nil {

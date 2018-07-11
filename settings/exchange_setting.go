@@ -83,6 +83,13 @@ func (setting *Settings) loadFeeFromFile(path string) error {
 				log.Printf("Warning: Exchange %s is in KYBER_EXCHANGES, but not avail in Fee config file.", ex)
 				continue
 			}
+			//multiply all Funding fee by 2 to avoid fee increasing from exchanges
+			for tokenID, value := range exFee.Funding.Deposit {
+				exFee.Funding.Deposit[tokenID] = value * 2
+			}
+			for tokenID, value := range exFee.Funding.Withdraw {
+				exFee.Funding.Withdraw[tokenID] = value * 2
+			}
 			if err = setting.Exchange.Storage.StoreFee(exName, exFee); err != nil {
 				return err
 			}
@@ -120,6 +127,10 @@ func (setting *Settings) loadMinDepositFromFile(path string) error {
 			if !ok {
 				log.Printf("Warning: Exchange %s is in KYBER_EXCHANGES, but not avail in MinDepositconfig file", exName.String())
 				continue
+			}
+			//multiply all minimum deposit by 2 to avoid min deposit increasing from Exchange
+			for token, value := range minDepo {
+				minDepo[token] = value * 2
 			}
 			if err = setting.Exchange.Storage.StoreMinDeposit(exName, minDepo); err != nil {
 				return err

@@ -2024,6 +2024,7 @@ Post form: {"name" : <Name of the exchange (binance, huobi etc...)>,
 UpdateFee will merge the new fee setting to the current fee setting,
 Any different key will be overwriten from new fee to current fee. This allows update
 one single token's exchange fee on a destined exchange.
+UpdateFee will not be mutiplied by any value, so please prepare a big enough number to avoid exchange's fee increasing.
 ```
 <host>:8000/setting/update-exchange-fee
 ```
@@ -2061,6 +2062,7 @@ Post form: {"name" : <Name of the exchange (binance, huobi etc...)>,
 Update Exchange minDeposit will merge the new minDeposit setting to the current minDeposit setting,
 Any different key will be overwriten from new minDeposit to current minDeposit. This allows update
 one single token's exchange minDeposit on a destined exchange.
+minDeposit input will not be mutiplied by any value, so please prepare a big enough number to avoid exchange's minDeposit increasing.
 ```
 <host>:8000/setting/update-exchange-mindeposit
 ```
