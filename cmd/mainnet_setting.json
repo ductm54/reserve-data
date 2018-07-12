@@ -337,6 +337,69 @@
       "internal use": true,
       "listed": true
     },
+    "WAX": {
+      "name": "Wax",
+      "decimals": 8,
+      "address": "0x39bb259f66e1c59d5abef88375979b4d20d98022",
+      "internal use": true,
+      "listed": true
+    },
+    "SUB": {
+      "name": "Substratum",
+      "decimals": 2,
+      "address": "0x12480e24eb5bec1a9d4369cab6a80cad3c0a377a",
+      "internal use": true,
+      "listed": true
+    },
+    "POE": {
+      "name": "Po.et",
+      "decimals": 8,
+      "address": "0x0e0989b1f9b8a38983c2ba8053269ca62ec9b195",
+      "internal use": true,
+      "listed": true
+    },
+    "PAY": {
+      "name": "TenX",
+      "decimals": 18,
+      "address": "0xB97048628DB6B661D4C2aA833e95Dbe1A905B280",
+      "internal use": true,
+      "listed": true
+    },
+    "CHAT": {
+      "name": "Chatcoin",
+      "decimals": 18,
+      "address": "0x442bc47357919446eabc18c7211e57a13d983469",
+      "internal use": true,
+      "listed": true
+    },
+    "DTA": {
+      "name": "Data",
+      "decimals": 18,
+      "address": "0x69b148395ce0015c13e36bffbad63f49ef874e03",
+      "internal use": true,
+      "listed": true
+    },
+    "BNT": {
+      "name": "Bancor",
+      "decimals": 18,
+      "address": "0x1f573d6fb3f13d689ff844b4ce37794d79a7ff1c",
+      "internal use": true,
+      "listed": true
+    },
+    "TUSD": {
+      "name": "TrueUSD",
+      "decimals": 18,
+      "address": "0x8dd5fbce2f6a956c3022ba3663759011dd51e73e",
+      "internal use": true,
+      "listed": true
+    },
+    "TOMO": {
+      "name": "Tomocoin",
+      "decimals": 18,
+      "address": "0x8b353021189375591723E7384262F45709A3C3dC",
+      "internal use": false,
+      "listed": true
+    },
     "ETH": {
       "name": "Ethereum",
       "decimals": 18,
@@ -368,7 +431,12 @@
       "ENJ" : "0x44d34a119ba21a42167ff8b77a88f0fc7bb2db90",
       "AION":  "0x44d34a119ba21a42167ff8b77a88f0fc7bb2db90",
       "AE":  "0x44d34a119ba21a42167ff8b77a88f0fc7bb2db90",
-      "BLZ":  "0x44d34a119ba21a42167ff8b77a88f0fc7bb2db90"
+      "BLZ":  "0x44d34a119ba21a42167ff8b77a88f0fc7bb2db90",
+      "SUB": "0x44d34a119ba21a42167ff8b77a88f0fc7bb2db90",
+      "POE": "0x44d34a119ba21a42167ff8b77a88f0fc7bb2db90",
+      "CHAT": "0x44d34a119ba21a42167ff8b77a88f0fc7bb2db90",
+      "BNT": "0x44d34a119ba21a42167ff8b77a88f0fc7bb2db90",
+      "TUSD": "0x44d34a119ba21a42167ff8b77a88f0fc7bb2db90"
     },
     "huobi": {
       "ETH": "0x0c8fd73eaf6089ef1b91231d0a07d0d2ca2b9d66",
@@ -376,7 +444,10 @@
       "POLY": "0x0c8fd73eaf6089ef1b91231d0a07d0d2ca2b9d66",
       "LBA": "0x0c8fd73eaf6089ef1b91231d0a07d0d2ca2b9d66",
       "EDU": "0x0c8fd73eaf6089ef1b91231d0a07d0d2ca2b9d66",
-      "CVC": "0x0c8fd73eaf6089ef1b91231d0a07d0d2ca2b9d66"
+      "CVC": "0x0c8fd73eaf6089ef1b91231d0a07d0d2ca2b9d66",
+      "WAX": "0x0c8fd73eaf6089ef1b91231d0a07d0d2ca2b9d66",
+      "PAY": "0x0c8fd73eaf6089ef1b91231d0a07d0d2ca2b9d66",
+      "DTA": "0x0c8fd73eaf6089ef1b91231d0a07d0d2ca2b9d66"
     },
     "stable_exchange": {
       "ETH": "0xFDF28Bf25779ED4cA74e958d54653260af604C20",
