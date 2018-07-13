@@ -73,3 +73,4 @@ cmd/mainnet_rates.db
 cmd/mainnet_stats.db
 cmd/mainnet_users.db
 cmd/shared/
+apidocs/build
