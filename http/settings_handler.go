@@ -220,7 +220,7 @@ func (self *HTTPServer) ConfirmTokenListing(c *gin.Context) {
 			return
 		}
 		if err = self.metric.ConfirmTokenListingInfo(tarQty, pws, quadEq); err != nil {
-			httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Can not update metric data while token and exchange info has been set. This required manual token update/ exchange update to revert to previous setting before listing", err.Error())))
+			httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Can not update metric data (%s) while token and exchange info has been set. This required manual token update/ exchange update to revert to previous setting before listing", err.Error())))
 			return
 		}
 	}
