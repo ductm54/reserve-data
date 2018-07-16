@@ -41,7 +41,7 @@ func (setting *Settings) loadTokenFromFile(filePath string) error {
 		return err
 	}
 	for id, t := range tokens.Tokens {
-		token := common.NewToken(id, t.Name, t.Address, t.Decimals, t.Active, t.Internal, t.MinimalRecordResolution, t.MaxPerBlockImbalance, t.MaxTotalImbalance)
+		token := common.NewToken(id, t.Name, t.Address, t.Decimals, t.Active, t.Internal)
 		if err = setting.UpdateToken(token); err != nil {
 			return err
 		}

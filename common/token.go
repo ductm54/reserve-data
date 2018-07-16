@@ -24,28 +24,22 @@ type TokenFee struct {
 }
 
 type Token struct {
-	ID                      string `json:"id"`
-	Name                    string `json:"name"`
-	Address                 string `json:"address"`
-	Decimals                int64  `json:"decimals"`
-	Active                  bool   `json:"active"`
-	Internal                bool   `json:"internal"`
-	MinimalRecordResolution string `json:"minimal_record_resolution"`
-	MaxTotalImbalance       string `json:"max_total_imbalance"`
-	MaxPerBlockImbalance    string `json:"max_per_block_imbalance"`
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Address  string `json:"address"`
+	Decimals int64  `json:"decimals"`
+	Active   bool   `json:"active"`
+	Internal bool   `json:"internal"`
 }
 
 // NewToken creates a new Token.
-func NewToken(id, name, address string, decimal int64, active, internal bool, miminalrr, maxti, maxpbi string) Token {
+func NewToken(id, name, address string, decimal int64, active, internal bool) Token {
 	return Token{
-		ID:                      id,
-		Address:                 address,
-		Decimals:                decimal,
-		Active:                  active,
-		Internal:                internal,
-		MinimalRecordResolution: miminalrr,
-		MaxTotalImbalance:       maxti,
-		MaxPerBlockImbalance:    maxpbi,
+		ID:       id,
+		Address:  address,
+		Decimals: decimal,
+		Active:   active,
+		Internal: internal,
 	}
 }
 

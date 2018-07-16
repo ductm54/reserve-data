@@ -1590,9 +1590,6 @@ curl -X "POST" "http://localhost:8000/update-token" \
       \"name\": \"Chain Link\",
       \"decimals\": 18,
       \"address\": \"0x514910771xf9ca656af840dff83e8264ecf986ca\",
-      \"minimal_record_resolution\" : \"10\",
-      \"max_per_block_imbalance\" : \"1925452883\",
-      \"max_total_imbalance\" : \"1925452883\",
       \"internal\": True,
       \"listed\": True 
       }"
@@ -1641,9 +1638,6 @@ curl -X "POST" "http://localhost:8000/setting/set-token-listing" \
           \"name\": \"OmisexGO\",
           \"decimals\": 18,
           \"address\": \"0xd26114cd6EE289AccF82350c8d8487fedB8A0C07\",
-          \"minimal_record_resolution\": \"1000000000000000\",
-          \"max_per_block_imbalance\": \"439794468212403470336\",
-          \"max_total_imbalance\": \"722362414038872621056\",
           \"internal\": true,
           \"active\": true
         },
@@ -1737,10 +1731,7 @@ response
           "address": "0x27054b13b1b798b345b591a4d22e6562d47ea75a",
           "decimals": 18,
           "active": True,
-          "internal": False,
-          "minimal_record_resolution": "10",
-          "max_total_imbalance": "1925452883",
-          "max_per_block_imbalance": "1925452883"
+          "internal": False
         },
         "exchanges": {
           "binance": {
@@ -1797,10 +1788,7 @@ curl -X "POST" "http://localhost:8000/setting/confirm-token-listing" \
             \"address\": \"0x8f8221afbb33998d8584a2b05749ba73c37a938a\",
             \"decimals\": 18,
             \"active\": true,
-            \"internal\": false,
-            \"minimal_record_resolution\": \"\",
-            \"max_total_imbalance\": \"\",
-            \"max_per_block_imbalance\": \"\"
+            \"internal\": false
           },
           \"exchanges\": null,
           \"pwis_equation\": null,
@@ -1827,10 +1815,7 @@ curl -X "POST" "http://localhost:8000/setting/confirm-token-listing" \
             \"address\": \"0xd26114cd6EE289AccF82350c8d8487fedB8A0C07\",
             \"decimals\": 18,
             \"active\": true,
-            \"internal\": true,
-            \"minimal_record_resolution\": \"1000000000000000\",
-            \"max_total_imbalance\": \"722362414038872621056\",
-            \"max_per_block_imbalance\": \"439794468212403470336\"
+            \"internal\": true
           },
           \"exchanges\": {
             \"binance\": {
@@ -1950,10 +1935,7 @@ response
       "address": "0xb98d4c97425d9908e66e53a6fdf673acca0be986",
       "decimals": 18,
       "active": true,
-      "internal": true,
-      "minimal_record_resolution": "100000000000000",
-      "max_total_imbalance": "6043192343824681664512",
-      "max_per_block_imbalance": "5461044951947117854720"
+      "internal": true
     }
   ],
   "success": true
@@ -2182,10 +2164,7 @@ Response
         "address": "0xb98d4c97425d9908e66e53a6fdf673acca0be986",
         "decimals": 18,
         "active": true,
-        "internal": true,
-        "minimal_record_resolution": "100000000000000",
-        "max_total_imbalance": "6043192343824681664512",
-        "max_per_block_imbalance": "5461044951947117854720"
+        "internal": true
       },
       {
         "id": "ZIL",
@@ -2193,10 +2172,7 @@ Response
         "address": "0x05f4a42e251f2d52b8ed15e9fedaacfcef1fad27",
         "decimals": 12,
         "active": true,
-        "internal": true,
-        "minimal_record_resolution": "10",
-        "max_total_imbalance": "1925452883",
-        "max_per_block_imbalance": "1925452883"
+        "internal": true
       }
     ],
     "Exchanges": {
