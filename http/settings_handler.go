@@ -238,15 +238,16 @@ func (self *HTTPServer) RejectTokenListing(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("there is no pending token listing (%s)", err.Error())))
 		return
 	}
-	if thereIsInternal(listings) {
-		if err := self.metric.RemovePendingTokenListingInfo(); err != nil {
-			httputil.ResponseFailure(c, httputil.WithError(err))
-			return
-		}
-	}
+	// TODO: Handling odd case when setting bucket DB op successful but metric bucket DB op failed.
 	if err := self.setting.RemovePendingTokenListings(); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
+	}
+	if thereIsInternal(listings) {
+		if err := self.metric.RemovePendingTokenListingInfo(); err != nil {
+			httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Token listing Removal has been finished but can not remove pending metrics data associated with the token listing (%s).This removal should be handle manually before calling token listing again. ", err.Error())))
+			return
+		}
 	}
 	httputil.ResponseSuccess(c)
 }
