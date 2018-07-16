@@ -207,25 +207,23 @@ func (self *HTTPServer) ConfirmTokenListing(c *gin.Context) {
 			return
 		}
 	}
-
-	//reload token indices and apply metric changes if the token is Internal
-	if hasInternal {
-		if err = self.updateInternalTokensIndices(tokenListings); err != nil {
-			httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Can not update internal token indices (%s)", err.Error())))
-			return
-		}
-		if err = self.metric.ConfirmTokenListingInfo(tarQty, pws, quadEq); err != nil {
-			httputil.ResponseFailure(c, httputil.WithError(err))
-			return
-		}
-	}
-
 	// Apply the change into setting database
 	if err = self.setting.ApplyTokenWithExchangeSetting(preparedToken, preparedExchangeSetting); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
 
+	//reload token indices and apply metric changes if the token is Internal
+	if hasInternal {
+		if err = self.updateInternalTokensIndices(tokenListings); err != nil {
+			httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Can not update internal token indices (%s) while token and exchange info has been set. This required manual token update/ exchange update to revert to previous setting before listing", err.Error())))
+			return
+		}
+		if err = self.metric.ConfirmTokenListingInfo(tarQty, pws, quadEq); err != nil {
+			httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Can not update metric data while token and exchange info has been set. This required manual token update/ exchange update to revert to previous setting before listing", err.Error())))
+			return
+		}
+	}
 	httputil.ResponseSuccess(c)
 }
 

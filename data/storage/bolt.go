@@ -1712,11 +1712,6 @@ func (self *BoltStorage) storeJSONByteArray(tx *bolt.Tx, bucketName string, key,
 	if b == nil {
 		return fmt.Errorf("Bucket %s hasn't existed yet", bucketName)
 	}
-	c := b.Cursor()
-	k, _ := c.First()
-	if k != nil {
-		return fmt.Errorf("Bucket %s has a pending record", bucketName)
-	}
 	return b.Put(key, value)
 }
 
