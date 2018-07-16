@@ -216,6 +216,7 @@ func (self *HTTPServer) ConfirmTokenListing(c *gin.Context) {
 		}
 		if err = self.metric.ConfirmTokenListingInfo(tarQty, pws, quadEq); err != nil {
 			httputil.ResponseFailure(c, httputil.WithError(err))
+			return
 		}
 	}
 
