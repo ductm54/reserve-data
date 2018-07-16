@@ -8,14 +8,11 @@ import (
 )
 
 type token struct {
-	Address                 string `json:"address"`
-	Name                    string `json:"name"`
-	Decimals                int64  `json:"decimals"`
-	Active                  bool   `json:"internal use"`
-	Internal                bool   `json:"listed"`
-	MinimalRecordResolution string `json:"minimalRecordResolution"`
-	MaxTotalImbalance       string `json:"maxPerBlockImbalance"`
-	MaxPerBlockImbalance    string `json:"maxTotalImbalance"`
+	Address  string `json:"address"`
+	Name     string `json:"name"`
+	Decimals int64  `json:"decimals"`
+	Active   bool   `json:"internal use"`
+	Internal bool   `json:"listed"`
 }
 
 type TokenConfig struct {

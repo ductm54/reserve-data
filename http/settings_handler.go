@@ -174,6 +174,7 @@ func (self *HTTPServer) ConfirmTokenListing(c *gin.Context) {
 	preparedToken := []common.Token{}
 	for tokenID, tokenListing := range tokenListings {
 		token := tokenListing.Token
+		token.LastActivationChange = common.GetTimepoint()
 		preparedToken = append(preparedToken, token)
 		if token.Internal {
 			//check if there is the token in pending PWIequation
@@ -186,7 +187,7 @@ func (self *HTTPServer) ConfirmTokenListing(c *gin.Context) {
 				httputil.ResponseFailure(c, httputil.WithReason("The Token is not in current PendingTargetQty "))
 				return
 			}
-			//check if there is the token in quadratic euqation
+			//check if there is the token in quadratic equation
 			if _, ok := quadEq[token.ID]; !ok {
 				httputil.ResponseFailure(c, httputil.WithReason("The Token is not in current quadratic reblance equation"))
 				return
@@ -472,6 +473,13 @@ func (self *HTTPServer) UpdateToken(c *gin.Context) {
 			return
 		}
 	}
+	currTok, err := self.setting.GetTokenByID(token.ID)
+	if (err != nil) || ((err == nil) && (currTok.Active != token.Active)) {
+		token.LastActivationChange = common.GetTimepoint()
+	} else {
+		token.LastActivationChange = currTok.LastActivationChange
+	}
+
 	if err := self.setting.UpdateToken(token); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
