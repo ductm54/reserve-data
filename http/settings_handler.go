@@ -441,7 +441,14 @@ func (self *HTTPServer) UpdateToken(c *gin.Context) {
 		}
 	}
 	currTok, err := self.setting.GetTokenByID(token.ID)
-	if (err != nil) || ((err == nil) && (currTok.Active != token.Active)) {
+	if err == settings.ErrTokenNotFound {
+		token.LastActivationChange = common.GetTimepoint()
+	} else if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+
+	if currTok.Active != token.Active {
 		token.LastActivationChange = common.GetTimepoint()
 	} else {
 		token.LastActivationChange = currTok.LastActivationChange
