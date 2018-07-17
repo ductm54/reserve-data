@@ -302,7 +302,7 @@ func (self *HTTPServer) ConfirmTokenListing(c *gin.Context) {
 	}
 	// Apply the change into setting database
 	if err = self.setting.ApplyTokenWithExchangeSetting(preparedToken, preparedExchangeSetting); err != nil {
-		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Can not apply token and exchange setting for token listing. Metric data and token indices changes has to be manually revert", err.Error())))
+		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Can not apply token and exchange setting for token listing (%s). Metric data and token indices changes has to be manually revert", err.Error())))
 		return
 	}
 
