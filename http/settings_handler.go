@@ -265,7 +265,7 @@ func (self *HTTPServer) ConfirmTokenListing(c *gin.Context) {
 	preparedToken := []common.Token{}
 	for tokenID, tokenListing := range tokenListings {
 		token := tokenListing.Token
-		token.LastActivationChange = common.GetTimepoint()
+		token.LastActivationChange = common.GetTimepointInMicrosecond()
 		preparedToken = append(preparedToken, token)
 		if token.Internal {
 			//set metrics data for the token
@@ -442,7 +442,7 @@ func (self *HTTPServer) UpdateToken(c *gin.Context) {
 	}
 	currTok, err := self.setting.GetTokenByID(token.ID)
 	if (err != nil) || ((err == nil) && (currTok.Active != token.Active)) {
-		token.LastActivationChange = common.GetTimepoint()
+		token.LastActivationChange = common.GetTimepointInMicrosecond()
 	} else {
 		token.LastActivationChange = currTok.LastActivationChange
 	}

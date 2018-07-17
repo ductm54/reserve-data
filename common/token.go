@@ -34,7 +34,7 @@ type Token struct {
 }
 
 // NewToken creates a new Token.
-func NewToken(id, name, address string, decimal int64, active, internal bool) Token {
+func NewToken(id, name, address string, decimal int64, active, internal bool, timepoint uint64) Token {
 	return Token{
 		ID:                   id,
 		Name:                 name,
@@ -42,7 +42,7 @@ func NewToken(id, name, address string, decimal int64, active, internal bool) To
 		Decimals:             decimal,
 		Active:               active,
 		Internal:             internal,
-		LastActivationChange: GetTimepoint(),
+		LastActivationChange: timepoint,
 	}
 }
 
