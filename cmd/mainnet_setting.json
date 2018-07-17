@@ -435,13 +435,6 @@
       "internal use": false,
       "listed": true
     },
-    "NULS": {
-      "name": "Nuls",
-      "decimals": 18,
-      "address": "0xb91318f35bdb262e9423bc7c7c2a3a93dd93c92c",
-      "internal use": false,
-      "listed": true
-    },
     "ETH": {
       "name": "Ethereum",
       "decimals": 18,
