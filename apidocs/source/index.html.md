@@ -9,6 +9,16 @@ toc_footers:
   - <a href='https://github.com/lord/slate'>Documentation Powered by Slate</a>
 
 includes:
+  - exchangeinfo
+  - authdata
+  - getrates
+  - rebalance_activities
+  - stats
+  - metrics/metrics
+  - metrics/pwi_equation
+  - metrics/target_quantity
+  - metrics/rebalance_quadratic
+  - metrics/stable_token
   - errors
 
 search: true
@@ -21,18 +31,19 @@ search: true
 
 All APIs that are marked with (signing required) must follow authentication mechanism below:
 
-1. Must be urlencoded (x-www-form-urlencoded)
+1. Must be urlencoded (**x-www-form-urlencoded**)
 1. Must have `signed` header with value equals to `hmac512(secret, message)`
 1. Must contain `nonce` param, its value is the unix time in millisecond, it must not be before or after server time by 10s
 1. `message` is constructed in following way: all query params (nonce is included) and body key-values are merged into one urlencoded string with keys are sorted.
 1. `secret` is configured secret string.
 
-Example:
-- param query: `amount=0xde0b6b3a7640000&nonce=1514554594528&token=KNC`
-- secret: `vtHpz1l0kxLyGc4R1qJBkFlQre5352xGJU9h8UQTwUTz5p6VrxcEslF4KnDI21s1`
+Example:  
+
+- param query: `amount=0xde0b6b3a7640000&nonce=1514554594528&token=KNC`  
+- secret: `vtHpz1l0kxLyGc4R1qJBkFlQre5352xGJU9h8UQTwUTz5p6VrxcEslF4KnDI21s1`  
 - signed string: `2969826a713d13b399dd0d016dad3e95949aa81ed8703ec0258abebb5f0288b96272eef68275f12a32f7e396de3b5fd63ed12b530385e08e1b676c695aacb93b`
 
-# APIS 
+# General 
 
 ## Get time server 
 
@@ -461,143 +472,3 @@ curl -X GET "http://localhost:8000/prices"
 ### HTTP request
 
 `GET http://example.com/prices`
-
-
-## Get trade history for an account (signing required)
-
-```shell
-curl -X GET "http://localhost:8000/tradehistoryfromTime=1516116380102&toTime=18446737278344972745"
-```
-
-> The above command returns JSON structured like this:
-
-```json
-{
-  "data": {
-    "Version": 1517298257114,
-    "Valid": true,
-    "Timestamp": "1517298257115",
-    "Data": {
-      "binance": {
-        "EOS-ETH": [],
-        "KNC-ETH": [
-          {
-            "ID": "548002",
-            "Price": 0.003038,
-            "Qty": 50,
-            "Type": "buy",
-            "Timestamp": 1516116380102
-          },
-          {
-            "ID": "548003",
-            "Price": 0.0030384,
-            "Qty": 7,
-            "Type": "buy",
-            "Timestamp": 1516116380102
-          },
-          {
-            "ID": "548004",
-            "Price": 0.003043,
-            "Qty": 16,
-            "Type": "buy",
-            "Timestamp": 1516116380102
-          },
-          {
-            "ID": "548005",
-            "Price": 0.0030604,
-            "Qty": 29,
-            "Type": "buy",
-            "Timestamp": 1516116380102
-          },
-          {
-            "ID": "548006",
-            "Price": 0.003065,
-            "Qty": 29,
-            "Type": "buy",
-            "Timestamp": 1516116380102
-          },
-          {
-            "ID": "548007",
-            "Price": 0.003065,
-            "Qty": 130,
-            "Type": "buy",
-            "Timestamp": 1516116380102
-          }
-        ],
-        "OMG-ETH": [
-          {
-            "ID": "123980",
-            "Price": 0.020473,
-            "Qty": 48,
-            "Type": "buy",
-            "Timestamp": 1512395498231
-          },
-          {
-            "ID": "130518",
-            "Price": 0.021022,
-            "Qty": 13.49,
-            "Type": "buy",
-            "Timestamp": 1512564108827
-          },
-          {
-            "ID": "130706",
-            "Price": 0.020202,
-            "Qty": 9.93,
-            "Type": "sell",
-            "Timestamp": 1512569059460
-          },
-          {
-            "ID": "140078",
-            "Price": 0.019098,
-            "Qty": 11.07,
-            "Type": "buy",
-            "Timestamp": 1512714826339
-          },
-          {
-            "ID": "140157",
-            "Price": 0.019053,
-            "Qty": 7.68,
-            "Type": "sell",
-            "Timestamp": 1512716338997
-          },
-          {
-            "ID": "295923",
-            "Price": 0.020446,
-            "Qty": 4,
-            "Type": "buy",
-            "Timestamp": 1514360742162
-          }
-        ],
-        "SALT-ETH": [],
-        "SNT-ETH": []
-      },
-      "bittrex": {
-        "OMG-ETH": [
-          {
-            "ID": "eb948865-6261-4991-8615-b36c8ccd1256",
-            "Price": 0.01822057,
-            "Qty": 1,
-            "Type": "buy",
-            "Timestamp": 18446737278344972745
-          }
-        ],
-        "SALT-ETH": [],
-        "SNT-ETH": []
-      }
-    }
-  },
-  "success": true
-}
-```
-
-### HTTP Request
-
-`GET http://example.com/tradehistory`
-
-
-### Query Parameters
-
-Parameter | Required | Default | Description
---------- | -------- | --------| -----------
-fromTime  | false | 0 | timestamp to get history from by millisecond
-toTime    | false | 0 | timestamp to get history to by millisecond
