@@ -8,6 +8,9 @@ Save metrics information
 
 Set a record marking the condition because of which the set price is called. 
 
+```shell
+```
+
 > sample response:
 
 ```json
@@ -21,7 +24,7 @@ on failure:
 
 ### HTTP Request
 
-**GET**
+**POST**
 `<host>:8000/update-price-analytic-data`
 
 ### URL params:
@@ -40,8 +43,9 @@ value | true |  bool | the json enconded object to save.
 **signing required**
 
 ```shell
-curl -x GET \
-  http://localhost:8000/get-price-analytic-data?fromTime=1522753160000&toTime=1522755792000
+curl -X GET "http://localhost:8000/get-price-analytic-data?\
+fromTime=1522753160000&\
+toTime=1522755792000"
 ```
  
 > sample response:
@@ -94,6 +98,17 @@ toTime | true | integer | to timestamp (millisecond)
 
 ## Update exchange notifications 
 
+```shell
+curl -X POST "http://localhost:8000/exchange-notification"\ 
+-F 'exchange=binance'\ 
+-F 'action=deposit'\ 
+-F 'token=KNCETH'\ 
+-F 'fromTime=1520553600000'\ 
+-F 'toTime=1520640000000'\ 
+-F 'isWarning=true'\ 
+-F 'msg="something to notice here"'
+```
+
 > sample response:
 
 ```json
@@ -119,8 +134,45 @@ toTime | true | integer | to timestamp
 isWarning | true | bool | is exchange warning or not
 msg | true | string | message for the notification
 
+## Get exchanges status
+
+```shell
+curl -X GET "http://localhost:8000/get-exchange-status"
+```
+
+> sample response:
+
+```json
+{
+    "data": {
+        "binance": {
+            "timestamp": 1521532176702,
+            "status": true
+        },
+        "bittrex": {
+            "timestamp": 1521532176704,
+            "status": true
+        },
+        "huobi": {
+            "timestamp": 1521532176703,
+            "status": true
+        }
+    },
+    "success": true
+}
+```
+
+###HTTP Request
+
+**GET**
+`<host>:8000/get-exchange-status`
+
 
 ## Get exchange notifications
+
+```shell
+curl -X GET "http://localhost:8000/exchange-notifications"
+```
 
 > sample response:
 
@@ -149,6 +201,10 @@ msg | true | string | message for the notification
 
 ## Get rebalance status
 
+```shell
+curl -X GET "http://localhost:8000/rebalancestatus"
+```
+
 > sample response:
 
 ```json
@@ -169,9 +225,7 @@ Get rebalance status, if reponse is *true* then rebalance is enable, the analyti
 ## Hold rebalance
 
 ```shell
-curl -X POST \
-  http://localhost:8000/holdrebalance \
-  -H 'content-type: multipart/form-data' \
+curl -X POST "http://localhost:8000/holdrebalance"
 ```
 
 
@@ -192,9 +246,7 @@ curl -X POST \
 ## Enable rebalance
 
 ```shell
-curl -X POST \
-  http://localhost:8000/enablerebalance \
-  -H 'content-type: multipart/form-data' \
+curl -X POST "http://localhost:8000/enablerebalance"
 ```
 
 > sample response:
@@ -212,6 +264,10 @@ curl -X POST \
 
 
 ## Get setrate status
+
+```shell
+curl -X GET "http://localhost:8000/setratestatus"
+```
 
 > sample response:
 
@@ -231,16 +287,28 @@ Get setrate status, if reponse is *true* then setrate is enable, the analytic ca
 
 
 ## Hold setrate
+```shell
+curl -X POST "http://localhost:8000/holdsetrate"
+```
+
+> sample response:
+
+```json
+  {
+    "success": true
+  }
+```
 
 ### HTTP Request
 
 **POST**
 `<host>:8000/holdsetrate`
 
+
+## Enable setrate
+
 ```shell
-curl -X POST \
-  http://localhost:8000/holdsetrate \
-  -H 'content-type: multipart/form-data' \
+curl -X POST "http://localhost:8000/enablesetrate"
 ```
 
 > sample response:
@@ -250,24 +318,8 @@ curl -X POST \
     "success": true
   }
 ```
-
-## Enable setrate
 
 ### HTTP Request
 
 **POST**
 `<host>:8000/enablesetrate`
-
-```shell
-curl -X POST \
-  http://localhost:8000/enablesetrate \
-  -H 'content-type: multipart/form-data' \
-```
-
-> sample response:
-
-```json
-  {
-    "success": true
-  }
-```

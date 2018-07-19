@@ -141,6 +141,14 @@ type | true | string |  "buy" or "sell"
 
 **signing required**
 
+```shell
+curl -X POST \
+  http://localhost:8000/trade/binance\
+  -F base=ETH \
+  -F quote=KNC \
+  -F order_id="1231701321"
+```
+
 > Sample response:
 
 ```json

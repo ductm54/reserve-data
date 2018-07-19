@@ -5,32 +5,31 @@
 **signing required**
 
 ```shell
-curl -X "POST" "http://localhost:8000/confirm-rebalance-quadratic" \
-     -H 'Content-Type: application/x-www-form-urlencoded' \
-     --data-urlencode "data={\
-  \"EOS\":{
-    \"rebalance_quadratic\s": {
-      \"a\": 750,
-      \"b\": 500,
-      \"c\": 0,
-    }
-  },
-  \"ETH\": {
-    \"rebalance_quadratic\": {
-      \"a\": 750,
-      \"b\": 500,
-      \"c\": 0,
-    }
-  }
-}\"
+curl -X GET "http://localhost:8000/rebalance-quadratic"
 ```
 
 > sample response
 
 ```json
-  {
-    "success": true,
-  }
+{
+    "data": {
+        "EOS": {
+            "rebalance_quadratic": {
+                "a": 750,
+                "b": 500,
+                "c": 0
+            }
+        },
+        "ETH": {
+            "rebalance_quadratic": {
+                "a": 750,
+                "b": 500,
+                "c": 0
+            }
+        }
+    },
+    "success": true
+}
 ```
 
 ### HTTP Request
@@ -44,24 +43,24 @@ curl -X "POST" "http://localhost:8000/confirm-rebalance-quadratic" \
 **signing required**
 
 ```shell
-curl -X "POST" "http://localhost:8000/confirm-rebalance-quadratic" \
-     -H 'Content-Type: application/x-www-form-urlencoded' \
-     --data-urlencode "data={\
+curl -X "POST" "http://localhost:8000/set-rebalance-quadratic" \
+-H 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode "value={
   \"EOS\":{
-    \"rebalance_quadratic\s": {
+    \"rebalance_quadratic\": {
       \"a\": 750,
       \"b\": 500,
-      \"c\": 0,
+      \"c\": 0
     }
   },
   \"ETH\": {
     \"rebalance_quadratic\": {
       \"a\": 750,
       \"b\": 500,
-      \"c\": 0,
+      \"c\": 0
     }
   }
-}\"
+}"
 ```
 
 > sample response
@@ -84,32 +83,31 @@ Post form: json encoding data of rebalance quadratic equation
 **signing required**
 
 ```shell
-curl -X "POST" "http://localhost:8000/confirm-rebalance-quadratic" \
-     -H 'Content-Type: application/x-www-form-urlencoded' \
-     --data-urlencode "data={\
-  \"EOS\":{
-    \"rebalance_quadratic\s": {
-      \"a\": 750,
-      \"b\": 500,
-      \"c\": 0,
-    }
-  },
-  \"ETH\": {
-    \"rebalance_quadratic\": {
-      \"a\": 750,
-      \"b\": 500,
-      \"c\": 0,
-    }
-  }
-}\"
+curl -X GET "http://localhost:8000/pending-rebalance-quadratic"
 ```
 
 > sample response
 
 ```json
-  {
-    "success": true,
-  }
+{
+    "data": {
+        "EOS": {
+            "rebalance_quadratic": {
+                "a": 750,
+                "b": 500,
+                "c": 0
+            }
+        },
+        "ETH": {
+            "rebalance_quadratic": {
+                "a": 750,
+                "b": 500,
+                "c": 0
+            }
+        }
+    },
+    "success": true
+}
 ```
 
 ### HTTP Request
@@ -124,23 +122,23 @@ curl -X "POST" "http://localhost:8000/confirm-rebalance-quadratic" \
 
 ```shell
 curl -X "POST" "http://localhost:8000/confirm-rebalance-quadratic" \
-     -H 'Content-Type: application/x-www-form-urlencoded' \
-     --data-urlencode "data={\
+-H 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode "value={
   \"EOS\":{
-    \"rebalance_quadratic\s": {
+    \"rebalance_quadratic\": {
       \"a\": 750,
       \"b\": 500,
-      \"c\": 0,
+      \"c\": 0
     }
   },
   \"ETH\": {
     \"rebalance_quadratic\": {
       \"a\": 750,
       \"b\": 500,
-      \"c\": 0,
+      \"c\": 0
     }
   }
-}\"
+}"
 ```
 
 > sample response
@@ -165,8 +163,8 @@ Post form: json encoding data of pwis equation
 **signing required**
 
 ```shell
-curl -X "POST" "http://localhost:8000/reject-rebalance-quadratic" \
-     -H 'Content-Type: application/x-www-form-urlencoded'
+curl -X POST "http://localhost:8000/reject-rebalance-quadratic" \
+-H 'Content-Type: application/x-www-form-urlencoded'
 ```
 
 > sample response
@@ -181,4 +179,3 @@ curl -X "POST" "http://localhost:8000/reject-rebalance-quadratic" \
 
 **POST**
 `<host>:8000/reject-rebalance-quadratic`
-

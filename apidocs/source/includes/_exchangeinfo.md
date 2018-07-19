@@ -1,42 +1,5 @@
 # Exchange Info
 
-## Get precision and limit info 
-
-for base-quote pair on an exchange
-
-```shell
-  curl -X GET "http://127.0.0.1:8000/exchangeinfo/binance/omg/eth"
-```
-
-> response:
-
-```json
-  {
-    "data": {
-        "Precision": {
-            "Amount": 8,
-            "Price": 8
-        },
-        "AmountLimit": {
-            "Min": 0.01,
-            "Max": 90000000
-        },
-        "PriceLimit": {
-            "Min": 0.000001,
-            "Max": 100000
-        }
-    },
-    "success": true
-}
-```
-
-### HTTP Request
-
-**GET**
-`<host>:8000/exchangeinfo/<exchangeid>/<base>/<quote>`
-
-Where **exchangeid** is the id of the exchange, **base** is symbol of the base token and **quote** is symbol of the quote token
-
 ## Get precision and limit info
 
 for all base-quote pairs of an exchange

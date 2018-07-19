@@ -3,7 +3,9 @@
 ## Get trade logs
 
 ```shell
-    curl -X GET "http://127.0.0.1:8000/tradelogs"
+curl -X GET "http://localhost:8000/tradelogs?\
+fromTime=1520208000000&\
+toTime=1520294400000"
 ```
 
 > sample response
@@ -100,17 +102,26 @@
 **GET**
 `<host>:8000/tradelogs`
 
+### URL Params:
+
+Parameter | Required | Type | Description
+--------- | -------- | ---- | -----------
+fromTime | true | integer | from get timestamp
+toTime | true | integer | to get timestamp
+
+<aside class="notice">Restriction: toTime - fromTime <= 1 day (in millisecond)</aside>
+
 
 ## Get asset volume 
 
 for aggregate time (hour, day, month)
 
 ```shell
-curl -x GET http://localhost:8000/get-asset-volume?\
-    fromTime=1520640035000&\
-    toTime=1520722835000&\
-    asset=eth&\
-    freq=M
+curl -X GET "http://localhost:8000/get-asset-volume?\
+fromTime=1520640035000&\
+toTime=1520722835000&\
+asset=eth&\
+freq=M"
 ```
 
 > sample response
@@ -164,12 +175,12 @@ asset | true | string | asset name (eg: ETH)
 ## Get reserve volume
 
 ```shell
-curl -x GET \
-    http://localhost:8000/get-reserve-volume?\
-    fromTime=1522540800000&\
-    toTime=1522627200000&\
-    freq=D&token=KNC&\
-    reserveAddr=0x63825c174ab367968EC60f061753D3bbD36A0D8F
+curl -X GET \
+"http://localhost:8000/get-reserve-volume?\
+fromTime=1522540800000&\
+toTime=1522627200000&\
+freq=D&token=KNC&\
+reserveAddr=0x63825c174ab367968EC60f061753D3bbD36A0D8F"
 ```
 
 > sample response:
@@ -213,11 +224,11 @@ freq | true | string | frequency to get volume ("M", "H", "D" - Minute, Hour, Da
 follow aggregate time (hour, day, month)
 
 ```shell
-    curl -X GET http://localhost:8000/get-burn-fee?\
-    fromTime=1520640035000&\
-    toTime=1520722835000&\
-    reserveAddr=0x2c5a182d280eeb5824377b98cd74871f78d6b8bc&\
-    freq=H
+curl -X GET "http://localhost:8000/get-burn-fee?\
+fromTime=1520640035000&\
+toTime=1520722835000&\
+reserveAddr=0x2c5a182d280eeb5824377b98cd74871f78d6b8bc&\
+freq=H"
 ```
 
 > sample response
@@ -252,11 +263,11 @@ reserveAddr | true | string | reserve address to get burn fee
 follow aggregate time (hour, day, month)
 
 ```shell
-    curl -X GET http://localhost:8000/get-burn-fee?\
-    fromTime=1520640035000&\
-    toTime=1520722835000&\
-    reserveAddr=0x2c5a182d280eeb5824377b98cd74871f78d6b8bc&\
-    freq=H
+curl -X GET "http://localhost:8000/get-burn-fee?\
+fromTime=1520640035000&\
+toTime=1520722835000&\
+reserveAddr=0x2c5a182d280eeb5824377b98cd74871f78d6b8bc&\
+freq=H"
 ```
 
 > sample response
@@ -292,11 +303,11 @@ walletAddr | true | integer | wallet address to get fee
 follow aggregate time (hour, day, month)
 
 ```shell
-    curl -X GET http://localhost:8000/get-burn-fee?\
-    fromTime=1520640035000&\
-    toTime=1520722835000&\
-    reserveAddr=0x2c5a182d280eeb5824377b98cd74871f78d6b8bc&\
-    freq=H
+curl -X GET "http://localhost:8000/get-burn-fee?\
+fromTime=1520640035000&\
+toTime=1520722835000&\
+reserveAddr=0x2c5a182d280eeb5824377b98cd74871f78d6b8bc&\
+freq=H"
 ```
 
 > sample response
@@ -329,9 +340,10 @@ userAddr | true | string | user address to get volume
 follow reserve (including sanity rate)
 
 ```shell
-    curl -x GET http://localhost:8000/get-reserve-rate?\
-    fromTime=1520650426000&\
-    reserveAddr=0x2C5a182d280EeB5824377B98CD74871f78d6b8BC
+curl -X GET "http://localhost:8000/get-reserve-rate?\
+fromTime=1520294400000&\
+toTime=1520380800000&\
+reserveAddr=0x2C5a182d280EeB5824377B98CD74871f78d6b8BC"
 ```
 
 > sample response
@@ -611,15 +623,16 @@ fromTime | true | integer | from timestamp (millisecond)
 toTime | true | integer | to timestamp (millisecond)
 reserveAddr | true | string | Address of the reserve to get rate from
 
+<aside class="notice">Restriction: toTime - fromTime <= 1 day (in millisecond)</aside>
 
 ## Get trade summary
 
 follow timeframe (day)
 
 ```shell
-    curl -x GET http://localhost:8000/get-trade-summary?\
-    fromTime=1519297149000&\
-    toTime=1519815549000
+curl -X GET "http://localhost:8000/get-trade-summary?\
+fromTime=1519297149000&\
+toTime=1519815549000"
 ```
 
 > sample response
@@ -711,15 +724,17 @@ fromTime | true | integer | from time stamp (millisecond)
 toTime | true | integer | to time stamp (millisecond)
 timeZone | true | integer | (in range [-12,14], default to 0): the integer specific which UTC timezone to query
 
+<aside class="notice">Restriction: toTime - fromTime <= 1 day (in millisecond)</aside>
+
 ## Get wallet stats summary
 
 follow timeframe (day)
 
 ```shell
-    curl -x GET http://localhost:8000/get-wallet-stats?\
-    fromTime=1521914061000&\
-    toTime=1523000461000&\
-    walletAddr=0xb9e29984fe50602e7a619662ebed4f90d93824c7
+curl -X GET "http://localhost:8000/get-wallet-stats?\
+fromTime=1521914061000&\
+toTime=1523000461000&\
+walletAddr=0xb9e29984fe50602e7a619662ebed4f90d93824c7"
 ```
 
 > sample response
@@ -768,10 +783,12 @@ toTime | true |  integer | to time stamp (millisecond)
 timeZone | false (default 0)| integer | in range [-12,14] the integer specific which UTC timezone to query
 walletAddr | true | string | to specific which wallet Address to query data from. It must be larger than 2^128 to be valid.
 
+<aside class="notice">Restriction: toTime - fromTime <= 1 day (in millisecond)</aside>
+
 ## Get wallet list 
 
 ```shell
-    curl -x GET http://localhost:8000/get-wallet-address
+curl -X GET "http://localhost:8000/get-wallet-address"
 ```
 
 > sample response
@@ -793,40 +810,14 @@ Return a list of wallet address that has ever traded with core
 **GET**
 `<host>:8000/get-wallet-address`
 
-## Get exchanges status
+## Get country stats
 
 ```shell
-    curl -x GET http://localhost:8000/get-exchange-status
+curl -X GET "http://localhost:8000/get-country-stats?\
+fromTime=1520380800000&\
+toTime=1520467200000&\
+country=VN"
 ```
-
-> sample response:
-
-```json
-{
-    "data": {
-        "binance": {
-            "timestamp": 1521532176702,
-            "status": true
-        },
-        "bittrex": {
-            "timestamp": 1521532176704,
-            "status": true
-        },
-        "huobi": {
-            "timestamp": 1521532176703,
-            "status": true
-        }
-    },
-    "success": true
-}
-```
-
-###HTTP Request
-
-**GET**
-`<host>:8000/get-exchange-status`
-
-## Get country stats
 
 > sample response: 
 
@@ -859,12 +850,20 @@ Parameter | Required | Type | Description
 --------- | -------- | ---- | -----------
 fromTime | true | integer | from timestamp (millisecond)
 toTime | true | integer | to timestamp (millisecond)
-country | true | string |  internatinal country 
-timezone | true | integer | timezone to get country stats from -11 to 14
+country | true | string |  internatinal country code
+timezone | false | integer | timezone to get country stats from -11 to 14 (default 0)
+
+<aside class="notice">Restriction: toTime - fromTime <= 1 day (in millisecond)</aside>
 
 ## Get heatmap
 
 Return list of countries sort by total ETH value
+
+```shell
+curl -X GET "http://localhost:8000/get-heat-map?\
+fromTime=1520467200000&\
+toTime=1520553600000"
+```
 
 > sample response:
 
@@ -1007,17 +1006,19 @@ Parameter | Required | Type | Description
 --------- | -------- | ---- | -----------
 fromTime | true | integer | from timestamp (millisecond)
 toTime | true | integer | to timestamp (millisecond)
-timezone | true | integer | timezone to get country stats from -11 to 14
+timezone | false | integer | timezone to get country stats from -11 to 14 (default 0)
+
+<aside class="notice">Restriction: toTime - fromTime <= 1 day (in millisecond)</aside>
 
 ## Get heat map for token
 
 ```shell
-curl -x GET \
-    "http://localhost:8000/get-token-heatmap?\
-    fromTime=1518307200000&\
-    token=EOS&\
-    freq=D&\
-    toTime=1518911999999"
+curl -X GET \
+"http://localhost:8000/get-token-heatmap?\
+fromTime=1518307200000&\
+token=EOS&\
+freq=D&\
+toTime=1518911999999"
 ```
 
 > sample response:
@@ -1099,7 +1100,13 @@ toTime |true | integer | timestamp to get data to (millisecond)
 token | true | string | name of token to get heatmap
 freq | true | string | frequencty to get volume ("M", "H", "D" - Minute, Hour, Day)
 
+<aside class="notice">Restriction: toTime - fromTime <= 1 day (in millisecond)</aside>
+
 ## Get gold data
+
+```shell
+curl -X GET "http://localhost:8000/gold-feed"
+```
 
 > sample response:
 

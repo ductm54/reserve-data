@@ -4,16 +4,25 @@
 
 **signing required**
 
+```shell
+curl -X POST "http://localhost:8000/v2/settargetqty" \
+-H 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode "value={
+    \"OMG\" : {
+      \"TotalTarget\": 1500,
+      \"ReserveTarget\": 1005,
+      \"RebalanceThreshold\": 0.33,
+      \"TransferThreshold\": 0.2
+    }
+  }"
+```
+
 > sample response:
 
 ```json
-on success:
-{"success":true}
-
-
-on failure:
-{"success":false,
- "reason":<error>}
+{
+  "success":true
+}
 ```
 
 ### HTTP Request
@@ -32,19 +41,25 @@ value (string) | true | the json enconded string, represent a map (string : inte
 
 **signing required**
 
+```shell
+curl -X POST "http://localhost:8000/v2/confirmtargetqty" \
+-H 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode "value={
+    \"OMG\" : {
+      \"TotalTarget\": 1500,
+      \"ReserveTarget\": 1005,
+      \"RebalanceThreshold\": 0.33,
+      \"TransferThreshold\": 0.2
+    }
+  }"
+```
+
 > sample response:
 
 ```json
-
-on success:
-{"success":true}
-
-on failure:
-{
-    "success":false,
-    "reason":<error>
-}
-
+  {
+    "success":true
+  }
 ```
 
 ### HTTP Request
@@ -64,17 +79,16 @@ value (string) | true | the json enconded string, represent a map (string : inte
 
 **signing required**
 
+```shell
+curl -X POST "http://localhost:8000/v2/canceltargetqty
+```
+
 > sample response:
 
 ```json
-
-on success:
-{"success":true}
-
-
-on failure:
-{"success":false,
- "reason":<error>}
+  {
+    "success":true
+  }
 ```
 
 ### HTTP Request
@@ -88,6 +102,28 @@ on failure:
 
 **signing required**
 
+```shell
+curl -X GET "http://localhost:8000/v2/pendingtargetqty"
+```
+ 
+> sample response:
+
+```json
+{
+    "data": {
+        "OMG": {
+            "set_target": {
+                "total_target": 0,
+                "reserve_target": 0,
+                "rebalance_threshold": 0,
+                "transfer_threshold": 0
+            }
+        }
+    },
+    "success": true
+}
+```
+
 Return the current pending target quantity 
 
 ### HTTP Request
@@ -95,26 +131,6 @@ Return the current pending target quantity
 **GET**
 `<host>:8000/v2/pendingtargetqty`
 
-```shell
-curl -x GET \
-  http://localhost:8000/v2/pendingtargetqty?nonce=111111
-```
- 
-> sample response:
-
-```json
-{
-  "data": {
-     "OMG" : {
-        "TotalTarget": 1500,
-        "ReserveTarget": 1005,
-        "RebalanceThreshold": 0.33,
-        "TransferThreshold": 0.2
-    }
-  },
-  "success": true
-}
-```
 
 ## Get target quantity v2
 
@@ -123,8 +139,7 @@ curl -x GET \
 Return the current confirmed target quantity 
 
 ```shell
-curl -x GET \
-  http://localhost:8000/v2/targetqty?nonce=111111
+curl -X GET "http://localhost:8000/v2/targetqty"
 ```
  
 > sample response:
@@ -147,9 +162,3 @@ curl -x GET \
 
 **GET**
 `<host>:8000/v2/targetqty`
-
-### URL params:
-
-Parameter | Required | Description
---------- | -------- | -----------
-nonce | true | (uint64) : the nonce to conform to signing requirement

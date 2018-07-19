@@ -4,15 +4,24 @@
 
 **signing required**
 
+```shell
+curl -X POST "http://localhost:8000/set-stable-token-params" \
+-H 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode "value={
+    \"DGX\": {
+      \"AskSpread\": 50,
+      \"BidSpread\": 50,
+      \"PriceUpdateThreshold\": 0.1
+    }
+  }"
+```
+
 > sample response:
 
 ```json
-on success:
-{"success":true}
-
-on failure:
-{"success":false,
- "reason":<error>}
+{
+  "success":true
+}
 ```
 
 ### HTTP Request
@@ -28,15 +37,24 @@ value (string) | true | string | the json enconded string, represent a map (stri
 
 ## Confirm stable token params
 
+```shell
+curl -X POST "http://localhost:8000/confirm-stable-token-params" \
+-H 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode "value={
+    \"DGX\": {
+      \"AskSpread\": 50,
+      \"BidSpread\": 50,
+      \"PriceUpdateThreshold\": 0.1
+    }
+  }"
+```
+
 > sample response:
 
 ```json
-on success:
-{"success":true}
-
-on failure:
-{"success":false,
- "reason":<error>}
+{
+  "success":true
+}
 ```
 
 **signing required**
@@ -54,6 +72,18 @@ value | true | string | the json enconded string, represent a map (string : inte
 
 ## Reject stable token params
 
+```shell
+curl -X POST "http://localhost:8000/reject-stable-token-params"
+```
+
+> sample response:
+
+```json
+{
+  "success": true
+}
+```
+
 **signing required**
 
 ### HTTP Request
@@ -64,8 +94,7 @@ value | true | string | the json enconded string, represent a map (string : inte
 ## Get pending stable token params
 
 ```shell
-curl -x GET \
-  http://localhost:8000/pending-token-params?nonce=111111
+curl -X GET "http://localhost:8000/pending-stable-token-params"
 ```
  
 > sample response:
@@ -95,8 +124,7 @@ Return the current pending stable token params
 ## Get stable token params
 
 ```shell
-    curl -x GET \
-    http://localhost:8000/stable-token-params?nonce=111111
+curl -X GET "http://localhost:8000/stable-token-params"
 ```
  
 > sample response:

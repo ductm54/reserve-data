@@ -5,9 +5,9 @@
 **signing required**
 
 ```shell
-curl -X GET "http://localhost:8000/tradehistory?
-    fromTime=1516116380102&\
-    toTime=18446737278344972745"
+curl -X GET "http://localhost:8000/tradehistory?\
+fromTime=1530403200000&\
+toTime=1530489600000"
 ```
 
 > sample response:
@@ -292,6 +292,23 @@ curl -X GET "http://localhost:8000/authdata"
 
 ## Get all activities
 
+```shell
+curl -X GET "http://localhost:8000/activities?\
+fromTime=1530489600000&\
+toTime=1530576000000"
+```
+
+> sample response:
+
+```json
+{
+    "data": {
+
+    },
+    "success": true
+}
+```
+
 **signing required**
 
 ### HTTP Request
@@ -306,7 +323,22 @@ Parameter | Required | Type | Description
 fromTime | false | integer | from timepoint, unix millisecond
 toTime | false | integer | to timepoint - uint64, unix millisecond
 
+<aside class="notice">Restriction: toTime - fromTime <= 1 day (in millisecond)</aside>
+
 ## Get immediate pending activities
+
+```shell
+curl -X GET "http://localhost:8000/immediate-pending-activities"
+```
+
+> sample response:
+
+```json
+{
+    "data": {},
+    "success": true
+}
+```
 
 **signing required**
 

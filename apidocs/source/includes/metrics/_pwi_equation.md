@@ -5,8 +5,7 @@
 **signing required**
 
 ```shell
-    curl -X "GET" "http://localhost:8000/v2/pwis-equation" \
-     -H 'Content-Type: application/x-www-form-urlencoded' \
+curl -X "GET" "http://localhost:8000/v2/pwis-equation"
 ```
 
 > sample response:
@@ -63,8 +62,7 @@
 **signing required**
 
 ```shell
-curl -X "GET" "http://localhost:8000/v2/pending-pwis-equation" \
-     -H 'Content-Type: application/x-www-form-urlencoded' \
+curl -X "GET" "http://localhost:8000/v2/pending-pwis-equation"
 ```
 
 > sample response:
@@ -122,8 +120,8 @@ curl -X "GET" "http://localhost:8000/v2/pending-pwis-equation" \
 
 ```shell
 curl -X "POST" "http://localhost:8000/v2/set-pwis-equation" \
-     -H 'Content-Type: application/x-www-form-urlencoded' \
-     --data-urlencode "data={
+-H 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode "data={
   \"EOS\": {
     \"bid\": {
       \"a\": 750,
@@ -175,15 +173,14 @@ curl -X "POST" "http://localhost:8000/v2/set-pwis-equation" \
 Post form: json encoding data of pwis equation
 
 
-
 ## Confirm pending pwis equation v2
 
 **signing required**
 
 ```shell
 curl -X "POST" "http://localhost:8000/v2/confirm-pwis-equation" \
-     -H 'Content-Type: application/x-www-form-urlencoded' \
-     --data-urlencode "data={
+-H 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode "data={
   \"EOS\": {
     \"bid\": {
       \"a\": 750,
@@ -241,8 +238,8 @@ Post form: json encoding data of pwis equation
 **signing required**
 
 ```shell
-    curl -X "POST" "http://localhost:8000/v2/reject-pwis-equation" \
-     -H 'Content-Type: application/x-www-form-urlencoded'
+curl -X "POST" "http://localhost:8000/v2/reject-pwis-equation" \
+-H 'Content-Type: application/x-www-form-urlencoded'
 ```
 
 > sample response

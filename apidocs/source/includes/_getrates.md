@@ -181,7 +181,9 @@ curl -X GET "http://127.0.0.1:8000/getrates"
 ## Get all token rates from blockchain
 
 ```shell
-curl -X GET "http://127.0.0.1:8000/get-all-rates"
+curl -X GET "http://127.0.0.1:8000/get-all-rates?\
+fromTime=1530576000000&\
+toTime=1530662400000"
 ```
 
 > response
@@ -852,3 +854,5 @@ Parameter | Required | Type | Description
 --------- | -------- | ---- | -----------
 fromTime | false | integer | get all rates from this timepoint (millisecond)
 toTime | false | integer | get all rates to this timepoint (millisecond)
+
+<aside class="notice">Restriction: toTime - fromTime <= 1 day (in millisecond)</aside>
