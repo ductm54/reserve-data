@@ -139,7 +139,7 @@ curl -X GET "http://localhost:8000/stable-token-params"
     }
   },
   "success": true
-
+}
 ```
 
 **signing required**
