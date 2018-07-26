@@ -3,7 +3,9 @@ package http
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 
+	"github.com/KyberNetwork/reserve-data/boltutil"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/gin-gonic/gin"
@@ -38,11 +40,19 @@ func (self *HTTPServer) SetPWIEquationV2(c *gin.Context) {
 		return
 	}
 
+	// check if there is pending PWIEquation 2
+	if _, err := self.metric.GetPendingPWIEquationV2(); err != boltutil.ErrorNoPending {
+		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Expect there is no pending in PWIEquationv2, got different case (err = %v)", err)))
+		return
+	}
+
 	var input common.PWIEquationRequestV2
 	if err := json.Unmarshal(data, &input); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
+
+	// check if the tokens in the PWIEquation is supported
 	for tokenID := range input {
 		if _, err := self.setting.GetInternalTokenByID(tokenID); err != nil {
 			httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Token %s is unsupported", tokenID)))
@@ -79,8 +89,24 @@ func (self *HTTPServer) ConfirmPWIEquationV2(c *gin.Context) {
 		return
 	}
 	postData := postForm.Get(dataPostFormKey)
-	err := self.metric.StorePWIEquationV2(postData)
+	// check if the confirmData is as correct format.
+	confirmData := common.PWIEquationRequestV2{}
+	if err := json.Unmarshal([]byte(postData), &confirmData); err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	// check if there is pending PWIEquation and it is deep equal to confirm Data
+	pending, err := self.metric.GetPendingPWIEquationV2()
 	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	if eq := reflect.DeepEqual(pending, confirmData); !eq {
+		httputil.ResponseFailure(c, httputil.WithReason("Confirm data does not match pending data"))
+		return
+	}
+
+	if err := self.metric.StorePWIEquationV2(postData); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}

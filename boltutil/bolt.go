@@ -1,6 +1,9 @@
 package boltutil
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+	"errors"
+)
 
 // Uint64ToBytes converts the given uint64 to a stream of bytes to
 // store in BoltDB.
@@ -19,3 +22,6 @@ func BytesToUint64(b []byte) uint64 {
 	}
 	return binary.BigEndian.Uint64(b)
 }
+
+// ErrorNoPending is use for all case where pending bucket is empty
+var ErrorNoPending = errors.New("there is no pending data")
