@@ -316,6 +316,11 @@ func calculateNewGasPrice(initPrice *big.Int, count uint64) *big.Int {
 		newPrice := initPrice * math.Pow(base, float64(count)/4.0)
 		return common.FloatToBigInt(newPrice, 9)
 	}
+	// new = old + (50.1 - old) / (5 - count)
+	return old.Add(
+		old,
+		big.NewInt(0).Div(big.NewInt(0).Sub(common.GweiToWei(highBoundGasPrice), old), big.NewInt(int64(5-count))),
+	)
 }
 
 func (rc ReserveCore) pendingSetrateInfo(minedNonce uint64) (*big.Int, *big.Int, uint64, error) {
