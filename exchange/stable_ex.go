@@ -15,7 +15,7 @@ type StableEx struct {
 	setting Setting
 }
 
-func (self *StableEx) TokenAddresses() (map[string]ethereum.Address, error) {
+func (se *StableEx) TokenAddresses() (map[string]ethereum.Address, error) {
 	// returning admin multisig. In case anyone sent dgx to this address,
 	// we can still get it.
 	return map[string]ethereum.Address{
@@ -23,12 +23,12 @@ func (self *StableEx) TokenAddresses() (map[string]ethereum.Address, error) {
 	}, nil
 }
 
-func (self *StableEx) MarshalText() (text []byte, err error) {
-	return []byte(self.ID()), nil
+func (se *StableEx) MarshalText() (text []byte, err error) {
+	return []byte(se.ID()), nil
 }
 
-func (self *StableEx) Address(token common.Token) (ethereum.Address, bool) {
-	addrs, err := self.TokenAddresses()
+func (se *StableEx) Address(token common.Token) (ethereum.Address, bool) {
+	addrs, err := se.TokenAddresses()
 	if err != nil {
 		return ethereum.Address{}, false
 	}
@@ -36,20 +36,20 @@ func (self *StableEx) Address(token common.Token) (ethereum.Address, bool) {
 	return addr, supported
 }
 
-func (self *StableEx) UpdateDepositAddress(token common.Token, address string) error {
+func (se *StableEx) UpdateDepositAddress(token common.Token, address string) error {
 	return errors.New("dgx doesn't support update deposit addresses")
 }
 
-func (self *StableEx) GetInfo() (common.ExchangeInfo, error) {
-	return self.setting.GetExchangeInfo(settings.StableExchange)
+func (se *StableEx) GetInfo() (common.ExchangeInfo, error) {
+	return se.setting.GetExchangeInfo(settings.StableExchange)
 }
 
-func (self *StableEx) GetLiveExchangeInfos(tokenPairIDs []common.TokenPairID) (common.ExchangeInfo, error) {
+func (se *StableEx) GetLiveExchangeInfos(tokenPairIDs []common.TokenPairID) (common.ExchangeInfo, error) {
 	return common.ExchangeInfo{}, errors.New("Stable exchange doesn't support live token")
 }
 
-func (self *StableEx) GetExchangeInfo(pair common.TokenPairID) (common.ExchangePrecisionLimit, error) {
-	exInfo, err := self.setting.GetExchangeInfo(settings.StableExchange)
+func (se *StableEx) GetExchangeInfo(pair common.TokenPairID) (common.ExchangePrecisionLimit, error) {
+	exInfo, err := se.setting.GetExchangeInfo(settings.StableExchange)
 	if err != nil {
 		return common.ExchangePrecisionLimit{}, err
 	}
@@ -57,18 +57,18 @@ func (self *StableEx) GetExchangeInfo(pair common.TokenPairID) (common.ExchangeP
 	return data, err
 }
 
-func (self *StableEx) GetFee() (common.ExchangeFees, error) {
-	return self.setting.GetFee(settings.StableExchange)
+func (se *StableEx) GetFee() (common.ExchangeFees, error) {
+	return se.setting.GetFee(settings.StableExchange)
 }
 
 // ID must return the exact string or else simulation will fail
-func (self *StableEx) ID() common.ExchangeID {
+func (se *StableEx) ID() common.ExchangeID {
 	return common.ExchangeID(settings.StableExchange.String())
 }
 
-func (self *StableEx) TokenPairs() ([]common.TokenPair, error) {
+func (se *StableEx) TokenPairs() ([]common.TokenPair, error) {
 	result := []common.TokenPair{}
-	exInfo, err := self.setting.GetExchangeInfo(settings.StableExchange)
+	exInfo, err := se.setting.GetExchangeInfo(settings.StableExchange)
 	if err != nil {
 		return nil, err
 	}
@@ -77,11 +77,11 @@ func (self *StableEx) TokenPairs() ([]common.TokenPair, error) {
 		if len(pairIDs) != 2 {
 			return result, fmt.Errorf("PairID %s is malformed", string(pair))
 		}
-		tok1, uErr := self.setting.GetTokenByID(pairIDs[0])
+		tok1, uErr := se.setting.GetTokenByID(pairIDs[0])
 		if uErr != nil {
 			return result, fmt.Errorf("cant get Token %s, %s", pairIDs[0], uErr)
 		}
-		tok2, uErr := self.setting.GetTokenByID(pairIDs[1])
+		tok2, uErr := se.setting.GetTokenByID(pairIDs[1])
 		if uErr != nil {
 			return result, fmt.Errorf("cant get Token %s, %s", pairIDs[1], uErr)
 		}
@@ -94,11 +94,11 @@ func (self *StableEx) TokenPairs() ([]common.TokenPair, error) {
 	return result, nil
 }
 
-func (self *StableEx) Name() string {
+func (se *StableEx) Name() string {
 	return "stable token exchange"
 }
 
-func (self *StableEx) QueryOrder(symbol string, id uint64) (done float64, remaining float64, finished bool, err error) {
+func (se *StableEx) QueryOrder(symbol string, id uint64) (done float64, remaining float64, finished bool, err error) {
 	// TODO: see if trade order (a tx to dgx contract) is successful or not
 	// - successful: done = order amount, remaining = 0, finished = true, err = nil
 	// - failed: done = 0, remaining = order amount, finished = false, err = some error
@@ -106,27 +106,27 @@ func (self *StableEx) QueryOrder(symbol string, id uint64) (done float64, remain
 	return 0, 0, false, errors.New("not supported")
 }
 
-func (self *StableEx) Trade(tradeType string, base common.Token, quote common.Token, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
+func (se *StableEx) Trade(tradeType string, base common.Token, quote common.Token, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
 	// TODO: communicate with dgx connector to do the trade
 	return "not supported", 0, 0, false, errors.New("not supported")
 }
 
-func (self *StableEx) Withdraw(token common.Token, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
+func (se *StableEx) Withdraw(token common.Token, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
 	// TODO: communicate with dgx connector to withdraw
 	return "not supported", errors.New("not supported")
 }
 
-func (self *StableEx) CancelOrder(id, base, quote string) error {
+func (se *StableEx) CancelOrder(id, base, quote string) error {
 	return errors.New("Dgx doesn't support trade cancelling")
 }
 
-func (self *StableEx) FetchPriceData(timepoint uint64) (map[common.TokenPairID]common.ExchangePrice, error) {
+func (se *StableEx) FetchPriceData(timepoint uint64) (map[common.TokenPairID]common.ExchangePrice, error) {
 	result := map[common.TokenPairID]common.ExchangePrice{}
 	// TODO: Get price data from dgx connector and construct valid orderbooks
 	return result, nil
 }
 
-func (self *StableEx) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, error) {
+func (se *StableEx) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, error) {
 	result := common.EBalanceEntry{}
 	result.Timestamp = common.Timestamp(fmt.Sprintf("%d", timepoint))
 	result.Valid = true
@@ -139,33 +139,33 @@ func (self *StableEx) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry,
 	return result, nil
 }
 
-func (self *StableEx) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
+func (se *StableEx) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
 	return common.ExchangeTradeHistory{}, nil
 }
 
-func (self *StableEx) FetchTradeHistory(timepoint uint64) (map[common.TokenPairID][]common.TradeHistory, error) {
+func (se *StableEx) FetchTradeHistory(timepoint uint64) (map[common.TokenPairID][]common.TradeHistory, error) {
 	result := map[common.TokenPairID][]common.TradeHistory{}
 	// TODO: get trade history
 	return result, errors.New("not supported")
 }
 
-func (self *StableEx) DepositStatus(id common.ActivityID, txHash, currency string, amount float64, timepoint uint64) (string, error) {
+func (se *StableEx) DepositStatus(id common.ActivityID, txHash, currency string, amount float64, timepoint uint64) (string, error) {
 	// TODO: checking txHash status
 	return "", errors.New("not supported")
 }
 
-func (self *StableEx) WithdrawStatus(id, currency string, amount float64, timepoint uint64) (string, string, error) {
+func (se *StableEx) WithdrawStatus(id, currency string, amount float64, timepoint uint64) (string, string, error) {
 	// TODO: checking id (id is the txhash) status
 	return "", "", errors.New("not supported")
 }
 
-func (self *StableEx) OrderStatus(id string, base, quote string) (string, error) {
+func (se *StableEx) OrderStatus(id string, base, quote string) (string, error) {
 	// TODO: checking id (id is the txhash) status
 	return "", errors.New("not supported")
 }
 
-func (self *StableEx) GetMinDeposit() (common.ExchangesMinDeposit, error) {
-	return self.setting.GetMinDeposit(settings.StableExchange)
+func (se *StableEx) GetMinDeposit() (common.ExchangesMinDeposit, error) {
+	return se.setting.GetMinDeposit(settings.StableExchange)
 }
 
 func NewStableEx(setting Setting) (*StableEx, error) {
