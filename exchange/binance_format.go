@@ -10,7 +10,7 @@ type Binaprice struct {
 	Rate     string
 }
 
-func (self *Binaprice) UnmarshalJSON(text []byte) error {
+func (bp *Binaprice) UnmarshalJSON(text []byte) error {
 	temp := []interface{}{}
 	if err := json.Unmarshal(text, &temp); err != nil {
 		return err
@@ -19,12 +19,12 @@ func (self *Binaprice) UnmarshalJSON(text []byte) error {
 	if !ok {
 		return fmt.Errorf("Unmarshal err: interface %v can't be converted to string", temp[1])
 	}
-	self.Quantity = qty
+	bp.Quantity = qty
 	rate, ok := temp[0].(string)
 	if !ok {
 		return fmt.Errorf("Unmarshal err: interface %v can't be converted to string", temp[0])
 	}
-	self.Rate = rate
+	bp.Rate = rate
 	return nil
 }
 

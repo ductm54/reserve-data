@@ -26,11 +26,11 @@ func getSimulationURL(baseURL string) string {
 
 type RealInterface struct{}
 
-func (self *RealInterface) PublicEndpoint() string {
+func (ri *RealInterface) PublicEndpoint() string {
 	return huobiAPIEndpoint
 }
 
-func (self *RealInterface) AuthenticatedEndpoint() string {
+func (ri *RealInterface) AuthenticatedEndpoint() string {
 	return huobiAPIEndpoint
 }
 
@@ -42,12 +42,12 @@ type SimulatedInterface struct {
 	baseURL string
 }
 
-func (self *SimulatedInterface) PublicEndpoint() string {
-	return getSimulationURL(self.baseURL)
+func (si *SimulatedInterface) PublicEndpoint() string {
+	return getSimulationURL(si.baseURL)
 }
 
-func (self *SimulatedInterface) AuthenticatedEndpoint() string {
-	return getSimulationURL(self.baseURL)
+func (si *SimulatedInterface) AuthenticatedEndpoint() string {
+	return getSimulationURL(si.baseURL)
 }
 
 func NewSimulatedInterface(flagVariable string) *SimulatedInterface {
@@ -58,12 +58,12 @@ type RopstenInterface struct {
 	baseURL string
 }
 
-func (self *RopstenInterface) PublicEndpoint() string {
+func (roi *RopstenInterface) PublicEndpoint() string {
 	return huobiAPIEndpoint
 }
 
-func (self *RopstenInterface) AuthenticatedEndpoint() string {
-	return getSimulationURL(self.baseURL)
+func (roi *RopstenInterface) AuthenticatedEndpoint() string {
+	return getSimulationURL(roi.baseURL)
 }
 
 func NewRopstenInterface(flagVariable string) *RopstenInterface {
@@ -74,12 +74,12 @@ type KovanInterface struct {
 	baseURL string
 }
 
-func (self *KovanInterface) PublicEndpoint() string {
+func (ki *KovanInterface) PublicEndpoint() string {
 	return huobiAPIEndpoint
 }
 
-func (self *KovanInterface) AuthenticatedEndpoint() string {
-	return getSimulationURL(self.baseURL)
+func (ki *KovanInterface) AuthenticatedEndpoint() string {
+	return getSimulationURL(ki.baseURL)
 }
 
 func NewKovanInterface(flagVariable string) *KovanInterface {
@@ -88,11 +88,11 @@ func NewKovanInterface(flagVariable string) *KovanInterface {
 
 type DevInterface struct{}
 
-func (self *DevInterface) PublicEndpoint() string {
+func (di *DevInterface) PublicEndpoint() string {
 	return huobiAPIEndpoint
 }
 
-func (self *DevInterface) AuthenticatedEndpoint() string {
+func (di *DevInterface) AuthenticatedEndpoint() string {
 	return huobiAPIEndpoint
 }
 

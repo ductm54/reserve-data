@@ -39,19 +39,19 @@ func mustAddPath(original string, path string) string {
 	return url.String()
 }
 
-func (self *BittrexEndpoint) fillRequest(req *http.Request, signNeeded bool) {
+func (be *BittrexEndpoint) fillRequest(req *http.Request, signNeeded bool) {
 	req.Header.Add("Content-Type", "application/json;charset=utf-8")
 	req.Header.Add("Accept", "application/json")
 	if signNeeded {
 		q := req.URL.Query()
-		q.Set("apikey", self.signer.GetKey())
+		q.Set("apikey", be.signer.GetKey())
 		q.Set("nonce", nonce())
 		req.URL.RawQuery = q.Encode()
-		req.Header.Add("apisign", self.signer.Sign(req.URL.String()))
+		req.Header.Add("apisign", be.signer.Sign(req.URL.String()))
 	}
 }
 
-func (self *BittrexEndpoint) GetResponse(
+func (be *BittrexEndpoint) GetResponse(
 	url string, params map[string]string, signNeeded bool) ([]byte, error) {
 	client := &http.Client{
 		Timeout: time.Duration(30 * time.Second),
@@ -67,7 +67,7 @@ func (self *BittrexEndpoint) GetResponse(
 		q.Add(k, v)
 	}
 	req.URL.RawQuery = q.Encode()
-	self.fillRequest(req, signNeeded)
+	be.fillRequest(req, signNeeded)
 	var err error
 	var respBody []byte
 	log.Printf("request to bittrex: %s\n", req.URL)
@@ -85,10 +85,10 @@ func (self *BittrexEndpoint) GetResponse(
 	return respBody, err
 }
 
-func (self *BittrexEndpoint) GetExchangeInfo() (exchange.BittExchangeInfo, error) {
+func (be *BittrexEndpoint) GetExchangeInfo() (exchange.BittExchangeInfo, error) {
 	result := exchange.BittExchangeInfo{}
-	respBody, err := self.GetResponse(
-		mustAddPath(self.interf.PublicEndpoint(), "getmarkets"),
+	respBody, err := be.GetResponse(
+		mustAddPath(be.interf.PublicEndpoint(), "getmarkets"),
 		map[string]string{},
 		false,
 	)
@@ -98,10 +98,10 @@ func (self *BittrexEndpoint) GetExchangeInfo() (exchange.BittExchangeInfo, error
 	return result, err
 }
 
-func (self *BittrexEndpoint) FetchOnePairData(pair common.TokenPair) (exchange.Bittresp, error) {
+func (be *BittrexEndpoint) FetchOnePairData(pair common.TokenPair) (exchange.Bittresp, error) {
 	data := exchange.Bittresp{}
-	respBody, err := self.GetResponse(
-		mustAddPath(self.interf.PublicEndpoint(), "getorderbook"),
+	respBody, err := be.GetResponse(
+		mustAddPath(be.interf.PublicEndpoint(), "getorderbook"),
 		map[string]string{
 			"market": fmt.Sprintf("%s-%s", pair.Quote.ID, pair.Base.ID),
 			"type":   "both",
@@ -116,7 +116,7 @@ func (self *BittrexEndpoint) FetchOnePairData(pair common.TokenPair) (exchange.B
 	return data, err
 }
 
-func (self *BittrexEndpoint) Trade(
+func (be *BittrexEndpoint) Trade(
 	tradeType string,
 	base, quote common.Token,
 	rate, amount float64) (exchange.Bitttrade, error) {
@@ -124,16 +124,16 @@ func (self *BittrexEndpoint) Trade(
 	result := exchange.Bitttrade{}
 	var url string
 	if tradeType == "sell" {
-		url = mustAddPath(self.interf.MarketEndpoint(), "selllimit")
+		url = mustAddPath(be.interf.MarketEndpoint(), "selllimit")
 	} else {
-		url = mustAddPath(self.interf.MarketEndpoint(), "buylimit")
+		url = mustAddPath(be.interf.MarketEndpoint(), "buylimit")
 	}
 	params := map[string]string{
 		"market":   fmt.Sprintf("%s-%s", strings.ToUpper(quote.ID), strings.ToUpper(base.ID)),
 		"quantity": strconv.FormatFloat(amount, 'f', -1, 64),
 		"rate":     strconv.FormatFloat(rate, 'f', -1, 64),
 	}
-	respBody, err := self.GetResponse(
+	respBody, err := be.GetResponse(
 		url, params, true)
 
 	if err != nil {
@@ -143,10 +143,10 @@ func (self *BittrexEndpoint) Trade(
 	return result, err
 }
 
-func (self *BittrexEndpoint) OrderStatus(uuid string) (exchange.Bitttraderesult, error) {
+func (be *BittrexEndpoint) OrderStatus(uuid string) (exchange.Bitttraderesult, error) {
 	result := exchange.Bitttraderesult{}
-	respBody, err := self.GetResponse(
-		mustAddPath(self.interf.AccountEndpoint(), "getorder"),
+	respBody, err := be.GetResponse(
+		mustAddPath(be.interf.AccountEndpoint(), "getorder"),
 		map[string]string{
 			"uuid": uuid,
 		},
@@ -159,10 +159,10 @@ func (self *BittrexEndpoint) OrderStatus(uuid string) (exchange.Bitttraderesult,
 	return result, err
 }
 
-func (self *BittrexEndpoint) GetDepositAddress(currency string) (exchange.BittrexDepositAddress, error) {
+func (be *BittrexEndpoint) GetDepositAddress(currency string) (exchange.BittrexDepositAddress, error) {
 	result := exchange.BittrexDepositAddress{}
-	respBody, err := self.GetResponse(
-		mustAddPath(self.interf.AccountEndpoint(), "getdepositaddress"),
+	respBody, err := be.GetResponse(
+		mustAddPath(be.interf.AccountEndpoint(), "getdepositaddress"),
 		map[string]string{
 			"currency": currency,
 		},
@@ -174,10 +174,10 @@ func (self *BittrexEndpoint) GetDepositAddress(currency string) (exchange.Bittre
 	return result, err
 }
 
-func (self *BittrexEndpoint) WithdrawHistory(currency string) (exchange.Bittwithdrawhistory, error) {
+func (be *BittrexEndpoint) WithdrawHistory(currency string) (exchange.Bittwithdrawhistory, error) {
 	result := exchange.Bittwithdrawhistory{}
-	respBody, err := self.GetResponse(
-		mustAddPath(self.interf.AccountEndpoint(), "getwithdrawalhistory"),
+	respBody, err := be.GetResponse(
+		mustAddPath(be.interf.AccountEndpoint(), "getwithdrawalhistory"),
 		map[string]string{
 			"currency": currency,
 		},
@@ -190,10 +190,10 @@ func (self *BittrexEndpoint) WithdrawHistory(currency string) (exchange.Bittwith
 	return result, err
 }
 
-func (self *BittrexEndpoint) DepositHistory(currency string) (exchange.Bittdeposithistory, error) {
+func (be *BittrexEndpoint) DepositHistory(currency string) (exchange.Bittdeposithistory, error) {
 	result := exchange.Bittdeposithistory{}
-	respBody, err := self.GetResponse(
-		mustAddPath(self.interf.AccountEndpoint(), "getdeposithistory"),
+	respBody, err := be.GetResponse(
+		mustAddPath(be.interf.AccountEndpoint(), "getdeposithistory"),
 		map[string]string{
 			"currency": currency,
 		},
@@ -206,10 +206,10 @@ func (self *BittrexEndpoint) DepositHistory(currency string) (exchange.Bittdepos
 	return result, err
 }
 
-func (self *BittrexEndpoint) Withdraw(token common.Token, amount *big.Int, address ethereum.Address) (exchange.Bittwithdraw, error) {
+func (be *BittrexEndpoint) Withdraw(token common.Token, amount *big.Int, address ethereum.Address) (exchange.Bittwithdraw, error) {
 	result := exchange.Bittwithdraw{}
-	respBody, err := self.GetResponse(
-		mustAddPath(self.interf.AccountEndpoint(), "withdraw"),
+	respBody, err := be.GetResponse(
+		mustAddPath(be.interf.AccountEndpoint(), "withdraw"),
 		map[string]string{
 			"currency": strings.ToUpper(token.ID),
 			"quantity": strconv.FormatFloat(common.BigToFloat(amount, token.Decimals), 'f', -1, 64),
@@ -224,10 +224,10 @@ func (self *BittrexEndpoint) Withdraw(token common.Token, amount *big.Int, addre
 	return result, err
 }
 
-func (self *BittrexEndpoint) GetInfo() (exchange.Bittinfo, error) {
+func (be *BittrexEndpoint) GetInfo() (exchange.Bittinfo, error) {
 	result := exchange.Bittinfo{}
-	respBody, err := self.GetResponse(
-		mustAddPath(self.interf.AccountEndpoint(), "getbalances"),
+	respBody, err := be.GetResponse(
+		mustAddPath(be.interf.AccountEndpoint(), "getbalances"),
 		map[string]string{},
 		true,
 	)
@@ -238,10 +238,10 @@ func (self *BittrexEndpoint) GetInfo() (exchange.Bittinfo, error) {
 	return result, err
 }
 
-func (self *BittrexEndpoint) CancelOrder(uuid string) (exchange.Bittcancelorder, error) {
+func (be *BittrexEndpoint) CancelOrder(uuid string) (exchange.Bittcancelorder, error) {
 	result := exchange.Bittcancelorder{}
-	respBody, err := self.GetResponse(
-		mustAddPath(self.interf.MarketEndpoint(), "cancel"),
+	respBody, err := be.GetResponse(
+		mustAddPath(be.interf.MarketEndpoint(), "cancel"),
 		map[string]string{
 			"uuid": uuid,
 		},
@@ -254,15 +254,15 @@ func (self *BittrexEndpoint) CancelOrder(uuid string) (exchange.Bittcancelorder,
 	return result, err
 }
 
-func (self *BittrexEndpoint) GetAccountTradeHistory(base, quote common.Token) (exchange.BittTradeHistory, error) {
+func (be *BittrexEndpoint) GetAccountTradeHistory(base, quote common.Token) (exchange.BittTradeHistory, error) {
 	result := exchange.BittTradeHistory{}
 	params := map[string]string{}
 	symbol := fmt.Sprintf("%s-%s", quote.ID, base.ID)
 	if symbol != "" {
 		params["market"] = symbol
 	}
-	respBody, err := self.GetResponse(
-		mustAddPath(self.interf.AccountEndpoint(), "getorderhistory"),
+	respBody, err := be.GetResponse(
+		mustAddPath(be.interf.AccountEndpoint(), "getorderhistory"),
 		params,
 		true,
 	)

@@ -416,12 +416,12 @@ func (b *Bittrex) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, err
 		result.DepositBalance = map[string]float64{}
 		result.Status = true
 		if resp_data.Success {
-			for _, b := range resp_data.Result {
-				tokenID := b.Currency
+			for _, res := range resp_data.Result {
+				tokenID := res.Currency
 				_, err := b.setting.GetTokenByID(tokenID)
 				if err == nil {
-					result.AvailableBalance[tokenID] = b.Available
-					result.DepositBalance[tokenID] = b.Pending
+					result.AvailableBalance[tokenID] = res.Available
+					result.DepositBalance[tokenID] = res.Pending
 					result.LockedBalance[tokenID] = 0
 				}
 			}

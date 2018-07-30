@@ -19,49 +19,49 @@ type testBittrexInterface struct {
 	DepositHistoryMock string
 }
 
-func (self testBittrexInterface) FetchOnePairData(pair common.TokenPair) (Bittresp, error) {
+func (testBitInterface testBittrexInterface) FetchOnePairData(pair common.TokenPair) (Bittresp, error) {
 	return Bittresp{}, nil
 }
-func (self testBittrexInterface) GetExchangeInfo() (BittExchangeInfo, error) {
+func (testBitInterface testBittrexInterface) GetExchangeInfo() (BittExchangeInfo, error) {
 	return BittExchangeInfo{}, nil
 }
-func (self testBittrexInterface) GetInfo() (Bittinfo, error) {
+func (testBitInterface testBittrexInterface) GetInfo() (Bittinfo, error) {
 	return Bittinfo{}, nil
 }
-func (self testBittrexInterface) Withdraw(
+func (testBitInterface testBittrexInterface) Withdraw(
 	token common.Token,
 	amount *big.Int,
 	address ethereum.Address) (Bittwithdraw, error) {
 	return Bittwithdraw{}, nil
 }
-func (self testBittrexInterface) Trade(
+func (testBitInterface testBittrexInterface) Trade(
 	tradeType string,
 	base, quote common.Token,
 	rate, amount float64) (Bitttrade, error) {
 	return Bitttrade{}, nil
 }
-func (self testBittrexInterface) CancelOrder(uuid string) (Bittcancelorder, error) {
+func (testBitInterface testBittrexInterface) CancelOrder(uuid string) (Bittcancelorder, error) {
 	return Bittcancelorder{}, nil
 }
-func (self testBittrexInterface) DepositHistory(currency string) (Bittdeposithistory, error) {
+func (testBitInterface testBittrexInterface) DepositHistory(currency string) (Bittdeposithistory, error) {
 	res := Bittdeposithistory{}
-	err := json.Unmarshal([]byte(self.DepositHistoryMock), &res)
+	err := json.Unmarshal([]byte(testBitInterface.DepositHistoryMock), &res)
 	fmt.Printf("%s\n", common.ErrorToString(err))
 	fmt.Printf("%v\n", res)
 	return res, err
 }
-func (self testBittrexInterface) WithdrawHistory(currency string) (Bittwithdrawhistory, error) {
+func (testBitInterface testBittrexInterface) WithdrawHistory(currency string) (Bittwithdrawhistory, error) {
 	return Bittwithdrawhistory{}, nil
 }
-func (self testBittrexInterface) OrderStatus(uuid string) (Bitttraderesult, error) {
+func (testBitInterface testBittrexInterface) OrderStatus(uuid string) (Bitttraderesult, error) {
 	return Bitttraderesult{}, nil
 }
 
-func (self testBittrexInterface) GetAccountTradeHistory(base, quote common.Token) (BittTradeHistory, error) {
+func (testBitInterface testBittrexInterface) GetAccountTradeHistory(base, quote common.Token) (BittTradeHistory, error) {
 	return BittTradeHistory{}, nil
 }
 
-func (self testBittrexInterface) GetDepositAddress(currency string) (BittrexDepositAddress, error) {
+func (testBitInterface testBittrexInterface) GetDepositAddress(currency string) (BittrexDepositAddress, error) {
 	return BittrexDepositAddress{}, nil
 }
 
@@ -69,20 +69,20 @@ type testBittrexStorage struct {
 	IsNew bool
 }
 
-func (self *testBittrexStorage) IsNewBittrexDeposit(id uint64, actID common.ActivityID) bool {
-	return self.IsNew
+func (testBitInterface *testBittrexStorage) IsNewBittrexDeposit(id uint64, actID common.ActivityID) bool {
+	return testBitInterface.IsNew
 }
 
-func (self *testBittrexStorage) RegisterBittrexDeposit(id uint64, actID common.ActivityID) error {
-	self.IsNew = false
+func (testBitInterface *testBittrexStorage) RegisterBittrexDeposit(id uint64, actID common.ActivityID) error {
+	testBitInterface.IsNew = false
 	return nil
 }
 
-func (self *testBittrexStorage) StoreTradeHistory(data common.ExchangeTradeHistory) error {
+func (testBitInterface *testBittrexStorage) StoreTradeHistory(data common.ExchangeTradeHistory) error {
 	return nil
 }
 
-func (self *testBittrexStorage) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
+func (testBitInterface *testBittrexStorage) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
 	return common.ExchangeTradeHistory{}, nil
 }
 
