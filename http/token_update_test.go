@@ -1,6 +1,7 @@
 package http
 
 import (
+	"errors"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -8,13 +9,154 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/gin-gonic/gin"
-
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/data/storage"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/settings"
 	settingsstorage "github.com/KyberNetwork/reserve-data/settings/storage"
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/gin-gonic/gin"
+)
+
+const (
+	tokenRequestData = `{
+	"KNC": {
+		"token": {
+			"name": "KyberNetwork Crystal",
+			"decimals": 18,
+			"address": "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07",
+			"minimal_record_resolution": "1000000000000000",
+			"max_per_block_imbalance": "439794468212403470336",
+			"max_total_imbalance": "722362414038872621056",
+			"internal": true,
+			"active": true
+		},
+		"exchanges": {
+		"binance": {
+			"DepositAddress": "0x22222222222222222222222222222222222",
+			"Fee": {
+			"Trading": 0.1,
+			"WithDraw": 0.2,
+			"Deposit": 0.3
+			},
+			"MinDeposit": 4
+		}
+		},
+		"pwis_equation": {
+		"ask": {
+			"a": 800,
+			"b": 600,
+			"c": 0,
+			"min_min_spread": 0,
+			"price_multiply_factor": 0
+		},
+		"bid": {
+			"a": 750,
+			"b": 500,
+			"c": 0,
+			"min_min_spread": 0,
+			"price_multiply_factor": 0
+		}
+		},
+		"target_qty": {
+		"set_target": {
+			"total_target": 1,
+			"reserve_target": 2,
+			"rebalance_threshold": 0,
+			"transfer_threshold": 0
+		}
+		},
+		"rebalance_quadratic": {
+		"rebalance_quadratic": {
+			"a": 1,
+			"b": 2,
+			"c": 4
+		}
+		}
+	},
+	"NEO": {
+		"token": {
+			"id": "NEO",
+			"name": "Request",
+			"decimals": 18,
+			"address": "0x8f8221afbb33998d8584a2b05749ba73c37a938a",
+			"minimalRecordResolution": "1000000000000000",
+			"maxPerBlockImbalance": "27470469074054960644096",
+			"maxTotalImbalance": "33088179999699195920384",
+			"internal": false,
+			"active": true          
+		}
+		}
+	}`
+	incorrectTokenRequestData = `{
+		"OMG": {
+			"token": {
+				"name": "OmiseGo",
+				"decimals": 18,
+				"address": "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07",
+				"minimal_record_resolution": "1000000000000000",
+				"max_per_block_imbalance": "439794468212403470336",
+				"max_total_imbalance": "722362414038872621056",
+				"internal": true,
+				"active": true
+			},
+			"exchanges": {
+			"binance": {
+				"DepositAddress": "0x22222222222222222222222222222222222",
+				"Fee": {
+				"Trading": 0.1,
+				"WithDraw": 0.2,
+				"Deposit": 0.3
+				},
+				"MinDeposit": 4
+			}
+			},
+			"pwis_equation": {
+			"ask": {
+				"a": 800,
+				"b": 600,
+				"c": 0,
+				"min_min_spread": 0,
+				"price_multiply_factor": 0
+			},
+			"bid": {
+				"a": 750,
+				"b": 500,
+				"c": 0,
+				"min_min_spread": 0,
+				"price_multiply_factor": 0
+			}
+			},
+			"target_qty": {
+			"set_target": {
+				"total_target": 1,
+				"reserve_target": 2,
+				"rebalance_threshold": 0,
+				"transfer_threshold": 0
+			}
+			},
+			"rebalance_quadratic": {
+			"rebalance_quadratic": {
+				"a": 1,
+				"b": 2,
+				"c": 4
+			}
+			}
+		},
+		"NEO": {
+			"token": {
+				"id": "NEO",
+				"name": "Request",
+				"decimals": 18,
+				"address": "0x8f8221afbb33998d8584a2b05749ba73c37a938a",
+				"minimalRecordResolution": "1000000000000000",
+				"maxPerBlockImbalance": "27470469074054960644096",
+				"maxTotalImbalance": "33088179999699195920384",
+				"internal": false,
+				"active": true          
+			}
+			}
+		}`
 )
 
 func TestHTTPServerUpdateToken(t *testing.T) {
@@ -23,75 +165,6 @@ func TestHTTPServerUpdateToken(t *testing.T) {
 		getPendingTokenUpdateEndpoint    = "/setting/pending-token-update"
 		confirmTokenUpdateEndpoint       = "/setting/confirm-token-update"
 		rejectPendingTokenUpdateEndpoint = "/setting/reject-token-update"
-		tokenRequestData                 = `{
-			"KNC": {
-			  "token": {
-				  "name": "KyberNetwork Crystal",
-				  "decimals": 18,
-				  "address": "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07",
-				  "minimal_record_resolution": "1000000000000000",
-				  "max_per_block_imbalance": "439794468212403470336",
-				  "max_total_imbalance": "722362414038872621056",
-				  "internal": true,
-				  "active": true
-				},
-			  "exchanges": {
-				"binance": {
-				  "DepositAddress": "0x22222222222222222222222222222222222",
-				  "Fee": {
-					"Trading": 0.1,
-					"WithDraw": 0.2,
-					"Deposit": 0.3
-				  },
-				  "MinDeposit": 4
-				}
-			  },
-			  "pwis_equation": {
-				"ask": {
-				  "a": 800,
-				  "b": 600,
-				  "c": 0,
-				  "min_min_spread": 0,
-				  "price_multiply_factor": 0
-				},
-				"bid": {
-				  "a": 750,
-				  "b": 500,
-				  "c": 0,
-				  "min_min_spread": 0,
-				  "price_multiply_factor": 0
-				}
-			  },
-			  "target_qty": {
-				"set_target": {
-				  "total_target": 1,
-				  "reserve_target": 2,
-				  "rebalance_threshold": 0,
-				  "transfer_threshold": 0
-				}
-			  },
-			  "rebalance_quadratic": {
-				"rebalance_quadratic": {
-				  "a": 1,
-				  "b": 2,
-				  "c": 4
-				}
-			  }
-			},
-			"NEO": {
-				"token": {
-				  "id": "NEO",
-				  "name": "Request",
-				  "decimals": 18,
-				  "address": "0x8f8221afbb33998d8584a2b05749ba73c37a938a",
-				  "minimalRecordResolution": "1000000000000000",
-				  "maxPerBlockImbalance": "27470469074054960644096",
-				  "maxTotalImbalance": "33088179999699195920384",
-				  "internal": false,
-				  "active": true          
-				}
-			  }
-		  }`
 	)
 	tmpDir, err := ioutil.TempDir("", "test_setting_apis")
 	if err != nil {
@@ -135,6 +208,7 @@ func TestHTTPServerUpdateToken(t *testing.T) {
 		metric:      storage,
 		authEnabled: false,
 		r:           gin.Default(),
+		blockchain:  TestHTTPBlockchain{},
 		setting:     setting,
 	}
 	testServer.register()
@@ -152,7 +226,25 @@ func TestHTTPServerUpdateToken(t *testing.T) {
 			assert: httputil.ExpectFailure,
 		},
 		{
+			msg:      "set token update incorrectly",
+			endpoint: setPendingTokenUpdateEndpoint,
+			method:   http.MethodPost,
+			data: map[string]string{
+				"data": incorrectTokenRequestData,
+			},
+			assert: httputil.ExpectFailure,
+		},
+		{
 			msg:      "set token update correctly",
+			endpoint: setPendingTokenUpdateEndpoint,
+			method:   http.MethodPost,
+			data: map[string]string{
+				"data": tokenRequestData,
+			},
+			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg:      "set token update correctly but duplicated",
 			endpoint: setPendingTokenUpdateEndpoint,
 			method:   http.MethodPost,
 			data: map[string]string{
@@ -166,9 +258,18 @@ func TestHTTPServerUpdateToken(t *testing.T) {
 	}
 }
 
-type TestBlockchain struct {
+type TestHTTPBlockchain struct {
 }
 
-func (tbc TestBlockchain) CheckTokenIndices() {
+func (tbc TestHTTPBlockchain) CheckTokenIndices(addr ethereum.Address) error {
+	const correctAddrstr = "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07"
+	correctAddr := ethereum.HexToAddress(correctAddrstr)
+	if addr.Hex() == correctAddr.Hex() {
+		return nil
+	}
+	return errors.New("wrong address")
+}
 
+func (tbc TestHTTPBlockchain) LoadAndSetTokenIndices(addrs []ethereum.Address) error {
+	return nil
 }
