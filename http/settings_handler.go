@@ -14,6 +14,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const (
+	pricingOPAddressName      = "pricing_operator"
+	depositOPAddressName      = "deposit_operator"
+	intermediateOPAddressName = "intermediate_operator"
+)
+
 func (self *HTTPServer) updateInternalTokensIndices(tokenUpdates map[string]common.TokenUpdate) error {
 	tokens, err := self.setting.GetInternalTokens()
 	if err != nil {
@@ -573,6 +579,10 @@ func (self *HTTPServer) GetAllSetting(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
+	addressSettings[pricingOPAddressName] = self.blockchain.GetPricingOPAddress().Hex()
+	addressSettings[depositOPAddressName] = self.blockchain.GetDepositOPAddress().Hex()
+	addressSettings[intermediateOPAddressName] = self.blockchain.GetIntermediatorOPAddress().Hex()
+
 	exchangeSettings := make(map[string]*common.ExchangeSetting)
 	for exID := range common.SupportedExchanges {
 		exName, vErr := self.ensureRunningExchange(string(exID))

@@ -9,4 +9,7 @@ import (
 type Blockchain interface {
 	LoadAndSetTokenIndices([]ethereum.Address) error
 	CheckTokenIndices(ethereum.Address) error
+	GetPricingOPAddress() ethereum.Address
+	GetDepositOPAddress() ethereum.Address
+	GetIntermediatorOPAddress() ethereum.Address
 }
