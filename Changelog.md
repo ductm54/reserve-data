@@ -6,15 +6,25 @@
 
 ### Bug fixes:
 
+### Improvements
+
+### Compatibility
+
+## 0.10.0 (2018-07-03)
+
+### Features:
+
+- dynamic core setting, allow setting to be update on the fly. (#332. #361)
+
+- persistent core setting, allow setting transition between different deployment/ retain setting in fail over. (#294, #267, #320)
+
+### Bug fixes:
+
 ### Improvements:
 
 - refactor bolt storage implementation for stat (#357)
 
-- build binary only docker image (#339)
-
-- persistent core setting, allow setting transition between different deployment/ retain setting in fail over. (#294, #267, #320)
-
-- dynamic core setting, allow setting to be update on the fly. (#332. #361)
+- build binary docker image (#339)
 
 - refactor SetRates function (#365)
 
@@ -28,7 +38,10 @@
 
 - review and modify unnecessary panic (#376)
 
-### Compatibility
+### Compatibility:
+
+- KyberNetwork smart contracts (>= 0.3.0)
+- KyberNetwork analytic (0.10.0)
 
 ## 0.10.0 (2018-07-03)
 
