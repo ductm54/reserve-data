@@ -70,7 +70,6 @@ type AddressConfig struct {
 	FeeBurner          string   `json:"feeburner"`
 	Whitelist          string   `json:"whitelist"`
 	ThirdPartyReserves []string `json:"third_party_reserves"`
-	SetRate            string   `json:"setrate"`
 }
 
 // AddressSetting type defines component to handle all address setting in core.
@@ -111,9 +110,6 @@ func (setting *Settings) loadAddressFromFile(path string) error {
 		return err
 	}
 	if err = setting.Address.Storage.UpdateOneAddress(Whitelist, addrs.Whitelist); err != nil {
-		return err
-	}
-	if err = setting.Address.Storage.UpdateOneAddress(SetRate, addrs.SetRate); err != nil {
 		return err
 	}
 	for _, addr := range addrs.ThirdPartyReserves {

@@ -10,6 +10,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
+	huobiblockchain "github.com/KyberNetwork/reserve-data/exchange/huobi/blockchain"
 	"github.com/KyberNetwork/reserve-data/settings"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -666,4 +667,16 @@ func NewBlockchain(base *blockchain.BaseBlockchain, setting Setting) (*Blockchai
 		reserve: reserve,
 		setting: setting,
 	}, nil
+}
+
+func (self *Blockchain) GetPricingOPAddress() ethereum.Address {
+	return self.MustGetOperator(pricingOP).Address
+}
+
+func (self *Blockchain) GetDepositOPAddress() ethereum.Address {
+	return self.MustGetOperator(depositOP).Address
+}
+
+func (self *Blockchain) GetIntermediatorOPAddress() ethereum.Address {
+	return self.MustGetOperator(huobiblockchain.HuobiOP).Address
 }
