@@ -23,8 +23,8 @@ type HTTPServer struct {
 }
 
 //PendingIntermediateTxs get pending transaction
-func (self *HTTPServer) PendingIntermediateTxs(c *gin.Context) {
-	data, err := self.app.PendingIntermediateTxs()
+func (h *HTTPServer) PendingIntermediateTxs(c *gin.Context) {
+	data, err := h.app.PendingIntermediateTxs()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
 	} else {
@@ -34,12 +34,12 @@ func (self *HTTPServer) PendingIntermediateTxs(c *gin.Context) {
 }
 
 //Run run http server for huobi
-func (self *HTTPServer) Run() {
-	if self.app != nil {
-		self.r.GET("/pending_intermediate_tx", self.PendingIntermediateTxs)
+func (h *HTTPServer) Run() {
+	if h.app != nil {
+		h.r.GET("/pending_intermediate_tx", h.PendingIntermediateTxs)
 	}
 
-	if err := self.r.Run(self.host); err != nil {
+	if err := h.r.Run(h.host); err != nil {
 		log.Fatalf("Http server run error: %s", err.Error())
 	}
 }

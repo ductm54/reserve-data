@@ -14,32 +14,32 @@ type Blockchain struct {
 	*blockchain.BaseBlockchain
 }
 
-func (self *Blockchain) GetIntermediatorAddr() ethereum.Address {
-	return self.OperatorAddresses()[HuobiOP]
+func (bc *Blockchain) GetIntermediatorAddr() ethereum.Address {
+	return bc.OperatorAddresses()[HuobiOP]
 }
 
-func (self *Blockchain) SendTokenFromAccountToExchange(amount *big.Int, exchangeAddress ethereum.Address, tokenAddress ethereum.Address) (*types.Transaction, error) {
-	opts, err := self.GetTxOpts(HuobiOP, nil, nil, nil)
+func (bc *Blockchain) SendTokenFromAccountToExchange(amount *big.Int, exchangeAddress ethereum.Address, tokenAddress ethereum.Address) (*types.Transaction, error) {
+	opts, err := bc.GetTxOpts(HuobiOP, nil, nil, nil)
 	if err != nil {
 		return nil, err
 	}
-	tx, err := self.BuildSendERC20Tx(opts, amount, exchangeAddress, tokenAddress)
+	tx, err := bc.BuildSendERC20Tx(opts, amount, exchangeAddress, tokenAddress)
 	if err != nil {
 		return nil, err
 	}
-	return self.SignAndBroadcast(tx, HuobiOP)
+	return bc.SignAndBroadcast(tx, HuobiOP)
 }
 
-func (self *Blockchain) SendETHFromAccountToExchange(amount *big.Int, exchangeAddress ethereum.Address) (*types.Transaction, error) {
-	opts, err := self.GetTxOpts(HuobiOP, nil, nil, amount)
+func (bc *Blockchain) SendETHFromAccountToExchange(amount *big.Int, exchangeAddress ethereum.Address) (*types.Transaction, error) {
+	opts, err := bc.GetTxOpts(HuobiOP, nil, nil, amount)
 	if err != nil {
 		return nil, err
 	}
-	tx, err := self.BuildSendETHTx(opts, exchangeAddress)
+	tx, err := bc.BuildSendETHTx(opts, exchangeAddress)
 	if err != nil {
 		return nil, err
 	}
-	return self.SignAndBroadcast(tx, HuobiOP)
+	return bc.SignAndBroadcast(tx, HuobiOP)
 }
 
 func NewBlockchain(
@@ -53,9 +53,9 @@ func NewBlockchain(
 	}, nil
 }
 
-// func (self *Blockchain) CheckBalance(token common.Token) *big.Int {
-// 	addr := self.intermediateSigner.GetAddress()
-// 	balance, err := self.FetchBalanceData(addr, token)
+// func (bc *Blockchain) CheckBalance(token common.Token) *big.Int {
+// 	addr := bc.intermediateSigner.GetAddress()
+// 	balance, err := bc.FetchBalanceData(addr, token)
 // 	if err != nil || !balance.Valid {
 // 		return big.NewInt(0)
 // 	}
@@ -65,13 +65,13 @@ func NewBlockchain(
 
 // }
 
-// func (self *Blockchain) FetchBalanceData(reserve ethereum.Address, token common.Token) (common.BalanceEntry, error) {
+// func (bc *Blockchain) FetchBalanceData(reserve ethereum.Address, token common.Token) (common.BalanceEntry, error) {
 // 	result := common.BalanceEntry{}
 // 	tokens := []ethereum.Address{}
 // 	tokens = append(tokens, ethereum.HexToAddress(token.Address))
 
 // 	timestamp := common.GetTimestamp()
-// 	balances, err := self.wrapper.GetBalances(nil, nil, reserve, tokens)
+// 	balances, err := bc.wrapper.GetBalances(nil, nil, reserve, tokens)
 // 	returnTime := common.GetTimestamp()
 // 	log.Printf("Fetcher ------> balances: %v, err: %s", balances, err)
 // 	if err != nil {
