@@ -456,3 +456,15 @@ func (tbc TestHTTPBlockchain) CheckTokenIndices(addr ethereum.Address) error {
 func (tbc TestHTTPBlockchain) LoadAndSetTokenIndices(addrs []ethereum.Address) error {
 	return nil
 }
+
+func (tbc TestHTTPBlockchain) GetPricingOPAddress() ethereum.Address {
+	return ethereum.Address{}
+}
+
+func (tbc TestHTTPBlockchain) GetDepositOPAddress() ethereum.Address {
+	return ethereum.Address{}
+}
+
+func (tbc TestHTTPBlockchain) GetIntermediatorOPAddress() ethereum.Address {
+	return ethereum.Address{}
+}
