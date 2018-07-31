@@ -581,8 +581,9 @@ func (self *HTTPServer) GetAllSetting(c *gin.Context) {
 	}
 	addressSettings[pricingOPAddressName] = self.blockchain.GetPricingOPAddress().Hex()
 	addressSettings[depositOPAddressName] = self.blockchain.GetDepositOPAddress().Hex()
-	addressSettings[intermediateOPAddressName] = self.blockchain.GetIntermediatorOPAddress().Hex()
-
+	if _, ok = common.SupportedExchanges["huobi"]; ok {
+		addressSettings[intermediateOPAddressName] = self.blockchain.GetIntermediatorOPAddress().Hex()
+	}
 	exchangeSettings := make(map[string]*common.ExchangeSetting)
 	for exID := range common.SupportedExchanges {
 		exName, vErr := self.ensureRunningExchange(string(exID))
