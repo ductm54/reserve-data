@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/data/storage"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/settings"
@@ -101,7 +100,7 @@ func TestHTTPUpdateExchange(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	storage, err := storage.NewBoltStorage(filepath.Join(tmpDir, "test.db"))
+	testStorage, err := storage.NewBoltStorage(filepath.Join(tmpDir, "test.db"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,15 +108,13 @@ func TestHTTPUpdateExchange(t *testing.T) {
 	testServer := HTTPServer{
 		app:         nil,
 		core:        nil,
-		metric:      storage,
+		metric:      testStorage,
 		authEnabled: false,
 		r:           gin.Default(),
-		blockchain:  TestHTTPBlockchain{},
+		blockchain:  testHTTPBlockchain{},
 		setting:     setting,
 	}
 	testServer.register()
-
-	common.AddTestExchangeForSetting()
 
 	var tests = []testCase{
 		//invalid post formats

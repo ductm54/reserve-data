@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/common/testutil"
 	"github.com/KyberNetwork/reserve-data/data/storage"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/settings"
@@ -336,7 +336,7 @@ func TestHTTPServerUpdateToken(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	storage, err := storage.NewBoltStorage(filepath.Join(tmpDir, "test.db"))
+	testStorage, err := storage.NewBoltStorage(filepath.Join(tmpDir, "test.db"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -344,15 +344,14 @@ func TestHTTPServerUpdateToken(t *testing.T) {
 	testServer := HTTPServer{
 		app:         nil,
 		core:        nil,
-		metric:      storage,
+		metric:      testStorage,
 		authEnabled: false,
 		r:           gin.Default(),
-		blockchain:  TestHTTPBlockchain{},
+		blockchain:  testHTTPBlockchain{},
 		setting:     setting,
 	}
 	testServer.register()
-
-	common.AddTestExchangeForSetting()
+	_ = testutil.EnsureTestUtilInit()
 
 	var tests = []testCase{
 		{
@@ -441,10 +440,9 @@ func TestHTTPServerUpdateToken(t *testing.T) {
 
 }
 
-type TestHTTPBlockchain struct {
-}
+type testHTTPBlockchain struct{}
 
-func (tbc TestHTTPBlockchain) CheckTokenIndices(addr ethereum.Address) error {
+func (tbc testHTTPBlockchain) CheckTokenIndices(addr ethereum.Address) error {
 	const correctAddrstr = "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07"
 	correctAddr := ethereum.HexToAddress(correctAddrstr)
 	if addr.Hex() == correctAddr.Hex() {
@@ -453,18 +451,18 @@ func (tbc TestHTTPBlockchain) CheckTokenIndices(addr ethereum.Address) error {
 	return errors.New("wrong address")
 }
 
-func (tbc TestHTTPBlockchain) LoadAndSetTokenIndices(addrs []ethereum.Address) error {
+func (tbc testHTTPBlockchain) LoadAndSetTokenIndices(addrs []ethereum.Address) error {
 	return nil
 }
 
-func (tbc TestHTTPBlockchain) GetPricingOPAddress() ethereum.Address {
+func (tbc testHTTPBlockchain) GetPricingOPAddress() ethereum.Address {
 	return ethereum.Address{}
 }
 
-func (tbc TestHTTPBlockchain) GetDepositOPAddress() ethereum.Address {
+func (tbc testHTTPBlockchain) GetDepositOPAddress() ethereum.Address {
 	return ethereum.Address{}
 }
 
-func (tbc TestHTTPBlockchain) GetIntermediatorOPAddress() ethereum.Address {
+func (tbc testHTTPBlockchain) GetIntermediatorOPAddress() ethereum.Address {
 	return ethereum.Address{}
 }

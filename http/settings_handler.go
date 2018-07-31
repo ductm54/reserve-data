@@ -54,7 +54,7 @@ func (self *HTTPServer) getExchangeSetting(exName settings.ExchangeName) (*commo
 		if err != settings.ErrExchangeRecordNotFound {
 			return nil, err
 		}
-		log.Printf("the current exchange fee for %s hasn't existed yet. Overwrite new setting instead", exName.String())
+		log.Printf("the current exchange fee for %s hasn't existed yet.", exName.String())
 		fundingFee := common.NewFundingFee(make(map[string]float64), make(map[string]float64))
 		exFee = common.NewExchangeFee(make(common.TradingFee), fundingFee)
 	}
@@ -63,7 +63,7 @@ func (self *HTTPServer) getExchangeSetting(exName settings.ExchangeName) (*commo
 		if err != settings.ErrExchangeRecordNotFound {
 			return nil, err
 		}
-		log.Printf("the current exchange MinDeposit for %s hasn't existed yet. Overwrite new setting instead", exName.String())
+		log.Printf("the current exchange MinDeposit for %s hasn't existed yet.", exName.String())
 		exMinDep = make(common.ExchangesMinDeposit)
 	}
 	exInfos, err := self.setting.GetExchangeInfo(exName)
@@ -71,7 +71,7 @@ func (self *HTTPServer) getExchangeSetting(exName settings.ExchangeName) (*commo
 		if err != settings.ErrExchangeRecordNotFound {
 			return nil, err
 		}
-		log.Printf("the current exchange Info for %s hasn't existed yet. Overwrite new setting instead", exName.String())
+		log.Printf("the current exchange Info for %s hasn't existed yet.", exName.String())
 		exInfos = make(common.ExchangeInfo)
 	}
 	depAddrs, err := self.setting.GetDepositAddresses(exName)
@@ -79,7 +79,7 @@ func (self *HTTPServer) getExchangeSetting(exName settings.ExchangeName) (*commo
 		if err != settings.ErrExchangeRecordNotFound {
 			return nil, err
 		}
-		log.Printf("the current exchange deposit addresses  for %s hasn't existed yet. Overwrite new setting instead", exName.String())
+		log.Printf("the current exchange deposit addresses  for %s hasn't existed yet.", exName.String())
 		depAddrs = make(common.ExchangeAddresses)
 	}
 	return common.NewExchangeSetting(depAddrs, exMinDep, exFee, exInfos), nil
