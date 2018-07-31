@@ -2,6 +2,7 @@ package settings
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -23,6 +24,8 @@ const (
 	StableExchange                     //stable_exchange
 )
 const exchangeEnv string = "KYBER_EXCHANGES"
+
+var ErrExchangeRecordNotFound = errors.New("Exchange record not found")
 
 type ExchangeFeesConfig struct {
 	Exchanges map[string]common.ExchangeFees `json:"exchanges"`

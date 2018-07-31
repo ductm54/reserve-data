@@ -17,8 +17,11 @@ func (setting *Settings) GetFee(ex ExchangeName) (common.ExchangeFees, error) {
 func (setting *Settings) UpdateFee(exName ExchangeName, exFee common.ExchangeFees) error {
 	currExFee, err := setting.GetFee(exName)
 	if err != nil {
-		log.Printf("UpdateExchangeFee: Can't get current exchange fee of %s (%s), overwrite it with new data", exName.String(), err)
-		currExFee = common.NewExchangeFee(common.TradingFee{}, common.FundingFee{})
+		if err != ErrExchangeRecordNotFound {
+			return err
+		}
+		log.Printf("UpdateExchangeFee: the current exchange fee of %s hasn't existed yet, overwrite it with new data", exName.String())
+		currExFee = common.NewExchangeFee(common.TradingFee{}, common.NewFundingFee(make(map[string]float64), make(map[string]float64)))
 	}
 	for tok, val := range exFee.Funding.Deposit {
 		currExFee.Funding.Deposit[tok] = val
@@ -43,7 +46,10 @@ func (setting *Settings) GetMinDeposit(ex ExchangeName) (common.ExchangesMinDepo
 func (setting *Settings) UpdateMinDeposit(exName ExchangeName, minDeposit common.ExchangesMinDeposit) error {
 	currExMinDep, err := setting.GetMinDeposit(exName)
 	if err != nil {
-		log.Printf("UpdateMinDeposit: Can't get current min deposit of %s (%s), overwrite it with new data", exName.String(), err)
+		if err != ErrExchangeRecordNotFound {
+			return err
+		}
+		log.Printf("UpdateMinDeposit: Can't get current min deposit of %s, overwrite it with new data", exName.String())
 		currExMinDep = make(common.ExchangesMinDeposit)
 	}
 	for tok, val := range minDeposit {
@@ -62,7 +68,10 @@ func (setting *Settings) GetDepositAddresses(ex ExchangeName) (common.ExchangeAd
 func (setting *Settings) UpdateDepositAddress(exName ExchangeName, addrs common.ExchangeAddresses) error {
 	currAddrs, err := setting.GetDepositAddresses(exName)
 	if err != nil {
-		log.Printf("UpdateDepositAddress: Can't get current deposit address of %s (%s), overwrite it with new data", exName.String(), err)
+		if err != ErrExchangeRecordNotFound {
+			return err
+		}
+		log.Printf("UpdateDepositAddress: the current exchange deposit addresses for %s hasn't existed yet. Overwrite new setting instead", exName.String())
 		currAddrs = make(common.ExchangeAddresses)
 	}
 	for tokenID, address := range addrs {
@@ -83,7 +92,10 @@ func (setting *Settings) GetExchangeInfo(ex ExchangeName) (common.ExchangeInfo, 
 func (setting *Settings) UpdateExchangeInfo(exName ExchangeName, exInfo common.ExchangeInfo) error {
 	currExInfo, err := setting.GetExchangeInfo(exName)
 	if err != nil {
-		log.Printf("UpdateExchangeInfo: Can't get exchange Info of %s (%s), overwrite it with new data", exName.String(), err)
+		if err != ErrExchangeRecordNotFound {
+			return err
+		}
+		log.Printf("UpdateExchangeInfo: the current exchange Info for %s hasn't existed yet. Overwrite new setting instead", exName.String())
 		currExInfo = common.NewExchangeInfo()
 	}
 	for tokenPairID, exPreLim := range exInfo {

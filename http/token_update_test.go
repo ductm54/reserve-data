@@ -105,7 +105,46 @@ const (
 				"DepositAddress": "0x22222222222222222222222222222222222",
 				"Fee": {
 				"Trading": 0.1,
-				"WithDraw": 0.2,
+				"		{
+			msg:      "Update Exchange Fee on an unsupported exchange",
+			endpoint: updateExchangeFeeEndpoint,
+			method:   http.MethodPost,
+			data: map[string]string{
+				"name": "ex",
+				"data": feeRequest,
+			},
+			assert: httputil.ExpectFailure,
+		},
+		{
+			msg:      "Update Exchange Fee on a supported exchange with wrong data format",
+			endpoint: updateExchangeFeeEndpoint,
+			method:   http.MethodPost,
+			data: map[string]string{
+				"name": "binance",
+				"data": minDepositRequest,
+			},
+			assert: httputil.ExpectFailure,
+		},
+		{
+			msg:      "Update Exchange Fee on a supported exchange without record in setting DB",
+			endpoint: updateExchangeFeeEndpoint,
+			method:   http.MethodPost,
+			data: map[string]string{
+				"name": "binance",
+				"data": feeRequest,
+			},
+			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg:      "Update Exchange Fee on a supported exchange with recording in setting DB",
+			endpoint: updateExchangeFeeEndpoint,
+			method:   http.MethodPost,
+			data: map[string]string{
+				"name": "binance",
+				"data": feeRequest,
+			},
+			assert: httputil.ExpectSuccess,
+		},": 0.2,
 				"Deposit": 0.3
 				},
 				"MinDeposit": 4
@@ -157,6 +196,105 @@ const (
 			}
 			}
 		}`
+	confirmData = `{
+			"KNC": {
+			  "token": {
+				"id": "KNC",
+				"name": "KyberNetwork Crystal",
+				"address": "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07",
+				"decimals": 18,
+				"active": true,
+				"internal": true,
+				"last_activation_change": 0
+			  },
+			  "exchanges": {
+				"binance": {
+				  "deposit_address": "",
+				  "exchange_info": {
+					"KNC-ETH": {
+					  "precision": {
+						"amount": 0,
+						"price": 7
+					  },
+					  "amount_limit": {
+						"min": 1,
+						"max": 900000
+					  },
+					  "price_limit": {
+						"min": 0.000192,
+						"max": 0.019195
+					  },
+					  "min_notional": 0.01
+					}
+				  },
+				  "fee": {
+					"withdraw": 0.2,
+					"deposit": 0.3
+				  },
+				  "min_deposit": 0
+				}
+			  },
+			  "pwis_equation": {
+				"ask": {
+				  "a": 800,
+				  "b": 600,
+				  "c": 0,
+				  "min_min_spread": 0,
+				  "price_multiply_factor": 0
+				},
+				"bid": {
+				  "a": 750,
+				  "b": 500,
+				  "c": 0,
+				  "min_min_spread": 0,
+				  "price_multiply_factor": 0
+				}
+			  },
+			  "target_qty": {
+				"set_target": {
+				  "total_target": 1,
+				  "reserve_target": 2,
+				  "rebalance_threshold": 0,
+				  "transfer_threshold": 0
+				}
+			  },
+			  "rebalance_quadratic": {
+				"rebalance_quadratic": {
+				  "a": 1,
+				  "b": 2,
+				  "c": 4
+				}
+			  }
+			},
+			"NEO": {
+			  "token": {
+				"id": "NEO",
+				"name": "Request",
+				"address": "0x8f8221afbb33998d8584a2b05749ba73c37a938a",
+				"decimals": 18,
+				"active": true,
+				"internal": false,
+				"last_activation_change": 0
+			  },
+			  "exchanges": null,
+			  "pwis_equation": null,
+			  "target_qty": {
+				"set_target": {
+				  "total_target": 0,
+				  "reserve_target": 0,
+				  "rebalance_threshold": 0,
+				  "transfer_threshold": 0
+				}
+			  },
+			  "rebalance_quadratic": {
+				"rebalance_quadratic": {
+				  "a": 0,
+				  "b": 0,
+				  "c": 0
+				}
+			  }
+			}
+		  }`
 )
 
 func TestHTTPServerUpdateToken(t *testing.T) {
@@ -166,7 +304,7 @@ func TestHTTPServerUpdateToken(t *testing.T) {
 		confirmTokenUpdateEndpoint       = "/setting/confirm-token-update"
 		rejectPendingTokenUpdateEndpoint = "/setting/reject-token-update"
 	)
-	tmpDir, err := ioutil.TempDir("", "test_setting_apis")
+	tmpDir, err := ioutil.TempDir("", "test_token_APIs")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -202,6 +340,7 @@ func TestHTTPServerUpdateToken(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	testServer := HTTPServer{
 		app:         nil,
 		core:        nil,
@@ -235,6 +374,15 @@ func TestHTTPServerUpdateToken(t *testing.T) {
 			assert: httputil.ExpectFailure,
 		},
 		{
+			msg:      "reject pending token update when there is no pending token update",
+			endpoint: rejectPendingTokenUpdateEndpoint,
+			method:   http.MethodPost,
+			data: map[string]string{
+				"value": "some random post form or this request will be unauthenticated",
+			},
+			assert: httputil.ExpectFailure,
+		},
+		{
 			msg:      "set token update correctly",
 			endpoint: setPendingTokenUpdateEndpoint,
 			method:   http.MethodPost,
@@ -244,18 +392,53 @@ func TestHTTPServerUpdateToken(t *testing.T) {
 			assert: httputil.ExpectSuccess,
 		},
 		{
-			msg:      "set token update correctly but duplicated",
+			msg:      "get pending token update",
+			endpoint: getPendingTokenUpdateEndpoint,
+			method:   http.MethodGet,
+			data:     map[string]string{},
+			assert:   httputil.ExpectSuccess,
+		},
+		{
+			msg:      "reject pending token update",
+			endpoint: rejectPendingTokenUpdateEndpoint,
+			method:   http.MethodPost,
+			data: map[string]string{
+				"value": "some random post form or this request will be unauthenticated",
+			},
+			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg:      "set token update correctly for confirmation",
 			endpoint: setPendingTokenUpdateEndpoint,
 			method:   http.MethodPost,
 			data: map[string]string{
 				"data": tokenRequestData,
 			},
+			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg:      "confirmation with incorrect data",
+			endpoint: confirmTokenUpdateEndpoint,
+			method:   http.MethodPost,
+			data: map[string]string{
+				"data": incorrectTokenRequestData,
+			},
 			assert: httputil.ExpectFailure,
+		},
+		{
+			msg:      "confirmation with correct data although exchange setting isn't available in DB",
+			endpoint: confirmTokenUpdateEndpoint,
+			method:   http.MethodPost,
+			data: map[string]string{
+				"data": confirmData,
+			},
+			assert: httputil.ExpectSuccess,
 		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, testServer.r) })
 	}
+
 }
 
 type TestHTTPBlockchain struct {
