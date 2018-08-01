@@ -229,6 +229,7 @@ func CreateStat(config *configuration.Config, kyberENV string, bc *blockchain.Bl
 		config.StatControllerRunner,
 		statFetcher,
 		config.Archive,
+		config.Setting,
 	)
 	return rStat
 }
