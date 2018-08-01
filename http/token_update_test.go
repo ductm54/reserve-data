@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	_ "github.com/KyberNetwork/reserve-data/common/testutil"
 	"github.com/KyberNetwork/reserve-data/data/storage"
+	_ "github.com/KyberNetwork/reserve-data/exchange/binance/mock"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/settings"
 	settingsstorage "github.com/KyberNetwork/reserve-data/settings/storage"
