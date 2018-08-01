@@ -17,18 +17,18 @@ const (
 	Wrapper                            //wrapper
 	Pricing                            //pricing
 	Whitelist                          //whitelist
-	InternalNetwork                    //internalnetwork
+	InternalNetwork                    //internal_network
 )
 
 var addressNameValues = map[string]AddressName{
-	"reserve":         Reserve,
-	"burner":          Burner,
-	"bank":            Bank,
-	"network":         Network,
-	"wrapper":         Wrapper,
-	"pricing":         Pricing,
-	"whitelist":       Whitelist,
-	"internalnetwork": InternalNetwork,
+	"reserve":          Reserve,
+	"burner":           Burner,
+	"bank":             Bank,
+	"network":          Network,
+	"wrapper":          Wrapper,
+	"pricing":          Pricing,
+	"whitelist":        Whitelist,
+	"internal_network": InternalNetwork,
 }
 
 // AddressNameValues returns the mapping of the string presentation
