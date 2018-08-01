@@ -105,10 +105,6 @@ func (self testBlockchain) SetRateMinedNonce() (uint64, error) {
 	return 0, nil
 }
 
-func (self testBlockchain) GetAddresses() (*common.Addresses, error) {
-	return &common.Addresses{}, nil
-}
-
 type testActivityStorage struct {
 	PendingDeposit bool
 }
