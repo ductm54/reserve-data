@@ -968,7 +968,7 @@ func (self *Fetcher) getTradeInfo(trade common.TradeLog) (float64, float64, floa
 	eth := self.setting.ETHToken()
 	srcToken, err := self.setting.GetTokenByAddress(ethereum.HexToAddress(srcAddr))
 	if err != nil {
-		log.Panicf("GetTradeInfo: can't get src Token (%s)", err)
+		log.Panicf("GetTradeInfo: can't get src Token, address: %s, error: %s", srcAddr, err)
 	}
 	srcAmount = common.BigToFloat(trade.SrcAmount, srcToken.Decimals)
 	if srcToken.IsETH() {
@@ -978,7 +978,7 @@ func (self *Fetcher) getTradeInfo(trade common.TradeLog) (float64, float64, floa
 	dstAddr := common.AddrToString(trade.DestAddress)
 	destToken, err := self.setting.GetTokenByAddress(ethereum.HexToAddress(dstAddr))
 	if err != nil {
-		log.Panicf("GetTradeInfo: can't get dest Token (%s)", err)
+		log.Panicf("GetTradeInfo: can't get dest Token, address: %s, error: %s", dstAddr, err)
 	}
 	destAmount = common.BigToFloat(trade.DestAmount, destToken.Decimals)
 	if destToken.IsETH() {
