@@ -155,6 +155,14 @@ func (self *HTTPServer) SetTokenUpdate(c *gin.Context) {
 	for tokenID, tokenUpdate := range tokenUpdates {
 		token := tokenUpdate.Token
 		token.ID = tokenID
+		if len(token.Address) != 42 {
+			httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Token %s's address is invalid length. Token field in token request might be empty ", tokenID)))
+			return
+		}
+		if len(token.Name) == 0 {
+			httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Token %s's name is empty. Token field in token request might be empty ", tokenID)))
+			return
+		}
 		// if the token is internal, it must come with PWIEq, targetQty and QuadraticEquation and exchange setting
 		if token.Internal {
 			if uErr := self.ensureInternalSetting(tokenUpdate); uErr != nil {
