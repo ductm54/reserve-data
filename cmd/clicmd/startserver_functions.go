@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"time"
 
 	"github.com/KyberNetwork/reserve-data/blockchain"
 	"github.com/KyberNetwork/reserve-data/cmd/configuration"
@@ -16,6 +17,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/core"
 	"github.com/KyberNetwork/reserve-data/data"
 	"github.com/KyberNetwork/reserve-data/data/fetcher"
+	"github.com/KyberNetwork/reserve-data/settings"
 	"github.com/KyberNetwork/reserve-data/stat"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/robfig/cron"
@@ -29,6 +31,8 @@ const (
 	// startingBlockStaging is the block the first version of
 	// staging network contract is created.
 	startingBlockStaging = 5042909
+	// defaultTimeOut is the default time out for requesting to core for setting
+	defaultTimeOut = time.Duration(10 * time.Second)
 )
 
 func backupLog(arch archive.Archive) {
@@ -204,7 +208,7 @@ func CreateStat(config *configuration.Config, kyberENV string, bc *blockchain.Bl
 	case common.StagingMode:
 		deployBlock = startingBlockStaging
 	}
-
+	settingClient := settings.NewSettingClient(config.AuthEngine, defaultTimeOut, coreURL)
 	statFetcher := stat.NewFetcher(
 		config.StatStorage,
 		config.LogStorage,
@@ -215,7 +219,7 @@ func CreateStat(config *configuration.Config, kyberENV string, bc *blockchain.Bl
 		deployBlock,
 		deployBlock,
 		config.EtherscanApiKey,
-		config.Setting,
+		settingClient,
 		config.IPlocator,
 	)
 	statFetcher.SetBlockchain(bc)
@@ -229,7 +233,7 @@ func CreateStat(config *configuration.Config, kyberENV string, bc *blockchain.Bl
 		config.StatControllerRunner,
 		statFetcher,
 		config.Archive,
-		config.Setting,
+		settingClient,
 	)
 	return rStat
 }

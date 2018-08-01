@@ -16,6 +16,7 @@ import (
 const (
 	remoteLogPath  string = "core-log/"
 	defaultBaseURL        = "http://127.0.0.1"
+	coreDefaultURL string = "http://localhost:8000"
 )
 
 // logDir is located at base of this repository.
@@ -28,6 +29,7 @@ var enableStat bool
 var noCore bool
 var stdoutLog bool
 var dryrun bool
+var coreURL string
 
 func serverStart(_ *cobra.Command, _ []string) {
 	numCPU := runtime.NumCPU()
@@ -127,6 +129,6 @@ func init() {
 	startServer.Flags().BoolVarP(&noCore, "no-core", "", false, "disable core related fetcher and api, this should be used only when we want to run an independent stat server")
 	startServer.Flags().BoolVarP(&stdoutLog, "log-to-stdout", "", false, "send log to both log file and stdout terminal")
 	startServer.Flags().BoolVarP(&dryrun, "dryrun", "", false, "only test if all the configs are set correctly, will not actually run core")
-
+	startServer.Flags().StringVar(&coreURL, "core-url", coreDefaultURL, "core url from which stat can call for setting APis")
 	RootCmd.AddCommand(startServer)
 }
