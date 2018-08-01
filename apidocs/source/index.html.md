@@ -9,6 +9,7 @@ toc_footers:
   - <a href='https://github.com/lord/slate'>Documentation Powered by Slate</a>
 
 includes:
+  - settings
   - exchangeinfo
   - authdata
   - getrates
@@ -66,60 +67,6 @@ This endpoint return current time server
 ### HTTP Request
 
 `GET http://example.com/timeserver`
-
-
-## Get all addresses are being used by core 
-
-```shell
-curl -X GET "http://localhost:8000/core/addresses"
-```
-
-
-> The above command returns JSON structured like this:
-
-```json
-{
-  "data": {
-    "tokens": {
-      "EOS": "0x15fb2a9d7dadbb88f260f78dcbb574b3b76a8e06",
-      "ETH": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-      "KNC": "0x8dc114d77e857558aefbe8e1a50b460ff9578f1a",
-      "OMG": "0x7606bd550f467546212649a9c25623dfca88dcd7",
-      "SALT": "0xcc112cd38362bf3c07d226768fd5869e65296083",
-      "SNT": "0x676f650000f420485b99ef0377a2e1c96eb3e821"
-    },
-    "exchanges": {
-      "binance": {
-        "EOS": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547",
-        "ETH": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547",
-        "KNC": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547",
-        "OMG": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547",
-        "SALT": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547",
-        "SNT": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547"
-      },
-      "bittrex": {
-        "EOS": "0xef6ee90c5bb23da2eb71b3daa8e57b204e5ac647",
-        "ETH": "0xe0355aa3cc0a4e0e4b2a70acd90c2fa961f61b23",
-        "KNC": "0x132478f1ec4b8e1256b11fdf3e00d97e4df5988f",
-        "OMG": "0x9db6e8d2d133448dbcf755f19d540253da4ba043",
-        "SALT": "0x385d619b530f00ab7d082683f7cdc37995ac76f2",
-        "SNT": "0x3ef96f9de64c44b1ad392b10e2277a73ec14ff5f"
-      }
-    },
-    "wrapper": "0xa54f27b5a72fc1ddc5c4bc6ed50391f457e4a46a",
-    "pricing": "0x77925520469d0fcbb0311814c053bf9bafcd867b",
-    "reserve": "0x2d1ceabd5a1cd16581ad199031601615a434a2cd",
-    "feeburner": "0xa33a2f0745ee8e31b753ec33d22d363a62a123a4",
-    "network": "0x643211b405c9a14139142e1104250bbcd94bd0ef"
-  },
-  "success": true
-}
-```
-
-
-### HTTP Request
-
-`GET http://example.com/core/addresses`
 
 
 ## Get prices all base-quote pair
