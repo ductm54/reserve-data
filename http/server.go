@@ -1511,6 +1511,13 @@ func (self *HTTPServer) register() {
 	stt.POST("/update-deposit-address", self.UpdateDepositAddress)
 	stt.POST("/update-exchange-info", self.UpdateExchangeInfo)
 	stt.GET("/all-settings", self.GetAllSetting)
+	stt.GET("/internal-tokens", self.GetInternalTokens)
+	stt.GET("/active-tokens", self.GetActiveTokens)
+	stt.GET("/token-by-address", self.GetTokenByAddress)
+	stt.GET("/active-token-by-id", self.GetActiveTokenByID)
+	stt.GET("/address", self.GetAddress)
+	stt.GET("/addresses", self.GetAddresses)
+	stt.GET("/ready-to-serve", self.ReadyToServe)
 
 	if self.core != nil && self.app != nil {
 		v2 := self.r.Group("/v2")

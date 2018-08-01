@@ -686,3 +686,105 @@ func (self *HTTPServer) getExchangeResponse() (*common.ExchangeResponse, error) 
 	}
 	return common.NewExchangeResponse(exchangeSettings, version), nil
 }
+
+func (self *HTTPServer) GetInternalTokens(c *gin.Context) {
+	_, ok := self.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
+	if !ok {
+		return
+	}
+	tokens, err := self.setting.GetInternalTokens()
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithData(tokens))
+}
+
+func (self *HTTPServer) GetActiveTokens(c *gin.Context) {
+	_, ok := self.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
+	if !ok {
+		return
+	}
+	tokens, err := self.setting.GetActiveTokens()
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithData(tokens))
+}
+
+func (self *HTTPServer) GetTokenByAddress(c *gin.Context) {
+	_, ok := self.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
+	if !ok {
+		return
+	}
+	addr := c.Query("address")
+	token, err := self.setting.GetTokenByAddress(ethereum.HexToAddress(addr))
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithData(token))
+}
+
+func (self *HTTPServer) GetActiveTokenByID(c *gin.Context) {
+	_, ok := self.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
+	if !ok {
+		return
+	}
+	ID := c.Query("ID")
+	token, err := self.setting.GetActiveTokenByID((ID))
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithData(token))
+}
+
+func (self *HTTPServer) GetAddress(c *gin.Context) {
+	_, ok := self.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
+	if !ok {
+		return
+	}
+	name := c.Query("name")
+	addressNames := settings.AddressNameValues()
+	addrName, ok := addressNames[name]
+	if !ok {
+		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("address name %s is not avail in this list of valid address name", name)))
+		return
+	}
+	address, err := self.setting.GetAddress(addrName)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithData(address))
+}
+
+func (self *HTTPServer) GetAddresses(c *gin.Context) {
+	_, ok := self.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
+	if !ok {
+		return
+	}
+	name := c.Query("name")
+	addressSetNames := settings.AddressSetNameValues()
+	addrSetName, ok := addressSetNames[name]
+	if !ok {
+		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("address set name %s is not avail in this list of valid address set name", name)))
+		return
+	}
+	address, err := self.setting.GetAddresses(addrSetName)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithData(address))
+}
+
+func (self *HTTPServer) ReadyToServe(c *gin.Context) {
+	_, ok := self.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
+	if !ok {
+		return
+	}
+	httputil.ResponseSuccess(c)
+}
