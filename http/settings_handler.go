@@ -215,7 +215,7 @@ func (self *HTTPServer) GetPendingTokenUpdates(c *gin.Context) {
 }
 
 func (self *HTTPServer) ConfirmTokenUpdate(c *gin.Context) {
-	postForm, ok := self.Authenticated(c, []string{"data"}, []Permission{ConfigurePermission})
+	postForm, ok := self.Authenticated(c, []string{"data"}, []Permission{ConfirmConfPermission})
 	if !ok {
 		return
 	}
