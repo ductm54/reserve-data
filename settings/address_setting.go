@@ -10,25 +10,25 @@ import (
 type AddressName int
 
 const (
-	Reserve   AddressName = iota //reserve
-	Burner                       //burner
-	Bank                         //bank
-	Network                      //network
-	Wrapper                      //wrapper
-	Pricing                      //pricing
-	Whitelist                    //whitelist
-	SetRate                      //setrate
+	Reserve         AddressName = iota //reserve
+	Burner                             //burner
+	Bank                               //bank
+	Network                            //network
+	Wrapper                            //wrapper
+	Pricing                            //pricing
+	Whitelist                          //whitelist
+	InternalNetwork                    //internalnetwork
 )
 
 var addressNameValues = map[string]AddressName{
-	"reserve":   Reserve,
-	"burner":    Burner,
-	"bank":      Bank,
-	"network":   Network,
-	"wrapper":   Wrapper,
-	"pricing":   Pricing,
-	"whitelist": Whitelist,
-	"setrate":   SetRate,
+	"reserve":         Reserve,
+	"burner":          Burner,
+	"bank":            Bank,
+	"network":         Network,
+	"wrapper":         Wrapper,
+	"pricing":         Pricing,
+	"whitelist":       Whitelist,
+	"internalnetwork": InternalNetwork,
 }
 
 // AddressNameValues returns the mapping of the string presentation
@@ -70,6 +70,7 @@ type AddressConfig struct {
 	FeeBurner          string   `json:"feeburner"`
 	Whitelist          string   `json:"whitelist"`
 	ThirdPartyReserves []string `json:"third_party_reserves"`
+	InternalNetwork    string   `json:"internal network"`
 }
 
 // AddressSetting type defines component to handle all address setting in core.
@@ -110,6 +111,9 @@ func (setting *Settings) loadAddressFromFile(path string) error {
 		return err
 	}
 	if err = setting.Address.Storage.UpdateOneAddress(Whitelist, addrs.Whitelist); err != nil {
+		return err
+	}
+	if err = setting.Address.Storage.UpdateOneAddress(InternalNetwork, addrs.InternalNetwork); err != nil {
 		return err
 	}
 	for _, addr := range addrs.ThirdPartyReserves {
