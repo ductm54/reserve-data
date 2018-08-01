@@ -463,8 +463,12 @@ func (self *Blockchain) GetRawLogs(fromBlock uint64, toBlock uint64) ([]types.Lo
 	if err != nil {
 		return nil, err
 	}
+	internalAddr, err := self.setting.GetAddress(settings.InternalNetwork)
+	if err != nil {
+		return nil, err
+	}
 
-	addresses = append(addresses, networkAddr, burnerAddr, whitelistAddr)
+	addresses = append(addresses, networkAddr, burnerAddr, whitelistAddr, internalAddr)
 	oldNetworks, err := self.setting.GetAddresses(settings.OldNetWorks)
 	if err != nil {
 		log.Printf("WARNING: can't get old network addresses (%s)", err)
