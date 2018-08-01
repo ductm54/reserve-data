@@ -10,10 +10,6 @@ import (
 
 const BinanceTestExchangeID = "binance"
 
-func EnsureTestUtilInit() bool {
-	return true
-}
-
 func init() {
 	common.SupportedExchanges[BinanceTestExchangeID] = BinanceTestExchange{}
 }

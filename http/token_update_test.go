@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/KyberNetwork/reserve-data/common/testutil"
+	_ "github.com/KyberNetwork/reserve-data/common/testutil"
 	"github.com/KyberNetwork/reserve-data/data/storage"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/settings"
@@ -351,7 +351,6 @@ func TestHTTPServerUpdateToken(t *testing.T) {
 		setting:     setting,
 	}
 	testServer.register()
-	_ = testutil.EnsureTestUtilInit()
 
 	var tests = []testCase{
 		{
