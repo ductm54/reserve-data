@@ -51,19 +51,36 @@ func (self *HTTPServer) ensureRunningExchange(ex string) (settings.ExchangeName,
 func (self *HTTPServer) getExchangeSetting(exName settings.ExchangeName) (*common.ExchangeSetting, error) {
 	exFee, err := self.setting.GetFee(exName)
 	if err != nil {
-		return nil, err
+		if err != settings.ErrExchangeRecordNotFound {
+			return nil, err
+		}
+		log.Printf("the current exchange fee for %s hasn't existed yet.", exName.String())
+		fundingFee := common.NewFundingFee(make(map[string]float64), make(map[string]float64))
+		exFee = common.NewExchangeFee(make(common.TradingFee), fundingFee)
 	}
 	exMinDep, err := self.setting.GetMinDeposit(exName)
 	if err != nil {
-		return nil, err
+		if err != settings.ErrExchangeRecordNotFound {
+			return nil, err
+		}
+		log.Printf("the current exchange MinDeposit for %s hasn't existed yet.", exName.String())
+		exMinDep = make(common.ExchangesMinDeposit)
 	}
 	exInfos, err := self.setting.GetExchangeInfo(exName)
 	if err != nil {
-		return nil, err
+		if err != settings.ErrExchangeRecordNotFound {
+			return nil, err
+		}
+		log.Printf("the current exchange Info for %s hasn't existed yet.", exName.String())
+		exInfos = make(common.ExchangeInfo)
 	}
 	depAddrs, err := self.setting.GetDepositAddresses(exName)
 	if err != nil {
-		return nil, err
+		if err != settings.ErrExchangeRecordNotFound {
+			return nil, err
+		}
+		log.Printf("the current exchange deposit addresses  for %s hasn't existed yet.", exName.String())
+		depAddrs = make(common.ExchangeAddresses)
 	}
 	return common.NewExchangeSetting(depAddrs, exMinDep, exFee, exInfos), nil
 }
@@ -453,6 +470,9 @@ func (self *HTTPServer) UpdateExchangeFee(c *gin.Context) {
 	if err := json.Unmarshal(data, &exFee); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
+	}
+	if exFee.Trading == nil || exFee.Funding.Deposit == nil || exFee.Funding.Withdraw == nil {
+		httputil.ResponseFailure(c, httputil.WithReason("Data is in the wrong format: there is nil map inside the data"))
 	}
 	if err := self.setting.UpdateFee(exName, exFee); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))

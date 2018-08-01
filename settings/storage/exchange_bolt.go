@@ -3,6 +3,7 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/KyberNetwork/reserve-data/boltutil"
@@ -21,7 +22,8 @@ func (boltSettingStorage *BoltSettingStorage) GetFee(ex settings.ExchangeName) (
 		}
 		data := b.Get(boltutil.Uint64ToBytes(uint64(ex)))
 		if data == nil {
-			return fmt.Errorf("key %s hasn't existed yet", ex.String())
+			log.Printf("key %s hasn't existed yet", ex.String())
+			return settings.ErrExchangeRecordNotFound
 		}
 		uErr := json.Unmarshal(data, &result)
 		if uErr != nil {
@@ -62,7 +64,8 @@ func (boltSettingStorage *BoltSettingStorage) GetMinDeposit(ex settings.Exchange
 		}
 		data := b.Get(boltutil.Uint64ToBytes(uint64(ex)))
 		if data == nil {
-			return fmt.Errorf("key %s hasn't existed yet", ex.String())
+			log.Printf("key %s hasn't existed yet", ex.String())
+			return settings.ErrExchangeRecordNotFound
 		}
 		uErr := json.Unmarshal(data, &result)
 		if uErr != nil {
@@ -103,7 +106,8 @@ func (boltSettingStorage *BoltSettingStorage) GetDepositAddresses(ex settings.Ex
 		}
 		data := b.Get(boltutil.Uint64ToBytes(uint64(ex)))
 		if data == nil {
-			return fmt.Errorf("key %s hasn't existed yet", ex.String())
+			log.Printf("key %s hasn't existed yet", ex.String())
+			return settings.ErrExchangeRecordNotFound
 		}
 		uErr := json.Unmarshal(data, &result)
 		if uErr != nil {
@@ -147,7 +151,8 @@ func (boltSettingStorage *BoltSettingStorage) GetTokenPairs(ex settings.Exchange
 		}
 		data := b.Get(boltutil.Uint64ToBytes(uint64(ex)))
 		if data == nil {
-			return fmt.Errorf("key %s hasn't existed yet", ex.String())
+			log.Printf("key %s hasn't existed yet", ex.String())
+			return settings.ErrExchangeRecordNotFound
 		}
 		if uErr := json.Unmarshal(data, &result); uErr != nil {
 			return uErr
@@ -183,7 +188,8 @@ func (boltSettingStorage *BoltSettingStorage) GetExchangeInfo(ex settings.Exchan
 		}
 		data := b.Get(boltutil.Uint64ToBytes(uint64(ex)))
 		if data == nil {
-			return fmt.Errorf("key %s hasn't existed yet", ex.String())
+			log.Printf("key %s hasn't existed yet", ex.String())
+			return settings.ErrExchangeRecordNotFound
 		}
 		return json.Unmarshal(data, &result)
 	})
