@@ -56,6 +56,7 @@ type Fetcher struct {
 	blockNumMarker         uint64
 	setting                Setting
 	ipLocator              *statutil.IPLocator
+	addressLookup          map[ethereum.Address]common.Token
 }
 
 func NewFetcher(
@@ -84,6 +85,7 @@ func NewFetcher(
 		sleepTime:         sleepTime,
 		setting:           setting,
 		ipLocator:         iploc,
+		addressLookup:     make(map[ethereum.Address]common.Token),
 	}
 	lastBlockChecked, err := fetcher.feeSetRateStorage.GetLastBlockChecked()
 	if err != nil {
@@ -961,25 +963,36 @@ func getTimestampFromTimeZone(t uint64, freq string) uint64 {
 	return result
 }
 
+// getTokenFromAddress do a in-mem lookup for a token matched with the input address
+// if not found, it will attempt to get it from core.
+// if both measure still return no token, stat will panic
+func (self *Fetcher) getTokenFromAddress(addr ethereum.Address) common.Token {
+	var err error
+	token, ok := self.addressLookup[addr]
+	if !ok {
+		token, err = self.setting.GetTokenByAddress(addr)
+		if err != nil {
+			log.Panicf("GetTradeInfo: can't get Token with address %s (err: %s)", addr.Hex(), err)
+
+		}
+	}
+	return token
+}
+
 //This function return srcAmount, destAmount, ethAmount and burnFee information of a trade log respectively
 func (self *Fetcher) getTradeInfo(trade common.TradeLog) (float64, float64, float64, float64) {
 	var srcAmount, destAmount, ethAmount, burnFee float64
 	srcAddr := common.AddrToString(trade.SrcAddress)
 	eth := self.setting.ETHToken()
-	srcToken, err := self.setting.GetTokenByAddress(ethereum.HexToAddress(srcAddr))
-	if err != nil {
-		log.Panicf("GetTradeInfo: can't get src Token, address: %s, error: %s", srcAddr, err)
-	}
+	srcToken := self.getTokenFromAddress(ethereum.HexToAddress(srcAddr))
+
 	srcAmount = common.BigToFloat(trade.SrcAmount, srcToken.Decimals)
 	if srcToken.IsETH() {
 		ethAmount = srcAmount
 	}
 
 	dstAddr := common.AddrToString(trade.DestAddress)
-	destToken, err := self.setting.GetTokenByAddress(ethereum.HexToAddress(dstAddr))
-	if err != nil {
-		log.Panicf("GetTradeInfo: can't get dest Token, address: %s, error: %s", dstAddr, err)
-	}
+	destToken := self.getTokenFromAddress(ethereum.HexToAddress(dstAddr))
 	destAmount = common.BigToFloat(trade.DestAmount, destToken.Decimals)
 	if destToken.IsETH() {
 		ethAmount = destAmount
