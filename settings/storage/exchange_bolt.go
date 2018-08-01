@@ -151,6 +151,7 @@ func (boltSettingStorage *BoltSettingStorage) GetTokenPairs(ex settings.Exchange
 		}
 		data := b.Get(boltutil.Uint64ToBytes(uint64(ex)))
 		if data == nil {
+			log.Printf("key %s hasn't existed yet", ex.String())
 			return settings.ErrExchangeRecordNotFound
 		}
 		if uErr := json.Unmarshal(data, &result); uErr != nil {
