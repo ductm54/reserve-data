@@ -108,11 +108,16 @@ func (self *Fetcher) SetBlockchain(blockchain Blockchain) {
 	self.blockchain = blockchain
 	self.FetchCurrentBlock()
 }
-
-func (self *Fetcher) Run() error {
-	log.Printf("Fetcher runner is starting...")
-	if err := self.runner.Start(); err != nil {
-		return err
+func (self *Fetcher) WaitForCoreAndRun() {
+	const waittime = 5 * time.Second
+	//wait till core is ready to serve
+	for {
+		err := self.setting.ReadyToServe()
+		log.Printf("STAT: try requesting core's internal tokens, got err %v", err)
+		if err == nil {
+			break
+		}
+		time.Sleep(waittime)
 	}
 	go self.RunBlockFetcher()
 	go self.RunLogFetcher()
@@ -120,6 +125,15 @@ func (self *Fetcher) Run() error {
 	go self.RunTradeLogProcessor()
 	go self.RunCatLogProcessor()
 	go self.RunFeeSetrateFetcher()
+}
+
+func (self *Fetcher) Run() error {
+	log.Printf("Fetcher runner is starting...")
+	if err := self.runner.Start(); err != nil {
+		return err
+	}
+	go self.WaitForCoreAndRun()
+
 	log.Printf("Fetcher runner is running...")
 	return nil
 }
