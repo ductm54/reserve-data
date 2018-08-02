@@ -52,6 +52,9 @@ func (boltSettingStorage *BoltSettingStorage) UpdateOneAddress(name settings.Add
 		if uErr != nil {
 			return uErr
 		}
+		if uErr := updateVersion(tx); uErr != nil {
+			return uErr
+		}
 		return b.Put(boltutil.Uint64ToBytes(uint64(name)), []byte(address))
 	})
 	return err
@@ -84,6 +87,9 @@ func (boltSettingStorage *BoltSettingStorage) AddAddressToSet(setName settings.A
 		}
 		s, uErr := b.CreateBucketIfNotExists(boltutil.Uint64ToBytes(uint64(setName)))
 		if uErr != nil {
+			return uErr
+		}
+		if uErr := updateVersion(tx); uErr != nil {
 			return uErr
 		}
 		return s.Put([]byte(address), []byte(defaultValue))

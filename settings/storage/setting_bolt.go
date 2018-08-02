@@ -18,6 +18,8 @@ const (
 	EXCHANGE_STATUS             string = "exchange_status"
 	EXCHANGE_NOTIFICATIONS      string = "exchange_notifications"
 	PENDING_TOKEN_REQUEST       string = "pending_token_request"
+	ALL_SETTING_VERSION         string = "all_setting_version"
+	ALL_SETTING_VERSION_KEY     string = "version"
 )
 
 type FilterFunction func(common.Token) bool
@@ -84,6 +86,9 @@ func NewBoltSettingStorage(dbPath string) (*BoltSettingStorage, error) {
 			return uErr
 		}
 		if _, uErr := tx.CreateBucketIfNotExists([]byte(PENDING_TOKEN_REQUEST)); uErr != nil {
+			return uErr
+		}
+		if _, uErr := tx.CreateBucketIfNotExists([]byte(ALL_SETTING_VERSION)); uErr != nil {
 			return uErr
 		}
 		return nil

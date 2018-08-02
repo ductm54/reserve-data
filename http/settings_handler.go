@@ -626,7 +626,11 @@ func (self *HTTPServer) GetAllSetting(c *gin.Context) {
 		}
 		exchangeSettings[string(exID)] = exSett
 	}
-
-	allSetting := common.NewAllSettings(addressSettings, tokenSettings, exchangeSettings)
+	version, err := self.setting.GetAllSettingVersion()
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	allSetting := common.NewAllSettings(addressSettings, tokenSettings, exchangeSettings, version)
 	httputil.ResponseSuccess(c, httputil.WithData(allSetting))
 }
