@@ -16,7 +16,7 @@ import (
 const (
 	remoteLogPath  string = "core-log/"
 	defaultBaseURL        = "http://127.0.0.1"
-	coreDefaultURL string = "http://localhost:8000"
+	coreDefaultURL string = "http://127.0.0.1:8000"
 )
 
 // logDir is located at base of this repository.

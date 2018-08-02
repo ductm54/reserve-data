@@ -19,6 +19,7 @@ const (
 	pricingOPAddressName      = "pricing_operator"
 	depositOPAddressName      = "deposit_operator"
 	intermediateOPAddressName = "intermediate_operator"
+	validAddressLength        = 42
 )
 
 func (self *HTTPServer) updateInternalTokensIndices(tokenUpdates map[string]common.TokenUpdate) error {
@@ -156,7 +157,7 @@ func (self *HTTPServer) SetTokenUpdate(c *gin.Context) {
 	for tokenID, tokenUpdate := range tokenUpdates {
 		token := tokenUpdate.Token
 		token.ID = tokenID
-		if len(token.Address) != 42 {
+		if len(token.Address) != validAddressLength {
 			httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Token %s's address is invalid length. Token field in token request might be empty ", tokenID)))
 			return
 		}
@@ -719,6 +720,10 @@ func (self *HTTPServer) GetTokenByAddress(c *gin.Context) {
 		return
 	}
 	addr := c.Query("address")
+	if len(addr) != validAddressLength {
+		httputil.ResponseFailure(c, httputil.WithReason("address is invalid length "))
+		return
+	}
 	token, err := self.setting.GetTokenByAddress(ethereum.HexToAddress(addr))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))

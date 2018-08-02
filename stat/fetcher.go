@@ -20,13 +20,17 @@ import (
 )
 
 const (
-	reorgBlockSafe       uint64 = 7
-	TimezoneBucketPrefix string = "utc"
-	StartTimezone        int64  = -11
-	EndTimezone          int64  = 14
-	blockRange           uint64 = 200
-	success              string = "OK"
-	noTxsFound           string = "No transactions found"
+	reorgBlockSafe       uint64        = 7
+	TimezoneBucketPrefix string        = "utc"
+	StartTimezone        int64         = -11
+	EndTimezone          int64         = 14
+	blockRange           uint64        = 200
+	success              string        = "OK"
+	noTxsFound           string        = "No transactions found"
+	retryCount           int           = 5
+	retryWait            time.Duration = 3 * time.Second
+	ethDecimals          int64         = 18
+	ethAddress           string        = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
 
 	TradeSummaryAggregation string = "trade_summary_aggregation"
 	WalletAggregation       string = "wallet_aggregation"
@@ -980,11 +984,17 @@ func getTimestampFromTimeZone(t uint64, freq string) uint64 {
 // getTokenFromAddress do a in-mem lookup for a token matched with the input address
 // if not found, it will attempt to get it from core.
 // if both measure still return no token, stat will panic
-func (self *Fetcher) getTokenFromAddress(addr ethereum.Address) common.Token {
+func (self *Fetcher) mustGetTokenFromAddress(addr ethereum.Address) common.Token {
 	var err error
 	token, ok := self.addressLookup[addr]
 	if !ok {
-		token, err = self.setting.GetTokenByAddress(addr)
+		for i := 0; i < retryCount; i++ {
+			token, err = self.setting.GetTokenByAddress(addr)
+			if err == nil {
+				break
+			}
+			time.Sleep(retryWait)
+		}
 		if err != nil {
 			log.Panicf("GetTradeInfo: can't get Token with address %s (err: %s)", addr.Hex(), err)
 
@@ -997,8 +1007,7 @@ func (self *Fetcher) getTokenFromAddress(addr ethereum.Address) common.Token {
 func (self *Fetcher) getTradeInfo(trade common.TradeLog) (float64, float64, float64, float64) {
 	var srcAmount, destAmount, ethAmount, burnFee float64
 	srcAddr := common.AddrToString(trade.SrcAddress)
-	eth := self.setting.ETHToken()
-	srcToken := self.getTokenFromAddress(ethereum.HexToAddress(srcAddr))
+	srcToken := self.mustGetTokenFromAddress(ethereum.HexToAddress(srcAddr))
 
 	srcAmount = common.BigToFloat(trade.SrcAmount, srcToken.Decimals)
 	if srcToken.IsETH() {
@@ -1006,18 +1015,18 @@ func (self *Fetcher) getTradeInfo(trade common.TradeLog) (float64, float64, floa
 	}
 
 	dstAddr := common.AddrToString(trade.DestAddress)
-	destToken := self.getTokenFromAddress(ethereum.HexToAddress(dstAddr))
+	destToken := self.mustGetTokenFromAddress(ethereum.HexToAddress(dstAddr))
 	destAmount = common.BigToFloat(trade.DestAmount, destToken.Decimals)
 	if destToken.IsETH() {
 		ethAmount = destAmount
 	} else if trade.EtherReceivalAmount != nil {
 		// Token-Token
-		receivalAmount := common.BigToFloat(trade.EtherReceivalAmount, eth.Decimals)
+		receivalAmount := common.BigToFloat(trade.EtherReceivalAmount, ethDecimals)
 		ethAmount = receivalAmount
 	}
 
 	if trade.BurnFee != nil {
-		burnFee = common.BigToFloat(trade.BurnFee, eth.Decimals)
+		burnFee = common.BigToFloat(trade.BurnFee, ethDecimals)
 	}
 
 	return srcAmount, destAmount, ethAmount, burnFee
@@ -1090,10 +1099,9 @@ func (self *Fetcher) aggregateVolumeStats(trade common.TradeLog, volumeStats map
 	self.aggregateVolumeStat(trade, userAddr, srcAmount, ethAmount, trade.FiatAmount, volumeStats)
 
 	// reserve volume
-	eth := self.setting.ETHToken()
 	var assetAddr string
 	var assetAmount float64
-	if srcAddr != eth.Address {
+	if srcAddr != ethAddress {
 		assetAddr = srcAddr
 		assetAmount = srcAmount
 	} else {
@@ -1106,7 +1114,7 @@ func (self *Fetcher) aggregateVolumeStats(trade common.TradeLog, volumeStats map
 	self.aggregateVolumeStat(trade, key, assetAmount, ethAmount, trade.FiatAmount, volumeStats)
 
 	// eth volume
-	key = fmt.Sprintf("%s_%s", reserveAddr, eth.Address)
+	key = fmt.Sprintf("%s_%s", reserveAddr, ethAddress)
 	self.aggregateVolumeStat(trade, key, ethAmount, ethAmount, trade.FiatAmount, volumeStats)
 
 	// country token volume
@@ -1127,9 +1135,8 @@ func (self *Fetcher) aggregateBurnFeeStats(trade common.TradeLog, burnFeeStats m
 
 	// wallet fee
 	var walletFee float64
-	eth := self.setting.ETHToken()
 	if trade.WalletFee != nil {
-		walletFee = common.BigToFloat(trade.WalletFee, eth.Decimals)
+		walletFee = common.BigToFloat(trade.WalletFee, ethDecimals)
 	}
 	self.aggregateBurnfee(fmt.Sprintf("%s_%s", reserveAddr, walletAddr), walletFee, trade, burnFeeStats)
 	return nil

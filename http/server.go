@@ -1517,7 +1517,7 @@ func (self *HTTPServer) register() {
 	stt.GET("/active-token-by-id", self.GetActiveTokenByID)
 	stt.GET("/address", self.GetAddress)
 	stt.GET("/addresses", self.GetAddresses)
-	stt.GET("/ready-to-serve", self.ReadyToServe)
+	stt.GET("/ping", self.ReadyToServe)
 
 	if self.core != nil && self.app != nil {
 		v2 := self.r.Group("/v2")

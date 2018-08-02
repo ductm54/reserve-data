@@ -25,7 +25,7 @@ const (
 	getActiveTokenByIDEndpoint = "setting/active-token-by-id"
 	getAddressEndpoint         = "setting/address"
 	getAddressesEndpoint       = "setting/addresses"
-	readyToServeEndpoint       = "setting/ready-to-serve"
+	readyToServeEndpoint       = "setting/ping"
 )
 
 type clientAuthentication interface {
@@ -51,7 +51,7 @@ func NewSettingClient(authEng clientAuthentication,
 
 // SortByKey sort all the params by key in string order
 // This is required for the request to be signed correctly
-func SortByKey(params map[string]string) map[string]string {
+func sortByKey(params map[string]string) map[string]string {
 	newParams := make(map[string]string, len(params))
 	keys := make([]string, 0, len(params))
 	for key := range params {
@@ -64,7 +64,7 @@ func SortByKey(params map[string]string) map[string]string {
 	return newParams
 }
 
-func (sc *SettingClient) MakeSign(req *http.Request, message string, nonce string) {
+func (sc *SettingClient) sign(req *http.Request, message string, nonce string) {
 	signed := sc.authEngine.KNSign(message)
 	req.Header.Add("nonce", nonce)
 	req.Header.Add("signed", signed)
@@ -89,14 +89,14 @@ func (sc *SettingClient) newRequest(method, url string, params map[string]string
 	if !ok {
 		log.Printf("there was no nonce")
 	} else {
-		sc.MakeSign(req, q.Encode(), nonce)
+		sc.sign(req, q.Encode(), nonce)
 	}
 
 	return req, nil
 }
 
-func (sc *SettingClient) GetResponse(method, url string, params map[string]string) ([]byte, error) {
-	params = SortByKey(params)
+func (sc *SettingClient) getReponse(method, url string, params map[string]string) ([]byte, error) {
+	params = sortByKey(params)
 	req, err := sc.newRequest(method, url, params)
 	//create request
 	if err != nil {
@@ -134,7 +134,7 @@ func (sc *SettingClient) GetInternalTokens() ([]common.Token, error) {
 	params := make(map[string]string)
 	nonce := strconv.FormatUint(common.GetTimepoint(), 10)
 	params[nonceParamKey] = nonce
-	response, err := sc.GetResponse("GET", url, params)
+	response, err := sc.getReponse(http.MethodGet, url, params)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +151,7 @@ func (sc *SettingClient) GetActiveTokens() ([]common.Token, error) {
 	params := make(map[string]string)
 	nonce := strconv.FormatUint(common.GetTimepoint(), 10)
 	params[nonceParamKey] = nonce
-	response, err := sc.GetResponse("GET", url, params)
+	response, err := sc.getReponse(http.MethodGet, url, params)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +176,7 @@ func (sc *SettingClient) GetTokenByAddress(addr ethereum.Address) (common.Token,
 	params[nonceParamKey] = nonce
 	params[addrParamKey] = addrStr
 	var tokenReply TokenReply
-	response, err := sc.GetResponse("GET", url, params)
+	response, err := sc.getReponse(http.MethodGet, url, params)
 	if err != nil {
 		return common.Token{}, err
 	}
@@ -194,7 +194,7 @@ func (sc *SettingClient) GetActiveTokenByID(id string) (common.Token, error) {
 	params[nonceParamKey] = nonce
 	params[idParamKey] = id
 	var tokenReply TokenReply
-	response, err := sc.GetResponse("GET", url, params)
+	response, err := sc.getReponse(http.MethodGet, url, params)
 	if err != nil {
 		return common.Token{}, err
 	}
@@ -217,7 +217,7 @@ func (sc *SettingClient) GetAddress(addressType AddressName) (ethereum.Address, 
 	params[nonceParamKey] = nonce
 	params[nameKey] = addressType.String()
 	var addressReply AddressReply
-	response, err := sc.GetResponse("GET", url, params)
+	response, err := sc.getReponse(http.MethodGet, url, params)
 	if err != nil {
 		return ethereum.Address{}, err
 	}
@@ -240,7 +240,7 @@ func (sc *SettingClient) GetAddresses(setType AddressSetName) ([]ethereum.Addres
 	params[nonceParamKey] = nonce
 	params[nameKey] = setType.String()
 	var addressesReply AddressesReply
-	response, err := sc.GetResponse("GET", url, params)
+	response, err := sc.getReponse(http.MethodGet, url, params)
 	if err != nil {
 		return []ethereum.Address{}, err
 	}
@@ -251,20 +251,12 @@ func (sc *SettingClient) GetAddresses(setType AddressSetName) ([]ethereum.Addres
 	return addressesReply.Data, nil
 }
 
-func (sc *SettingClient) ETHToken() common.Token {
-	token, err := sc.GetActiveTokenByID("ETH")
-	if err != nil {
-		panic(err)
-	}
-	return token
-}
-
 // ReadyToServe is called prior to running stat functions to make sure core is up
 func (sc *SettingClient) ReadyToServe() error {
 	url := fmt.Sprintf("%s/%s", sc.coreURL, readyToServeEndpoint)
 	params := make(map[string]string)
 	nonce := strconv.FormatUint(common.GetTimepoint(), 10)
 	params[nonceParamKey] = nonce
-	_, err := sc.GetResponse("GET", url, params)
+	_, err := sc.getReponse(http.MethodGet, url, params)
 	return err
 }
