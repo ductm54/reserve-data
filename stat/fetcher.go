@@ -20,17 +20,16 @@ import (
 )
 
 const (
-	reorgBlockSafe       uint64        = 7
-	TimezoneBucketPrefix string        = "utc"
-	StartTimezone        int64         = -11
-	EndTimezone          int64         = 14
-	blockRange           uint64        = 200
-	success              string        = "OK"
-	noTxsFound           string        = "No transactions found"
-	retryCount           int           = 5
-	retryWait            time.Duration = 3 * time.Second
-	ethDecimals          int64         = 18
-	ethAddress           string        = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+	reorgBlockSafe       uint64 = 7
+	TimezoneBucketPrefix string = "utc"
+	StartTimezone        int64  = -11
+	EndTimezone          int64  = 14
+	blockRange           uint64 = 200
+	success              string = "OK"
+	noTxsFound           string = "No transactions found"
+
+	ethDecimals int64  = 18
+	ethAddress  string = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
 
 	TradeSummaryAggregation string = "trade_summary_aggregation"
 	WalletAggregation       string = "wallet_aggregation"
@@ -117,7 +116,7 @@ func (self *Fetcher) WaitForCoreAndRun() {
 	//wait till core is ready to serve
 	for {
 		err := self.setting.ReadyToServe()
-		log.Printf("STAT: try requesting core's internal tokens, got err %v", err)
+		log.Printf("STAT: try to ping core, got err %v", err)
 		if err == nil {
 			break
 		}
@@ -370,14 +369,17 @@ func (self *Fetcher) RunCountryStatAggregation(t time.Time) {
 		allFirstTradeEver, _ := self.statStorage.GetAllFirstTradeEver()
 		kycEdUsers, _ := self.userStorage.GetKycUsers()
 		for _, trade := range tradeLogs {
-			if err := self.aggregateCountryStats(trade, countryStats, allFirstTradeEver, kycEdUsers); err == nil {
-				if trade.Timestamp > last {
-					last = trade.Timestamp
-				}
+			if err := self.aggregateCountryStats(trade, countryStats, allFirstTradeEver, kycEdUsers); err != nil {
+				log.Printf("STAT: aggregate country stat got err %s, return now and wait till next ticker", err)
+				return
+			}
+			if trade.Timestamp > last {
+				last = trade.Timestamp
 			}
 		}
 		if err := self.statStorage.SetCountryStat(countryStats, last); err != nil {
 			log.Printf("Set country stat error: %s", err.Error())
+			return
 		}
 	} else {
 		l, err := self.logStorage.GetLastTradeLog()
@@ -421,14 +423,17 @@ func (self *Fetcher) RunTradeSummaryAggregation(t time.Time) {
 		allFirstTradeEver, _ := self.statStorage.GetAllFirstTradeEver()
 		kycEdUsers, _ := self.userStorage.GetKycUsers()
 		for _, trade := range tradeLogs {
-			if err := self.aggregateTradeSumary(trade, tradeSummary, allFirstTradeEver, kycEdUsers); err == nil {
-				if trade.Timestamp > last {
-					last = trade.Timestamp
-				}
+			if err := self.aggregateTradeSumary(trade, tradeSummary, allFirstTradeEver, kycEdUsers); err != nil {
+				log.Printf("STAT: aggregate trade summary got err %s, return now and wait till next ticker", err)
+				return
+			}
+			if trade.Timestamp > last {
+				last = trade.Timestamp
 			}
 		}
 		if err := self.statStorage.SetTradeSummary(tradeSummary, last); err != nil {
 			log.Printf("Set trade summary error: %s", err.Error())
+			return
 		}
 		// self.statStorage.SetLastProcessedTradeLogTimepoint(tradeSummaryAggregation, last)
 	} else {
@@ -473,14 +478,17 @@ func (self *Fetcher) RunWalletStatAggregation(t time.Time) {
 		allFirstTradeEver, _ := self.statStorage.GetAllFirstTradeEver()
 		kycEdUsers, _ := self.userStorage.GetKycUsers()
 		for _, trade := range tradeLogs {
-			if err := self.aggregateWalletStats(trade, walletStats, allFirstTradeEver, kycEdUsers); err == nil {
-				if trade.Timestamp > last {
-					last = trade.Timestamp
-				}
+			if err := self.aggregateWalletStats(trade, walletStats, allFirstTradeEver, kycEdUsers); err != nil {
+				log.Printf("STAT: aggregate wallet stat got err %s, return now and wait till next ticker", err)
+				return
+			}
+			if trade.Timestamp > last {
+				last = trade.Timestamp
 			}
 		}
 		if err := self.statStorage.SetWalletStat(walletStats, last); err != nil {
 			log.Printf("Set wallet stats error: %s", err.Error())
+			return
 		}
 		// self.statStorage.SetLastProcessedTradeLogTimepoint(walletAggregation, last)
 	} else {
@@ -496,7 +504,6 @@ func (self *Fetcher) RunWalletStatAggregation(t time.Time) {
 				log.Printf("Set last processed tradelog timepoint: %s", err.Error())
 			}
 		}
-
 	}
 }
 
@@ -518,14 +525,17 @@ func (self *Fetcher) RunBurnFeeAggregation(t time.Time) {
 
 		burnFeeStats := map[string]common.BurnFeeStatsTimeZone{}
 		for _, trade := range tradeLogs {
-			if err := self.aggregateBurnFeeStats(trade, burnFeeStats); err == nil {
-				if trade.Timestamp > last {
-					last = trade.Timestamp
-				}
+			if err := self.aggregateBurnFeeStats(trade, burnFeeStats); err != nil {
+				log.Printf("STAT: aggregate burnFee stat got err %s, return now and wait till next ticker", err)
+				return
+			}
+			if trade.Timestamp > last {
+				last = trade.Timestamp
 			}
 		}
 		if err := self.statStorage.SetBurnFeeStat(burnFeeStats, last); err != nil {
 			log.Printf("Set burn fee error: %s", err.Error())
+			return
 		}
 		// self.statStorage.SetLastProcessedTradeLogTimepoint(burnfeeAggregation, last)
 	} else {
@@ -560,14 +570,17 @@ func (self *Fetcher) RunVolumeStatAggregation(t time.Time) {
 
 		volumeStats := map[string]common.VolumeStatsTimeZone{}
 		for _, trade := range tradeLogs {
-			if err := self.aggregateVolumeStats(trade, volumeStats); err == nil {
-				if trade.Timestamp > last {
-					last = trade.Timestamp
-				}
+			if err := self.aggregateVolumeStats(trade, volumeStats); err != nil {
+				log.Printf("STAT: aggregate Volume stat got err %s, return now and wait till next ticker", err)
+				return
+			}
+			if trade.Timestamp > last {
+				last = trade.Timestamp
 			}
 		}
 		if err := self.statStorage.SetVolumeStat(volumeStats, last); err != nil {
 			log.Printf("Set volume stat error: %s", err.Error())
+			return
 		}
 	} else {
 		l, err := self.logStorage.GetLastTradeLog()
@@ -601,13 +614,17 @@ func (self *Fetcher) RunUserInfoAggregation(t time.Time) {
 		var last uint64
 		userInfos := map[string]common.UserInfoTimezone{}
 		for _, trade := range tradeLogs {
-			self.aggregateUserInfo(trade, userInfos)
+			if err := self.aggregateUserInfo(trade, userInfos); err != nil {
+				log.Printf("STAT: aggregate user info got err %s, return now and wait till next ticker", err)
+				return
+			}
 			if trade.Timestamp > last {
 				last = trade.Timestamp
 			}
 		}
 		if err := self.statStorage.SetUserList(userInfos, last); err != nil {
 			log.Printf("Set user list: %s", err.Error())
+			return
 		}
 	} else {
 		l, err := self.logStorage.GetLastTradeLog()
@@ -983,39 +1000,39 @@ func getTimestampFromTimeZone(t uint64, freq string) uint64 {
 
 // getTokenFromAddress do a in-mem lookup for a token matched with the input address
 // if not found, it will attempt to get it from core.
-// if both measure still return no token, stat will panic
-func (self *Fetcher) mustGetTokenFromAddress(addr ethereum.Address) common.Token {
+// if both measure still return no token, it will return error
+func (self *Fetcher) getTokenFromAddress(addr ethereum.Address) (common.Token, error) {
 	var err error
 	token, ok := self.addressLookup[addr]
 	if !ok {
-		for i := 0; i < retryCount; i++ {
-			token, err = self.setting.GetTokenByAddress(addr)
-			if err == nil {
-				break
-			}
-			time.Sleep(retryWait)
-		}
+		token, err = self.setting.GetTokenByAddress(addr)
 		if err != nil {
-			log.Panicf("GetTradeInfo: can't get Token with address %s (err: %s)", addr.Hex(), err)
-
+			return token, err
 		}
+		//update in-mem lookup
+		self.addressLookup[addr] = token
 	}
-	return token
+	return token, nil
 }
 
 //This function return srcAmount, destAmount, ethAmount and burnFee information of a trade log respectively
-func (self *Fetcher) getTradeInfo(trade common.TradeLog) (float64, float64, float64, float64) {
+func (self *Fetcher) getTradeInfo(trade common.TradeLog) (float64, float64, float64, float64, error) {
 	var srcAmount, destAmount, ethAmount, burnFee float64
 	srcAddr := common.AddrToString(trade.SrcAddress)
-	srcToken := self.mustGetTokenFromAddress(ethereum.HexToAddress(srcAddr))
-
+	srcToken, err := self.getTokenFromAddress(ethereum.HexToAddress(srcAddr))
+	if err != nil {
+		return srcAmount, destAmount, ethAmount, burnFee, err
+	}
 	srcAmount = common.BigToFloat(trade.SrcAmount, srcToken.Decimals)
 	if srcToken.IsETH() {
 		ethAmount = srcAmount
 	}
 
 	dstAddr := common.AddrToString(trade.DestAddress)
-	destToken := self.mustGetTokenFromAddress(ethereum.HexToAddress(dstAddr))
+	destToken, err := self.getTokenFromAddress(ethereum.HexToAddress(dstAddr))
+	if err != nil {
+		return srcAmount, destAmount, ethAmount, burnFee, err
+	}
 	destAmount = common.BigToFloat(trade.DestAmount, destToken.Decimals)
 	if destToken.IsETH() {
 		ethAmount = destAmount
@@ -1029,7 +1046,7 @@ func (self *Fetcher) getTradeInfo(trade common.TradeLog) (float64, float64, floa
 		burnFee = common.BigToFloat(trade.BurnFee, ethDecimals)
 	}
 
-	return srcAmount, destAmount, ethAmount, burnFee
+	return srcAmount, destAmount, ethAmount, burnFee, nil
 }
 
 func (self *Fetcher) aggregateCountryStats(trade common.TradeLog,
@@ -1041,7 +1058,10 @@ func (self *Fetcher) aggregateCountryStats(trade common.TradeLog,
 		log.Printf("Cannot store country: %s", err.Error())
 		return err
 	}
-	_, _, ethAmount, burnFee := self.getTradeInfo(trade)
+	_, _, ethAmount, burnFee, err := self.getTradeInfo(trade)
+	if err != nil {
+		return err
+	}
 	var kycEd bool
 	regTime, exist := kycEdUsers[userAddr]
 	if exist && regTime < trade.Timestamp {
@@ -1059,7 +1079,10 @@ func (self *Fetcher) aggregateWalletStats(trade common.TradeLog,
 			log.Printf("Set wallet address error: %s", err.Error())
 		}
 	}
-	_, _, ethAmount, burnFee := self.getTradeInfo(trade)
+	_, _, ethAmount, burnFee, err := self.getTradeInfo(trade)
+	if err != nil {
+		return err
+	}
 	var kycEd bool
 	regTime, exist := kycEdUsers[userAddr]
 	if exist && regTime < trade.Timestamp {
@@ -1073,7 +1096,10 @@ func (self *Fetcher) aggregateTradeSumary(trade common.TradeLog,
 	tradeSummary map[string]common.MetricStatsTimeZone, allFirstTradeEver map[ethereum.Address]uint64, kycEdUsers map[string]uint64) error {
 
 	userAddr := common.AddrToString(trade.UserAddress)
-	_, _, ethAmount, burnFee := self.getTradeInfo(trade)
+	_, _, ethAmount, burnFee, err := self.getTradeInfo(trade)
+	if err != nil {
+		return err
+	}
 	var kycEd bool
 	regTime, exist := kycEdUsers[userAddr]
 	if exist && regTime < trade.Timestamp {
@@ -1090,7 +1116,10 @@ func (self *Fetcher) aggregateVolumeStats(trade common.TradeLog, volumeStats map
 	userAddr := common.AddrToString(trade.UserAddress)
 	reserveAddr := common.AddrToString(trade.ReserveAddress)
 
-	srcAmount, destAmount, ethAmount, _ := self.getTradeInfo(trade)
+	srcAmount, destAmount, ethAmount, _, err := self.getTradeInfo(trade)
+	if err != nil {
+		return err
+	}
 	// token volume
 	self.aggregateVolumeStat(trade, srcAddr, srcAmount, ethAmount, trade.FiatAmount, volumeStats)
 	self.aggregateVolumeStat(trade, dstAddr, destAmount, ethAmount, trade.FiatAmount, volumeStats)
@@ -1129,7 +1158,10 @@ func (self *Fetcher) aggregateBurnFeeStats(trade common.TradeLog, burnFeeStats m
 
 	reserveAddr := common.AddrToString(trade.ReserveAddress)
 	walletAddr := common.AddrToString(trade.WalletAddress)
-	_, _, _, burnFee := self.getTradeInfo(trade)
+	_, _, _, burnFee, err := self.getTradeInfo(trade)
+	if err != nil {
+		return err
+	}
 	// reserve burn fee
 	self.aggregateBurnfee(reserveAddr, burnFee, trade, burnFeeStats)
 
@@ -1142,14 +1174,17 @@ func (self *Fetcher) aggregateBurnFeeStats(trade common.TradeLog, burnFeeStats m
 	return nil
 }
 
-func (self *Fetcher) aggregateUserInfo(trade common.TradeLog, userInfos map[string]common.UserInfoTimezone) {
+func (self *Fetcher) aggregateUserInfo(trade common.TradeLog, userInfos map[string]common.UserInfoTimezone) error {
 	userAddr := common.AddrToString(trade.UserAddress)
 
-	_, _, ethAmount, _ := self.getTradeInfo(trade)
+	_, _, ethAmount, _, err := self.getTradeInfo(trade)
+	if err != nil {
+		return err
+	}
 
 	email, _, err := self.userStorage.GetUserOfAddress(trade.UserAddress)
 	if err != nil {
-		return
+		return err
 	}
 	userAddrInfo, exist := userInfos[userAddr]
 	if !exist {
@@ -1175,6 +1210,7 @@ func (self *Fetcher) aggregateUserInfo(trade common.TradeLog, userInfos map[stri
 		userAddrInfo[timezone] = timezoneInfo
 		userInfos[userAddr] = userAddrInfo
 	}
+	return nil
 }
 
 func (self *Fetcher) aggregateBurnfee(key string, fee float64, trade common.TradeLog, burnFeeStats map[string]common.BurnFeeStatsTimeZone) {
