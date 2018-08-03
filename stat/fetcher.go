@@ -60,6 +60,7 @@ type Fetcher struct {
 	setting                Setting
 	ipLocator              *statutil.IPLocator
 	addressLookup          map[ethereum.Address]common.Token
+	mu                     sync.RWMutex
 }
 
 func NewFetcher(
@@ -1002,15 +1003,19 @@ func getTimestampFromTimeZone(t uint64, freq string) uint64 {
 // if not found, it will attempt to get it from core.
 // if both measure still return no token, it will return error
 func (self *Fetcher) getTokenFromAddress(addr ethereum.Address) (common.Token, error) {
+	self.mu.RLock()
 	var err error
 	token, ok := self.addressLookup[addr]
+	self.mu.RUnlock()
 	if !ok {
 		token, err = self.setting.GetTokenByAddress(addr)
 		if err != nil {
 			return token, err
 		}
+		self.mu.Lock()
 		//update in-mem lookup
 		self.addressLookup[addr] = token
+		self.mu.Unlock()
 	}
 	return token, nil
 }
