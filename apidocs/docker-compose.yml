@@ -1,8 +1,7 @@
-
 version: '2'
 services:
   slate:
-    build: .
-    image: slate 
+    image: kybernetwork/slate:latest
     volumes:
+      - ./source:/slate/source:ro
       - ./build:/slate/build
