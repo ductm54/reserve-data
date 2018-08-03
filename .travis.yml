@@ -20,6 +20,7 @@ after_success:
   - docker --version
   - docker build -f Dockerfile.next -t kybernetwork/reserve-data:$TRAVIS_COMMIT .
   - docker run -v $PWD/apidocs/build/:/slate/build/ -v $PWD/apidocs/source/:/slate/source/ kybernetwork/slate:latest
+  - sudo chown -R $USER apidocs/build
 
 deploy:
   provider: script
