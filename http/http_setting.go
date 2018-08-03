@@ -31,4 +31,5 @@ type Setting interface {
 	GetPendingTokenUpdates() (map[string]common.TokenUpdate, error)
 	RemovePendingTokenUpdates() error
 	GetAllAddresses() (map[string]interface{}, error)
+	GetAllSettingVersion() (uint64, error)
 }

@@ -3,9 +3,11 @@ package storage
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/KyberNetwork/reserve-data/boltutil"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/settings"
 	"github.com/boltdb/bolt"
@@ -36,12 +38,23 @@ func addTokenByAddress(tx *bolt.Tx, t common.Token) error {
 	return b.Put([]byte(strings.ToLower(t.Address)), dataJson)
 }
 
+func updateVersion(tx *bolt.Tx) error {
+	b := tx.Bucket([]byte(ALL_SETTING_VERSION))
+	if uErr := b.Put([]byte(ALL_SETTING_VERSION_KEY), boltutil.Uint64ToBytes(common.GetTimepoint())); uErr != nil {
+		return uErr
+	}
+	return nil
+}
+
 func (boltSettingStorage *BoltSettingStorage) UpdateToken(t common.Token) error {
 	err := boltSettingStorage.db.Update(func(tx *bolt.Tx) error {
 		if uErr := addTokenByID(tx, t); uErr != nil {
 			return uErr
 		}
 		if uErr := addTokenByAddress(tx, t); uErr != nil {
+			return uErr
+		}
+		if uErr := updateVersion(tx); uErr != nil {
 			return uErr
 		}
 		return nil
@@ -59,6 +72,9 @@ func (boltSettingStorage *BoltSettingStorage) AddTokenByID(t common.Token) error
 		if uErr != nil {
 			return uErr
 		}
+		if uErr := updateVersion(tx); uErr != nil {
+			return uErr
+		}
 		return b.Put([]byte(strings.ToLower(t.ID)), dataJSON)
 	})
 	return err
@@ -72,6 +88,9 @@ func (boltSettingStorage *BoltSettingStorage) AddTokenByAddress(t common.Token) 
 		}
 		dataJson, uErr := json.Marshal(t)
 		if uErr != nil {
+			return uErr
+		}
+		if uErr := updateVersion(tx); uErr != nil {
 			return uErr
 		}
 		return b.Put([]byte(strings.ToLower(t.Address)), dataJson)
@@ -228,6 +247,9 @@ func (boltSettingStorage *BoltSettingStorage) UpdateTokenWithExchangeSetting(tok
 		if uErr := deletePendingTokenUpdates(tx); uErr != nil {
 			return uErr
 		}
+		if uErr := updateVersion(tx); uErr != nil {
+			return uErr
+		}
 		return nil
 	})
 	return err
@@ -292,4 +314,18 @@ func (boltSettingStorage *BoltSettingStorage) RemovePendingTokenUpdates() error 
 		return deletePendingTokenUpdates(tx)
 	})
 	return err
+}
+
+func (boltSettingStorage *BoltSettingStorage) GetAllSettingVersion() (uint64, error) {
+	var result uint64
+	err := boltSettingStorage.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(ALL_SETTING_VERSION))
+		data := b.Get([]byte(ALL_SETTING_VERSION_KEY))
+		if data == nil {
+			return errors.New("No version is currently available")
+		}
+		result = boltutil.BytesToUint64(data)
+		return nil
+	})
+	return result, err
 }

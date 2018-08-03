@@ -36,4 +36,5 @@ type TokenStorage interface {
 	GetPendingTokenUpdates() (map[string]common.TokenUpdate, error)
 	UpdateTokenWithExchangeSetting(t []common.Token, exSetting map[ExchangeName]*common.ExchangeSetting) error
 	RemovePendingTokenUpdates() error
+	GetAllSettingVersion() (uint64, error)
 }
