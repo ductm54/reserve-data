@@ -597,6 +597,7 @@ func (self *HTTPServer) GetAllSetting(c *gin.Context) {
 	if !ok {
 		return
 	}
+	timepoint := common.GetTimepoint()
 	tokenSettings, err := self.setting.GetAllTokens()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -631,6 +632,10 @@ func (self *HTTPServer) GetAllSetting(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	allSetting := common.NewAllSettings(addressSettings, tokenSettings, exchangeSettings, version)
-	httputil.ResponseSuccess(c, httputil.WithData(allSetting))
+	allSetting := common.NewAllSettings(addressSettings, tokenSettings, exchangeSettings)
+	httputil.ResponseSuccess(c, httputil.WithMultipleFields(gin.H{
+		"version":   version,
+		"timestamp": timepoint,
+		"data":      allSetting,
+	}))
 }

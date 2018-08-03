@@ -928,14 +928,12 @@ type AllSettings struct {
 	Addresses map[string]interface{}
 	Tokens    []Token
 	Exchanges map[string]*ExchangeSetting
-	Version   uint64
 }
 
-func NewAllSettings(addrs map[string]interface{}, toks []Token, exs map[string]*ExchangeSetting, version uint64) *AllSettings {
+func NewAllSettings(addrs map[string]interface{}, toks []Token, exs map[string]*ExchangeSetting) *AllSettings {
 	return &AllSettings{
 		Addresses: addrs,
 		Tokens:    toks,
 		Exchanges: exs,
-		Version:   version,
 	}
 }
