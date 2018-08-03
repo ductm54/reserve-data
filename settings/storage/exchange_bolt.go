@@ -296,8 +296,8 @@ func (boltSettingStorage *BoltSettingStorage) StoreExchangeNotification(
 			Message:   msg,
 		}
 
-		if uErr := updateVersion(tx); uErr != nil {
-			return uErr
+		if uvErr := updateVersion(tx); uvErr != nil {
+			return uvErr
 		}
 		// update new value
 		dataJSON, uErr := json.Marshal(noti)
