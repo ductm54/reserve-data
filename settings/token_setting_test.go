@@ -149,7 +149,7 @@ func TestInternaTokenSetting(t *testing.T) {
 			t.Error(rErr)
 		}
 	}()
-	if err := setting.UpdateToken(testInternalToken); err != nil {
+	if err := setting.UpdateToken(testInternalToken, 0); err != nil {
 		t.Fatal(err)
 	}
 	testPositiveGetInternalToken(t, setting, testInternalToken)
@@ -169,7 +169,7 @@ func TestExternalTokenSetting(t *testing.T) {
 			t.Error(rErr)
 		}
 	}()
-	if err := setting.UpdateToken(testExternalToken); err != nil {
+	if err := setting.UpdateToken(testExternalToken, 0); err != nil {
 		t.Fatal(err)
 	}
 	testGetToken(t, setting, testExternalToken)

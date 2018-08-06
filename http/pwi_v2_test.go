@@ -191,7 +191,7 @@ func TestHTTPServerPWIEquationV2(t *testing.T) {
 		Address:  "xxx",
 		Internal: true,
 		Active:   true,
-	})
+	}, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -200,7 +200,7 @@ func TestHTTPServerPWIEquationV2(t *testing.T) {
 		Address:  "xxx",
 		Internal: true,
 		Active:   true,
-	})
+	}, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
