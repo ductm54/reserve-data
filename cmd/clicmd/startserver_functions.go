@@ -199,7 +199,7 @@ func CreateDataCore(config *configuration.Config, kyberENV string, bc *blockchai
 	return rData, rCore
 }
 
-func CreateStat(config *configuration.Config, kyberENV string, bc *blockchain.Blockchain) *stat.ReserveStats {
+func CreateStat(config *configuration.Config, kyberENV string, bc *blockchain.StatBlockchain) *stat.ReserveStats {
 	var deployBlock uint64
 
 	switch kyberENV {

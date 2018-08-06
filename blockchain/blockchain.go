@@ -504,7 +504,6 @@ func (self *Blockchain) GetLogs(fromBlock uint64, toBlock uint64) ([]common.KNLo
 		err      error
 		result   []common.KNLog
 		noCatLog = 0
-		eth      = self.setting.ETHToken()
 	)
 
 	// get all logs from fromBlock to best block
@@ -562,7 +561,7 @@ func (self *Blockchain) GetLogs(fromBlock uint64, toBlock uint64) ([]common.KNLo
 
 		ethRate := self.GetEthRate(tradeLog.Timestamp / 1000000)
 		if ethRate != 0 {
-			result[i] = calculateFiatAmount(tradeLog, ethRate, eth)
+			result[i] = calculateFiatAmount(tradeLog, ethRate)
 		}
 	}
 

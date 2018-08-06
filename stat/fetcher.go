@@ -112,16 +112,36 @@ func (self *Fetcher) SetBlockchain(blockchain Blockchain) {
 	self.blockchain = blockchain
 	self.FetchCurrentBlock()
 }
+
+func (self *Fetcher) MustRegisterContract() error {
+	wrapperAddr, err := self.setting.GetAddress(settings.Wrapper)
+	if err != nil {
+		return err
+	}
+	log.Printf("wrapper address: %s", wrapperAddr.Hex())
+	self.blockchain.MustRegisterWrapper(wrapperAddr)
+	pricingAddr, err := self.setting.GetAddress(settings.Pricing)
+	if err != nil {
+		return err
+	}
+	log.Printf("pricing address: %s", pricingAddr.Hex())
+	self.blockchain.MustRegisterPricing(pricingAddr)
+	return nil
+}
+
 func (self *Fetcher) WaitForCoreAndRun() {
 	const waittime = 5 * time.Second
 	//wait till core is ready to serve
 	for {
 		err := self.setting.ReadyToServe()
-		log.Printf("STAT: try to ping core, got err %v", err)
+		log.Printf("STAT: waiting for core.... try to ping core, got err %v. ", err)
 		if err == nil {
 			break
 		}
 		time.Sleep(waittime)
+	}
+	if err := self.MustRegisterContract(); err != nil {
+		log.Panicf("STAT: cannot register contract for stat's blockchain: %s", err)
 	}
 	go self.RunBlockFetcher()
 	go self.RunLogFetcher()
@@ -412,6 +432,7 @@ func (self *Fetcher) RunTradeSummaryAggregation(t time.Time) {
 		return
 	}
 	if len(tradeLogs) > 0 {
+		log.Printf("STAT: Trade summary aggregation got %d logs from %d to %d", len(tradeLogs), fromTime, toTime)
 		if err := self.statStorage.SetFirstTradeEver(&tradeLogs); err != nil {
 			log.Printf("Set first trade ever error: %s", err.Error())
 		}
@@ -922,9 +943,49 @@ func (self *Fetcher) CheckDupAndStoreCatLog(l common.SetCatLog, timepoint uint64
 	return err
 }
 
+// getListOfAddresses return the list of addresses that have relation to our operations
+// it is used to assemble a list of addresses for log querrying.
+func (self *Fetcher) getListOfAddresses() ([]ethereum.Address, error) {
+	var addresses []ethereum.Address
+	networkAddr, err := self.setting.GetAddress(settings.Network)
+	if err != nil {
+		return nil, err
+	}
+	burnerAddr, err := self.setting.GetAddress(settings.Burner)
+	if err != nil {
+		return nil, err
+	}
+	whitelistAddr, err := self.setting.GetAddress(settings.Whitelist)
+	if err != nil {
+		return nil, err
+	}
+	internalAddr, err := self.setting.GetAddress(settings.InternalNetwork)
+	if err != nil {
+		return nil, err
+	}
+
+	addresses = append(addresses, networkAddr, burnerAddr, whitelistAddr, internalAddr)
+	oldNetworks, err := self.setting.GetAddresses(settings.OldNetWorks)
+	if err != nil {
+		log.Printf("WARNING: can't get old network addresses (%s)", err)
+	}
+	oldBurners, err := self.setting.GetAddresses(settings.OldBurners)
+	if err != nil {
+		log.Printf("WARNING: can't get old burners addresses (%s)", err)
+	}
+	addresses = append(addresses, oldNetworks...)
+	addresses = append(addresses, oldBurners...)
+	return addresses, nil
+}
+
 // FetchLogs return block number that we just fetched the logs
 func (self *Fetcher) FetchLogs(fromBlock uint64, toBlock uint64, timepoint uint64) (uint64, error) {
-	logs, err := self.blockchain.GetLogs(fromBlock, toBlock)
+	addresses, err := self.getListOfAddresses()
+	if err != nil {
+		log.Printf("LogFetcher - can not assemble list of addresses %s", err)
+		return enforceFromBlock(fromBlock), err
+	}
+	logs, err := self.blockchain.GetLogs(fromBlock, toBlock, addresses)
 	if err != nil {
 		log.Printf("LogFetcher - fetching logs data from block %d failed, error: %v", fromBlock, err)
 		return enforceFromBlock(fromBlock), err

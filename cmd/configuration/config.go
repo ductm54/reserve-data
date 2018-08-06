@@ -188,6 +188,11 @@ func (self *Config) AddStatConfig(settingPath SettingPaths) {
 }
 
 func (self *Config) AddCoreConfig(settingPath SettingPaths, kyberENV string) {
+	setting, err := GetSetting(settingPath, kyberENV)
+	if err != nil {
+		log.Panicf("Failed to create setting: %s", err.Error())
+	}
+	self.Setting = setting
 	dataStorage, err := storage.NewBoltStorage(settingPath.dataStoragePath)
 	if err != nil {
 		panic(err)

@@ -8,6 +8,7 @@ import (
 	"runtime"
 
 	"github.com/KyberNetwork/reserve-data"
+	"github.com/KyberNetwork/reserve-data/blockchain"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http"
 	"github.com/spf13/cobra"
@@ -46,39 +47,41 @@ func serverStart(_ *cobra.Command, _ []string) {
 	config := GetConfigFromENV(kyberENV)
 	backupLog(config.Archive)
 
-	var rData reserve.ReserveData
-	var rCore reserve.ReserveCore
-	var rStat reserve.ReserveStats
-
-	//Create blockchain object
-	bc, err := CreateBlockchain(config, kyberENV)
-	if err != nil {
-		log.Panicf("Can not create blockchain: (%s)", err)
-	}
-
+	var (
+		rData reserve.ReserveData
+		rCore reserve.ReserveCore
+		rStat reserve.ReserveStats
+		bc    *blockchain.Blockchain
+	)
 	//Create Data and Core, run if not in dry mode
 	if !noCore {
+		var iErr error
+		//create blockchain only if there is core
+		bc, iErr = CreateBlockchain(config, kyberENV)
+		if iErr != nil {
+			log.Panicf("Can not create blockchain: (%s)", iErr)
+		}
 		rData, rCore = CreateDataCore(config, kyberENV, bc)
 		if !dryrun {
 			if kyberENV != common.SimulationMode {
-				if err := rData.RunStorageController(); err != nil {
+				if iErr = rData.RunStorageController(); iErr != nil {
 					log.Panic(err)
 				}
 			}
-			if err := rData.Run(); err != nil {
-				log.Panic(err)
+			if iErr = rData.Run(); iErr != nil {
+				log.Panic(iErr)
 			}
 		}
-	}
-
-	//set static field supportExchange from common...
-	for _, ex := range config.Exchanges {
-		common.SupportedExchanges[ex.ID()] = ex
+		//set static field supportExchange from common...
+		for _, ex := range config.Exchanges {
+			common.SupportedExchanges[ex.ID()] = ex
+		}
 	}
 
 	//Create Stat, run if not in dry mode
 	if enableStat {
-		rStat = CreateStat(config, kyberENV, bc)
+		stbc := blockchain.NewStatBlockchain(config.Blockchain)
+		rStat = CreateStat(config, kyberENV, stbc)
 		if !dryrun {
 			if kyberENV != common.SimulationMode {
 				if err := rStat.RunStorageController(); err != nil {

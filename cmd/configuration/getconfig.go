@@ -105,10 +105,7 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string, noCore, enable
 	}
 
 	hmac512auth := http.NewKNAuthenticationFromFile(setPath.secretPath)
-	setting, err := GetSetting(setPath, kyberENV)
-	if err != nil {
-		log.Panicf("Failed to create setting: %s", err.Error())
-	}
+
 	var endpoint string
 	if endpointOW != "" {
 		log.Printf("overwriting Endpoint with %s\n", endpointOW)
@@ -164,7 +161,6 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string, noCore, enable
 		EnableAuthentication:    authEnbl,
 		Archive:                 s3archive,
 		World:                   theWorld,
-		Setting:                 setting,
 	}
 
 	if enableStat {
