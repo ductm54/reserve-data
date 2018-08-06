@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/KyberNetwork/reserve-data/core"
+	"github.com/KyberNetwork/reserve-data/data"
 	"github.com/KyberNetwork/reserve-data/data/storage"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/settings"
@@ -106,8 +108,8 @@ func TestHTTPUpdateExchange(t *testing.T) {
 	}
 
 	testServer := HTTPServer{
-		app:         nil,
-		core:        nil,
+		app:         data.NewReserveData(nil, nil, nil, nil, nil, nil, setting),
+		core:        core.NewReserveCore(nil, nil, setting),
 		metric:      testStorage,
 		authEnabled: false,
 		r:           gin.Default(),
