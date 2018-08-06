@@ -87,12 +87,15 @@ func (setting *Settings) MustCreateTokenPair(base, quote string) common.TokenPai
 	return pair
 }
 
-func (setting *Settings) UpdateToken(t common.Token) error {
-	return setting.Tokens.Storage.UpdateToken(t)
+func (setting *Settings) UpdateToken(t common.Token, timestamp uint64) error {
+	return setting.Tokens.Storage.UpdateToken(t, timestamp)
 }
 
-func (setting *Settings) ApplyTokenWithExchangeSetting(tokens []common.Token, exSetting map[ExchangeName]*common.ExchangeSetting) error {
-	return setting.Tokens.Storage.UpdateTokenWithExchangeSetting(tokens, exSetting)
+func (setting *Settings) ApplyTokenWithExchangeSetting(tokens []common.Token, exSetting map[ExchangeName]*common.ExchangeSetting, timestamp uint64) error {
+	if timestamp == 0 {
+		timestamp = common.GetTimepoint()
+	}
+	return setting.Tokens.Storage.UpdateTokenWithExchangeSetting(tokens, exSetting, timestamp)
 }
 
 func (setting *Settings) UpdatePendingTokenUpdates(tokenUpdates map[string]common.TokenUpdate) error {
@@ -105,4 +108,8 @@ func (setting *Settings) GetPendingTokenUpdates() (map[string]common.TokenUpdate
 
 func (setting *Settings) RemovePendingTokenUpdates() error {
 	return setting.Tokens.Storage.RemovePendingTokenUpdates()
+}
+
+func (setting *Settings) GetTokenVersion() (uint64, error) {
+	return setting.Tokens.Storage.GetTokenVersion()
 }

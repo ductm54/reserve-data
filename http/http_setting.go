@@ -13,7 +13,6 @@ type Setting interface {
 	GetInternalTokens() ([]common.Token, error)
 	GetAllTokens() ([]common.Token, error)
 	NewTokenPairFromID(base, quote string) (common.TokenPair, error)
-	UpdateToken(t common.Token) error
 	AddAddressToSet(setName settings.AddressSetName, address ethereum.Address, timestamp uint64) error
 	UpdateAddress(name settings.AddressName, address ethereum.Address, timestamp uint64) error
 	GetFee(ex settings.ExchangeName) (common.ExchangeFees, error)
@@ -27,10 +26,10 @@ type Setting interface {
 	GetExchangeStatus() (common.ExchangesStatus, error)
 	UpdateExchangeStatus(data common.ExchangesStatus) error
 	UpdatePendingTokenUpdates(map[string]common.TokenUpdate) error
-	ApplyTokenWithExchangeSetting([]common.Token, map[settings.ExchangeName]*common.ExchangeSetting) error
+	ApplyTokenWithExchangeSetting([]common.Token, map[settings.ExchangeName]*common.ExchangeSetting, uint64) error
 	GetPendingTokenUpdates() (map[string]common.TokenUpdate, error)
 	RemovePendingTokenUpdates() error
 	GetAllAddresses() (map[string]interface{}, error)
 	GetAddressVersion() (uint64, error)
-	GetAllSettingVersion() (uint64, error)
+	GetTokenVersion() (uint64, error)
 }

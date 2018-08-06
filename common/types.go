@@ -936,13 +936,25 @@ func NewAddressResponse(addrs map[string]interface{}, version uint64) *Addresses
 	}
 }
 
+type TokenResponse struct {
+	Tokens  []Token
+	Version uint64
+}
+
+func NewTokenResponse(tokens []Token, version uint64) *TokenResponse {
+	return &TokenResponse{
+		Tokens:  tokens,
+		Version: version,
+	}
+}
+
 type AllSettings struct {
 	Addresses *AddressesRepsonse
-	Tokens    []Token
+	Tokens    *TokenResponse
 	Exchanges map[string]*ExchangeSetting
 }
 
-func NewAllSettings(addrs *AddressesRepsonse, toks []Token, exs map[string]*ExchangeSetting) *AllSettings {
+func NewAllSettings(addrs *AddressesRepsonse, toks *TokenResponse, exs map[string]*ExchangeSetting) *AllSettings {
 	return &AllSettings{
 		Addresses: addrs,
 		Tokens:    toks,

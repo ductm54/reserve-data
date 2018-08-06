@@ -221,6 +221,8 @@ func (self *HTTPServer) ConfirmTokenUpdate(c *gin.Context) {
 		return
 	}
 	data := []byte(postForm.Get("data"))
+	//no need to handle error here, if timestamp==0 the program will use UNIX timestamp instead
+	timestamp, _ := strconv.ParseUint(postForm.Get("timestamp"), 10, 64)
 	var tokenUpdates map[string]common.TokenUpdate
 	if err := json.Unmarshal(data, &tokenUpdates); err != nil {
 		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("cant not unmarshall token request %s", err.Error())))
@@ -302,7 +304,7 @@ func (self *HTTPServer) ConfirmTokenUpdate(c *gin.Context) {
 		}
 	}
 	// Apply the change into setting database
-	if err = self.setting.ApplyTokenWithExchangeSetting(preparedToken, preparedExchangeSetting); err != nil {
+	if err = self.setting.ApplyTokenWithExchangeSetting(preparedToken, preparedExchangeSetting, timestamp); err != nil {
 		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Can not apply token and exchange setting for token listing (%s). Metric data and token indices changes has to be manually revert", err.Error())))
 		return
 	}
@@ -430,7 +432,7 @@ func (self *HTTPServer) UpdateAddress(c *gin.Context) {
 	}
 	addrStr := postForm.Get("address")
 	name := postForm.Get("name")
-	//no need to handle error here, if timestamp==0 the system will automatically get UNIX timestamp
+	//no need to handle error here, if timestamp==0 the program will use UNIX timestamp instead
 	timestamp, _ := strconv.ParseUint(postForm.Get("timestamp"), 10, 64)
 
 	addressName, ok := settings.AddressNameValues()[name]
@@ -454,7 +456,7 @@ func (self *HTTPServer) AddAddressToSet(c *gin.Context) {
 	addrStr := postForm.Get("address")
 	addr := ethereum.HexToAddress(addrStr)
 	setName := postForm.Get("name")
-	//no need to handle error here, if timestamp==0 the system will automatically get UNIX timestamp
+	//no need to handle error here, if timestamp==0 the program will use UNIX timestamp instead
 	timestamp, _ := strconv.ParseUint(postForm.Get("timestamp"), 10, 64)
 	addrSetName, ok := settings.AddressSetNameValues()[setName]
 	if !ok {
@@ -608,12 +610,11 @@ func (self *HTTPServer) GetAllSetting(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	tokenSettings, err := self.setting.GetAllTokens()
+	tokResponse, err := self.getTokenResponse()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-
 	exchangeSettings := make(map[string]*common.ExchangeSetting)
 	for exID := range common.SupportedExchanges {
 		exName, vErr := self.ensureRunningExchange(string(exID))
@@ -628,15 +629,13 @@ func (self *HTTPServer) GetAllSetting(c *gin.Context) {
 		}
 		exchangeSettings[string(exID)] = exSett
 	}
-	version, err := self.setting.GetAllSettingVersion()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
 	timepoint := common.GetTimepoint()
-	allSetting := common.NewAllSettings(addrReponse, tokenSettings, exchangeSettings)
+	allSetting := common.NewAllSettings(addrReponse, tokResponse, exchangeSettings)
 	httputil.ResponseSuccess(c, httputil.WithMultipleFields(gin.H{
-		"version":   version,
 		"timestamp": timepoint,
 		"data":      allSetting,
 	}))
@@ -658,4 +657,17 @@ func (self *HTTPServer) getAddressResponse() (*common.AddressesRepsonse, error) 
 	}
 	addressResponse := common.NewAddressResponse(addressSettings, addressVersion)
 	return addressResponse, nil
+}
+
+func (self *HTTPServer) getTokenResponse() (*common.TokenResponse, error) {
+	tokens, err := self.setting.GetAllTokens()
+	if err != nil {
+		return nil, err
+	}
+	version, err := self.setting.GetTokenVersion()
+	if err != nil {
+		return nil, err
+	}
+	tokenResponse := common.NewTokenResponse(tokens, version)
+	return tokenResponse, nil
 }
