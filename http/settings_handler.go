@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"strconv"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
@@ -429,13 +430,16 @@ func (self *HTTPServer) UpdateAddress(c *gin.Context) {
 	}
 	addrStr := postForm.Get("address")
 	name := postForm.Get("name")
+	//no need to handle error here, if timestamp==0 the system will automatically get UNIX timestamp
+	timestamp, _ := strconv.ParseUint(postForm.Get("timestamp"), 10, 64)
+
 	addressName, ok := settings.AddressNameValues()[name]
 	if !ok {
 		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("invalid address name: %s", name)))
 		return
 	}
 	addr := ethereum.HexToAddress(addrStr)
-	if err := self.setting.UpdateAddress(addressName, addr); err != nil {
+	if err := self.setting.UpdateAddress(addressName, addr, timestamp); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -450,12 +454,14 @@ func (self *HTTPServer) AddAddressToSet(c *gin.Context) {
 	addrStr := postForm.Get("address")
 	addr := ethereum.HexToAddress(addrStr)
 	setName := postForm.Get("name")
+	//no need to handle error here, if timestamp==0 the system will automatically get UNIX timestamp
+	timestamp, _ := strconv.ParseUint(postForm.Get("timestamp"), 10, 64)
 	addrSetName, ok := settings.AddressSetNameValues()[setName]
 	if !ok {
 		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("invalid address set name: %s", setName)))
 		return
 	}
-	if err := self.setting.AddAddressToSet(addrSetName, addr); err != nil {
+	if err := self.setting.AddAddressToSet(addrSetName, addr, timestamp); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -597,22 +603,17 @@ func (self *HTTPServer) GetAllSetting(c *gin.Context) {
 	if !ok {
 		return
 	}
-	timepoint := common.GetTimepoint()
+	addrReponse, err := self.getAddressResponse()
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
 	tokenSettings, err := self.setting.GetAllTokens()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	addressSettings, err := self.setting.GetAllAddresses()
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	addressSettings[pricingOPAddressName] = self.blockchain.GetPricingOPAddress().Hex()
-	addressSettings[depositOPAddressName] = self.blockchain.GetDepositOPAddress().Hex()
-	if _, ok = common.SupportedExchanges["huobi"]; ok {
-		addressSettings[intermediateOPAddressName] = self.blockchain.GetIntermediatorOPAddress().Hex()
-	}
+
 	exchangeSettings := make(map[string]*common.ExchangeSetting)
 	for exID := range common.SupportedExchanges {
 		exName, vErr := self.ensureRunningExchange(string(exID))
@@ -632,10 +633,29 @@ func (self *HTTPServer) GetAllSetting(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	allSetting := common.NewAllSettings(addressSettings, tokenSettings, exchangeSettings)
+	timepoint := common.GetTimepoint()
+	allSetting := common.NewAllSettings(addrReponse, tokenSettings, exchangeSettings)
 	httputil.ResponseSuccess(c, httputil.WithMultipleFields(gin.H{
 		"version":   version,
 		"timestamp": timepoint,
 		"data":      allSetting,
 	}))
+}
+
+func (self *HTTPServer) getAddressResponse() (*common.AddressesRepsonse, error) {
+	addressSettings, err := self.setting.GetAllAddresses()
+	if err != nil {
+		return nil, err
+	}
+	addressSettings[pricingOPAddressName] = self.blockchain.GetPricingOPAddress().Hex()
+	addressSettings[depositOPAddressName] = self.blockchain.GetDepositOPAddress().Hex()
+	if _, ok := common.SupportedExchanges["huobi"]; ok {
+		addressSettings[intermediateOPAddressName] = self.blockchain.GetIntermediatorOPAddress().Hex()
+	}
+	addressVersion, err := self.setting.GetAddressVersion()
+	if err != nil {
+		return nil, err
+	}
+	addressResponse := common.NewAddressResponse(addressSettings, addressVersion)
+	return addressResponse, nil
 }

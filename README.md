@@ -2138,7 +2138,8 @@ response
 ##### Update address - (signing required) update a single address
 POST request 
 Post form: {"name" : "Name of the address (reserve, deposit etc...)",
-            "address" : "Hex form of the new address"}
+            "address" : "Hex form of the new address"
+            "timestamp" (optional) uint64 "this will overwrite version in address setting"  }
 Note: This is used to update single address object. For list of address object, use add-address-to-set instead
 ```
 <host>:8000/setting/update-address
@@ -2150,7 +2151,8 @@ Example
 curl -X "POST" "http://localhost:8000/setting/update-address" \
      -H 'Content-Type: application/x-www-form-urlencoded'\
      --data-urlencode "name=bank"\
-     --data-urlencode "address=0x123456789aabbcceeeddff" 
+     --data-urlencode "address=0x123456789aabbcceeeddff"\
+     --data-urlencode "timestamp=1111111111"
 
 ```
 response

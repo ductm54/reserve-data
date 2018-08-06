@@ -82,11 +82,11 @@ func (self *Blockchain) StandardGasPrice() float64 {
 }
 
 func (self *Blockchain) AddOldNetwork(addr ethereum.Address) error {
-	return self.setting.AddAddressToSet(settings.OldNetWorks, addr)
+	return self.setting.AddAddressToSet(settings.OldNetWorks, addr, common.GetTimepoint())
 }
 
 func (self *Blockchain) AddOldBurners(addr ethereum.Address) error {
-	return self.setting.AddAddressToSet(settings.OldBurners, addr)
+	return self.setting.AddAddressToSet(settings.OldBurners, addr, common.GetTimepoint())
 }
 
 func (self *Blockchain) CheckTokenIndices(tokenAddr ethereum.Address) error {
