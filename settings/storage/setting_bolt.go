@@ -92,6 +92,9 @@ func NewBoltSettingStorage(dbPath string) (*BoltSettingStorage, error) {
 		if _, uErr := tx.CreateBucketIfNotExists([]byte(token_version)); uErr != nil {
 			return uErr
 		}
+		if _, uErr := tx.CreateBucketIfNotExists([]byte(exchange_version)); uErr != nil {
+			return uErr
+		}
 		return nil
 	})
 	if err != nil {

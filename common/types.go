@@ -924,13 +924,13 @@ type FeeSetRate struct {
 	TotalGasSpent *big.Float `json:"totalGasSpent"`
 }
 
-type AddressesRepsonse struct {
+type AddressesResponse struct {
 	Addresses map[string]interface{}
 	Version   uint64
 }
 
-func NewAddressResponse(addrs map[string]interface{}, version uint64) *AddressesRepsonse {
-	return &AddressesRepsonse{
+func NewAddressResponse(addrs map[string]interface{}, version uint64) *AddressesResponse {
+	return &AddressesResponse{
 		Addresses: addrs,
 		Version:   version,
 	}
@@ -948,13 +948,25 @@ func NewTokenResponse(tokens []Token, version uint64) *TokenResponse {
 	}
 }
 
-type AllSettings struct {
-	Addresses *AddressesRepsonse
-	Tokens    *TokenResponse
+type ExchangeResponse struct {
 	Exchanges map[string]*ExchangeSetting
+	Version   uint64
 }
 
-func NewAllSettings(addrs *AddressesRepsonse, toks *TokenResponse, exs map[string]*ExchangeSetting) *AllSettings {
+func NewExchangeResponse(exs map[string]*ExchangeSetting, version uint64) *ExchangeResponse {
+	return &ExchangeResponse{
+		Exchanges: exs,
+		Version:   version,
+	}
+}
+
+type AllSettings struct {
+	Addresses *AddressesResponse
+	Tokens    *TokenResponse
+	Exchanges *ExchangeResponse
+}
+
+func NewAllSettings(addrs *AddressesResponse, toks *TokenResponse, exs *ExchangeResponse) *AllSettings {
 	return &AllSettings{
 		Addresses: addrs,
 		Tokens:    toks,

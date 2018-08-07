@@ -88,6 +88,9 @@ func (setting *Settings) MustCreateTokenPair(base, quote string) common.TokenPai
 }
 
 func (setting *Settings) UpdateToken(t common.Token, timestamp uint64) error {
+	if timestamp == 0 {
+		timestamp = common.GetTimepoint()
+	}
 	return setting.Tokens.Storage.UpdateToken(t, timestamp)
 }
 

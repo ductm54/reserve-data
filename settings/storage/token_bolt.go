@@ -245,11 +245,15 @@ func (boltSettingStorage *BoltSettingStorage) UpdateTokenWithExchangeSetting(tok
 				return uErr
 			}
 		}
-		//delete pending token listings
-		if uErr := deletePendingTokenUpdates(tx); uErr != nil {
+		if uErr := updateExchangeVersion(tx, timestamp); uErr != nil {
 			return uErr
 		}
+
 		if uErr := updateTokenVersion(tx, timestamp); uErr != nil {
+			return uErr
+		}
+		//delete pending token listings
+		if uErr := deletePendingTokenUpdates(tx); uErr != nil {
 			return uErr
 		}
 		return nil

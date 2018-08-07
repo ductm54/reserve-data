@@ -482,6 +482,8 @@ func (self *HTTPServer) UpdateExchangeFee(c *gin.Context) {
 		return
 	}
 	data := []byte(postForm.Get("data"))
+	//no need to handle error here, if timestamp==0 the program will use UNIX timestamp instead
+	timestamp, _ := strconv.ParseUint(postForm.Get("timestamp"), 10, 64)
 	var exFee common.ExchangeFees
 	if err := json.Unmarshal(data, &exFee); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -490,7 +492,7 @@ func (self *HTTPServer) UpdateExchangeFee(c *gin.Context) {
 	if exFee.Trading == nil || exFee.Funding.Deposit == nil || exFee.Funding.Withdraw == nil {
 		httputil.ResponseFailure(c, httputil.WithReason("Data is in the wrong format: there is nil map inside the data"))
 	}
-	if err := self.setting.UpdateFee(exName, exFee); err != nil {
+	if err := self.setting.UpdateFee(exName, exFee, timestamp); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -509,12 +511,14 @@ func (self *HTTPServer) UpdateExchangeMinDeposit(c *gin.Context) {
 		return
 	}
 	data := []byte(postForm.Get("data"))
+	//no need to handle error here, if timestamp==0 the program will use UNIX timestamp instead
+	timestamp, _ := strconv.ParseUint(postForm.Get("timestamp"), 10, 64)
 	var exMinDeposit common.ExchangesMinDeposit
 	if err := json.Unmarshal(data, &exMinDeposit); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	if err := self.setting.UpdateMinDeposit(exName, exMinDeposit); err != nil {
+	if err := self.setting.UpdateMinDeposit(exName, exMinDeposit, timestamp); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -533,6 +537,8 @@ func (self *HTTPServer) UpdateDepositAddress(c *gin.Context) {
 		return
 	}
 	data := []byte(postForm.Get("data"))
+	//no need to handle error here, if timestamp==0 the program will use UNIX timestamp instead
+	timestamp, _ := strconv.ParseUint(postForm.Get("timestamp"), 10, 64)
 	var exDepositAddressStr map[string]string
 	if err := json.Unmarshal(data, &exDepositAddressStr); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -544,7 +550,7 @@ func (self *HTTPServer) UpdateDepositAddress(c *gin.Context) {
 		exDepositAddress[tokenID] = ethereum.HexToAddress(addrStr)
 		log.Printf(exDepositAddress[tokenID].Hex())
 	}
-	if err := self.setting.UpdateDepositAddress(exName, exDepositAddress); err != nil {
+	if err := self.setting.UpdateDepositAddress(exName, exDepositAddress, timestamp); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -563,6 +569,8 @@ func (self *HTTPServer) UpdateExchangeInfo(c *gin.Context) {
 		return
 	}
 	data := []byte(postForm.Get("data"))
+	//no need to handle error here, if timestamp==0 the program will use UNIX timestamp instead
+	timestamp, _ := strconv.ParseUint(postForm.Get("timestamp"), 10, 64)
 	var exInfo common.ExchangeInfo
 	if err := json.Unmarshal(data, &exInfo); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -593,7 +601,7 @@ func (self *HTTPServer) UpdateExchangeInfo(c *gin.Context) {
 			exInfo[tokenPairID] = epl
 		}
 	}
-	if err := self.setting.UpdateExchangeInfo(exName, exInfo); err != nil {
+	if err := self.setting.UpdateExchangeInfo(exName, exInfo, timestamp); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -615,33 +623,20 @@ func (self *HTTPServer) GetAllSetting(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	exchangeSettings := make(map[string]*common.ExchangeSetting)
-	for exID := range common.SupportedExchanges {
-		exName, vErr := self.ensureRunningExchange(string(exID))
-		if vErr != nil {
-			httputil.ResponseFailure(c, httputil.WithError(vErr))
-			return
-		}
-		exSett, vErr := self.getExchangeSetting(exName)
-		if vErr != nil {
-			httputil.ResponseFailure(c, httputil.WithError(vErr))
-			return
-		}
-		exchangeSettings[string(exID)] = exSett
-	}
+	exchangeResponse, err := self.getExchangeResponse()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
 	timepoint := common.GetTimepoint()
-	allSetting := common.NewAllSettings(addrReponse, tokResponse, exchangeSettings)
+	allSetting := common.NewAllSettings(addrReponse, tokResponse, exchangeResponse)
 	httputil.ResponseSuccess(c, httputil.WithMultipleFields(gin.H{
 		"timestamp": timepoint,
 		"data":      allSetting,
 	}))
 }
 
-func (self *HTTPServer) getAddressResponse() (*common.AddressesRepsonse, error) {
+func (self *HTTPServer) getAddressResponse() (*common.AddressesResponse, error) {
 	addressSettings, err := self.setting.GetAllAddresses()
 	if err != nil {
 		return nil, err
@@ -670,4 +665,24 @@ func (self *HTTPServer) getTokenResponse() (*common.TokenResponse, error) {
 	}
 	tokenResponse := common.NewTokenResponse(tokens, version)
 	return tokenResponse, nil
+}
+
+func (self *HTTPServer) getExchangeResponse() (*common.ExchangeResponse, error) {
+	exchangeSettings := make(map[string]*common.ExchangeSetting)
+	for exID := range common.SupportedExchanges {
+		exName, err := self.ensureRunningExchange(string(exID))
+		if err != nil {
+			return nil, err
+		}
+		exSett, err := self.getExchangeSetting(exName)
+		if err != nil {
+			return nil, err
+		}
+		exchangeSettings[string(exID)] = exSett
+	}
+	version, err := self.setting.GetExchangeVersion()
+	if err != nil {
+		return nil, err
+	}
+	return common.NewExchangeResponse(exchangeSettings, version), nil
 }

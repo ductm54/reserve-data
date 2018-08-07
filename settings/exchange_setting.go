@@ -96,7 +96,7 @@ func (setting *Settings) loadFeeFromFile(path string) error {
 			for tokenID, value := range exFee.Funding.Withdraw {
 				exFee.Funding.Withdraw[tokenID] = value * 2
 			}
-			if err = setting.Exchange.Storage.StoreFee(exName, exFee); err != nil {
+			if err = setting.Exchange.Storage.StoreFee(exName, exFee, common.GetTimepoint()); err != nil {
 				return err
 			}
 		}
@@ -138,7 +138,7 @@ func (setting *Settings) loadMinDepositFromFile(path string) error {
 			for token, value := range minDepo {
 				minDepo[token] = value * 2
 			}
-			if err = setting.Exchange.Storage.StoreMinDeposit(exName, minDepo); err != nil {
+			if err = setting.Exchange.Storage.StoreMinDeposit(exName, minDepo, common.GetTimepoint()); err != nil {
 				return err
 			}
 		}
@@ -182,7 +182,7 @@ func (setting *Settings) loadDepositAddressFromFile(path string) error {
 				continue
 			}
 			exchangeAddresses := convertToAddressMap(exchangeAddressStr)
-			if err = setting.Exchange.Storage.StoreDepositAddress(exName, exchangeAddresses); err != nil {
+			if err = setting.Exchange.Storage.StoreDepositAddress(exName, exchangeAddresses, common.GetTimepoint()); err != nil {
 				return err
 			}
 		}
@@ -211,7 +211,7 @@ func (setting *Settings) handleEmptyExchangeInfo() error {
 			if err != nil {
 				return err
 			}
-			if err = setting.Exchange.Storage.StoreExchangeInfo(exName, exInfo); err != nil {
+			if err = setting.Exchange.Storage.StoreExchangeInfo(exName, exInfo, common.GetTimepoint()); err != nil {
 				return err
 			}
 		}
