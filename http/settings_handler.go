@@ -426,51 +426,6 @@ func (self *HTTPServer) TokenSettings(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(data))
 }
 
-func (self *HTTPServer) UpdateAddress(c *gin.Context) {
-	postForm, ok := self.Authenticated(c, []string{"name", "address"}, []Permission{RebalancePermission, ConfigurePermission})
-	if !ok {
-		return
-	}
-	addrStr := postForm.Get("address")
-	name := postForm.Get("name")
-	//no need to handle error here, if timestamp==0 the program will use UNIX timestamp instead
-	timestamp, _ := strconv.ParseUint(postForm.Get("timestamp"), 10, 64)
-
-	addressName, ok := settings.AddressNameValues()[name]
-	if !ok {
-		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("invalid address name: %s", name)))
-		return
-	}
-	addr := ethereum.HexToAddress(addrStr)
-	if err := self.setting.UpdateAddress(addressName, addr, timestamp); err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c)
-}
-
-func (self *HTTPServer) AddAddressToSet(c *gin.Context) {
-	postForm, ok := self.Authenticated(c, []string{"name", "address"}, []Permission{RebalancePermission, ConfigurePermission})
-	if !ok {
-		return
-	}
-	addrStr := postForm.Get("address")
-	addr := ethereum.HexToAddress(addrStr)
-	setName := postForm.Get("name")
-	//no need to handle error here, if timestamp==0 the program will use UNIX timestamp instead
-	timestamp, _ := strconv.ParseUint(postForm.Get("timestamp"), 10, 64)
-	addrSetName, ok := settings.AddressSetNameValues()[setName]
-	if !ok {
-		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("invalid address set name: %s", setName)))
-		return
-	}
-	if err := self.setting.AddAddressToSet(addrSetName, addr, timestamp); err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c)
-}
-
 func (self *HTTPServer) UpdateExchangeFee(c *gin.Context) {
 	postForm, ok := self.Authenticated(c, []string{"name", "data"}, []Permission{RebalancePermission, ConfigurePermission})
 	if !ok {
@@ -647,11 +602,10 @@ func (self *HTTPServer) getAddressResponse() (*common.AddressesResponse, error) 
 	if _, ok := common.SupportedExchanges["huobi"]; ok {
 		addressSettings[intermediateOPAddressName] = self.blockchain.GetIntermediatorOPAddress().Hex()
 	}
-	addressVersion, err := self.setting.GetAddressVersion()
 	if err != nil {
 		return nil, err
 	}
-	addressResponse := common.NewAddressResponse(addressSettings, addressVersion)
+	addressResponse := common.NewAddressResponse(addressSettings)
 	return addressResponse, nil
 }
 

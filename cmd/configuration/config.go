@@ -114,9 +114,10 @@ type Config struct {
 	// etherscan api key (optional)
 	EtherscanApiKey string
 
-	ChainType string
-	Setting   *settings.Settings
-	IPlocator *statutil.IPLocator
+	ChainType      string
+	Setting        *settings.Settings
+	IPlocator      *statutil.IPLocator
+	AddressSetting *settings.AddressSetting
 }
 
 // GetStatConfig: load config to run stat server only
@@ -188,7 +189,7 @@ func (self *Config) AddStatConfig(settingPath SettingPaths) {
 }
 
 func (self *Config) AddCoreConfig(settingPath SettingPaths, kyberENV string) {
-	setting, err := GetSetting(settingPath, kyberENV)
+	setting, err := GetSetting(settingPath, kyberENV, self.AddressSetting)
 	if err != nil {
 		log.Panicf("Failed to create setting: %s", err.Error())
 	}

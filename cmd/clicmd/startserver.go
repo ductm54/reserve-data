@@ -80,7 +80,10 @@ func serverStart(_ *cobra.Command, _ []string) {
 
 	//Create Stat, run if not in dry mode
 	if enableStat {
-		stbc := blockchain.NewStatBlockchain(config.Blockchain)
+		stbc, err := CreateStatBlockChain(config.Blockchain, config.AddressSetting, kyberENV)
+		if err != nil {
+			log.Panic(err)
+		}
 		rStat = CreateStat(config, kyberENV, stbc)
 		if !dryrun {
 			if kyberENV != common.SimulationMode {

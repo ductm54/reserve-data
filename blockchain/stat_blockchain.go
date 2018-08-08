@@ -9,6 +9,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
+	"github.com/KyberNetwork/reserve-data/settings"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -22,36 +23,85 @@ const (
 
 type StatBlockchain struct {
 	*blockchain.BaseBlockchain
-	wrapper *blockchain.Contract
-	pricing *blockchain.Contract
+	wrapper        *blockchain.Contract
+	pricing        *blockchain.Contract
+	addressSetting *settings.AddressSetting
 }
 
-func NewStatBlockchain(base *blockchain.BaseBlockchain) *StatBlockchain {
-	return &StatBlockchain{
-		BaseBlockchain: base,
-		wrapper:        nil,
-		pricing:        nil,
+func (stBlockchain *StatBlockchain) AddOldNetwork(addr ethereum.Address) {
+	stBlockchain.addressSetting.AddAddressToSet(settings.OldNetWorks, addr)
+}
+
+func (stBlockchain *StatBlockchain) AddOldBurners(addr ethereum.Address) {
+	stBlockchain.addressSetting.AddAddressToSet(settings.OldBurners, addr)
+}
+func NewStatBlockchain(base *blockchain.BaseBlockchain, addrSetting *settings.AddressSetting) (*StatBlockchain, error) {
+	pricingAddr, err := addrSetting.GetAddress(settings.Pricing)
+	if err != nil {
+		return nil, err
 	}
-}
-
-func (stBlockchain *StatBlockchain) MustRegisterWrapper(wrapperAddr ethereum.Address) {
-	//this will panic if the NewContract is failed
-	wrapper := blockchain.NewContract(
-		wrapperAddr,
-		filepath.Join(common.CurrentDir(), "wrapper.abi"),
-	)
-	stBlockchain.wrapper = wrapper
-}
-
-func (stBlockchain *StatBlockchain) MustRegisterPricing(pricingAddr ethereum.Address) {
 	pricing := blockchain.NewContract(
 		pricingAddr,
 		filepath.Join(common.CurrentDir(), "pricing.abi"),
 	)
-	stBlockchain.pricing = pricing
+
+	wrapperAddr, err := addrSetting.GetAddress(settings.Wrapper)
+	if err != nil {
+		return nil, err
+	}
+	wrapper := blockchain.NewContract(
+		wrapperAddr,
+		filepath.Join(common.CurrentDir(), "wrapper.abi"),
+	)
+
+	return &StatBlockchain{
+		BaseBlockchain: base,
+		wrapper:        wrapper,
+		pricing:        pricing,
+		addressSetting: addrSetting,
+	}, nil
 }
 
-func (stBlockchain *StatBlockchain) GetRawLogs(fromBlock uint64, toBlock uint64, addresses []ethereum.Address) ([]types.Log, error) {
+// getListOfAddresses return the list of addresses that have relation to our operations
+// it is used to assemble a list of addresses for log querrying.
+func (stBlockchain *StatBlockchain) getListOfAddresses() ([]ethereum.Address, error) {
+	var addresses []ethereum.Address
+	networkAddr, err := stBlockchain.addressSetting.GetAddress(settings.Network)
+	if err != nil {
+		return nil, err
+	}
+	burnerAddr, err := stBlockchain.addressSetting.GetAddress(settings.Burner)
+	if err != nil {
+		return nil, err
+	}
+	whitelistAddr, err := stBlockchain.addressSetting.GetAddress(settings.Whitelist)
+	if err != nil {
+		return nil, err
+	}
+	internalAddr, err := stBlockchain.addressSetting.GetAddress(settings.InternalNetwork)
+	if err != nil {
+		return nil, err
+	}
+
+	addresses = append(addresses, networkAddr, burnerAddr, whitelistAddr, internalAddr)
+	oldNetworks, err := stBlockchain.addressSetting.GetAddresses(settings.OldNetWorks)
+	if err != nil {
+		log.Printf("WARNING: can't get old network addresses (%s)", err)
+	}
+	oldBurners, err := stBlockchain.addressSetting.GetAddresses(settings.OldBurners)
+	if err != nil {
+		log.Printf("WARNING: can't get old burners addresses (%s)", err)
+	}
+	addresses = append(addresses, oldNetworks...)
+	addresses = append(addresses, oldBurners...)
+	return addresses, nil
+}
+
+func (stBlockchain *StatBlockchain) GetRawLogs(fromBlock uint64, toBlock uint64) ([]types.Log, error) {
+	addresses, err := stBlockchain.getListOfAddresses()
+	if err != nil {
+		return nil, err
+	}
 	var (
 		from = big.NewInt(int64(fromBlock))
 		to   = big.NewInt(int64(toBlock))
@@ -76,7 +126,7 @@ func (stBlockchain *StatBlockchain) GetRawLogs(fromBlock uint64, toBlock uint64,
 }
 
 // GetLogs gets raw logs from blockchain and process it before returning.
-func (stBlockchain *StatBlockchain) GetLogs(fromBlock uint64, toBlock uint64, addresses []ethereum.Address) ([]common.KNLog, error) {
+func (stBlockchain *StatBlockchain) GetLogs(fromBlock uint64, toBlock uint64) ([]common.KNLog, error) {
 	var (
 		err      error
 		result   []common.KNLog
@@ -84,7 +134,7 @@ func (stBlockchain *StatBlockchain) GetLogs(fromBlock uint64, toBlock uint64, ad
 	)
 
 	// get all logs from fromBlock to best block
-	logs, err := stBlockchain.GetRawLogs(fromBlock, toBlock, addresses)
+	logs, err := stBlockchain.GetRawLogs(fromBlock, toBlock)
 	if err != nil {
 		return result, err
 	}

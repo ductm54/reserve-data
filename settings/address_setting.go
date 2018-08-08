@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
-	"github.com/KyberNetwork/reserve-data/common"
+	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 // AddressName is the name of ethereum address used in core.
@@ -78,14 +78,24 @@ type AddressConfig struct {
 // AddressSetting type defines component to handle all address setting in core.
 // It contains the storage interface used to query addresses.
 type AddressSetting struct {
-	Storage AddressStorage
+	Addresses   map[AddressName]ethereum.Address
+	AddressSets map[AddressSetName]([]ethereum.Address)
 }
 
-func NewAddressSetting(addressStorage AddressStorage) (*AddressSetting, error) {
-	return &AddressSetting{addressStorage}, nil
+func NewAddressSetting(path string) (*AddressSetting, error) {
+	address := make(map[AddressName]ethereum.Address)
+	addressSets := make(map[AddressSetName]([]ethereum.Address))
+	addressSetting := &AddressSetting{
+		Addresses:   address,
+		AddressSets: addressSets,
+	}
+	if err := addressSetting.loadAddressFromFile(path); err != nil {
+		return addressSetting, err
+	}
+	return addressSetting, nil
 }
 
-func (setting *Settings) loadAddressFromFile(path string) error {
+func (addrSetting *AddressSetting) loadAddressFromFile(path string) error {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return err
@@ -94,34 +104,19 @@ func (setting *Settings) loadAddressFromFile(path string) error {
 	if err = json.Unmarshal(data, &addrs); err != nil {
 		return err
 	}
-	if err = setting.Address.Storage.UpdateOneAddress(Bank, addrs.Bank, common.GetTimepoint()); err != nil {
-		return err
-	}
-	if err = setting.Address.Storage.UpdateOneAddress(Reserve, addrs.Reserve, common.GetTimepoint()); err != nil {
-		return err
-	}
-	if err = setting.Address.Storage.UpdateOneAddress(Network, addrs.Network, common.GetTimepoint()); err != nil {
-		return err
-	}
-	if err = setting.Address.Storage.UpdateOneAddress(Wrapper, addrs.Wrapper, common.GetTimepoint()); err != nil {
-		return err
-	}
-	if err = setting.Address.Storage.UpdateOneAddress(Pricing, addrs.Pricing, common.GetTimepoint()); err != nil {
-		return err
-	}
-	if err = setting.Address.Storage.UpdateOneAddress(Burner, addrs.FeeBurner, common.GetTimepoint()); err != nil {
-		return err
-	}
-	if err = setting.Address.Storage.UpdateOneAddress(Whitelist, addrs.Whitelist, common.GetTimepoint()); err != nil {
-		return err
-	}
-	if err = setting.Address.Storage.UpdateOneAddress(InternalNetwork, addrs.InternalNetwork, common.GetTimepoint()); err != nil {
-		return err
-	}
+	addrSetting.Addresses[Bank] = ethereum.HexToAddress(addrs.Bank)
+	addrSetting.Addresses[Reserve] = ethereum.HexToAddress(addrs.Reserve)
+	addrSetting.Addresses[Network] = ethereum.HexToAddress(addrs.Network)
+	addrSetting.Addresses[Wrapper] = ethereum.HexToAddress(addrs.Wrapper)
+	addrSetting.Addresses[Pricing] = ethereum.HexToAddress(addrs.Pricing)
+	addrSetting.Addresses[Burner] = ethereum.HexToAddress(addrs.FeeBurner)
+	addrSetting.Addresses[Whitelist] = ethereum.HexToAddress(addrs.Whitelist)
+	addrSetting.Addresses[InternalNetwork] = ethereum.HexToAddress(addrs.InternalNetwork)
+	thirdParty := []ethereum.Address{}
+
 	for _, addr := range addrs.ThirdPartyReserves {
-		if err = setting.Address.Storage.AddAddressToSet(ThirdPartyReserves, addr, common.GetTimepoint()); err != nil {
-			return err
-		}
+		thirdParty = append(thirdParty, ethereum.HexToAddress(addr))
 	}
+	addrSetting.AddressSets[ThirdPartyReserves] = thirdParty
 	return nil
 }

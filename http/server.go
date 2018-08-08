@@ -1506,8 +1506,6 @@ func (self *HTTPServer) register() {
 		stt.POST("/confirm-token-update", self.ConfirmTokenUpdate)
 		stt.POST("/reject-token-update", self.RejectTokenUpdate)
 		stt.GET("/token-settings", self.TokenSettings)
-		stt.POST("/update-address", self.UpdateAddress)
-		stt.POST("/add-address-to-set", self.AddAddressToSet)
 		stt.POST("/update-exchange-fee", self.UpdateExchangeFee)
 		stt.POST("/update-exchange-mindeposit", self.UpdateExchangeMinDeposit)
 		stt.POST("/update-deposit-address", self.UpdateDepositAddress)

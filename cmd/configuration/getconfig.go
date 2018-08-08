@@ -66,16 +66,12 @@ func GetConfigPaths(kyberENV string) SettingPaths {
 	return ConfigPaths[common.DevMode]
 }
 
-func GetSetting(setPath SettingPaths, kyberENV string) (*settings.Settings, error) {
+func GetSetting(setPath SettingPaths, kyberENV string, addressSetting *settings.AddressSetting) (*settings.Settings, error) {
 	boltSettingStorage, err := settingstorage.NewBoltSettingStorage(filepath.Join(common.CmdDirLocation(), GetSettingDBName(kyberENV)))
 	if err != nil {
 		return nil, err
 	}
 	tokenSetting, err := settings.NewTokenSetting(boltSettingStorage)
-	if err != nil {
-		return nil, err
-	}
-	addressSetting, err := settings.NewAddressSetting(boltSettingStorage)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +84,6 @@ func GetSetting(setPath SettingPaths, kyberENV string) (*settings.Settings, erro
 		addressSetting,
 		exchangeSetting,
 		settings.WithHandleEmptyToken(setPath.settingPath),
-		settings.WithHandleEmptyAddress(setPath.settingPath),
 		settings.WithHandleEmptyFee(setPath.feePath),
 		settings.WithHandleEmptyMinDeposit(filepath.Join(common.CmdDirLocation(), "min_deposit.json")),
 		settings.WithHandleEmptyDepositAddress(setPath.settingPath),
@@ -105,7 +100,10 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string, noCore, enable
 	}
 
 	hmac512auth := http.NewKNAuthenticationFromFile(setPath.secretPath)
-
+	addressSetting, err := settings.NewAddressSetting(setPath.settingPath)
+	if err != nil {
+		log.Panic("cannot init address setting %s", err)
+	}
 	var endpoint string
 	if endpointOW != "" {
 		log.Printf("overwriting Endpoint with %s\n", endpointOW)
@@ -161,6 +159,7 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string, noCore, enable
 		EnableAuthentication:    authEnbl,
 		Archive:                 s3archive,
 		World:                   theWorld,
+		AddressSetting:          addressSetting,
 	}
 
 	if enableStat {
