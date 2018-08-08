@@ -14,7 +14,7 @@ install:
 
 script:
   - gometalinter --config=gometalinter.json ./...
-  - $GOPATH/bin/goveralls -v -service=travis-ci
+  - $GOPATH/bin/goveralls -v -race -service=travis-ci
 
 after_success:
   - docker --version
