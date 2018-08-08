@@ -39,7 +39,7 @@ func (setting *Settings) loadTokenFromFile(filePath string) error {
 	}
 	for id, t := range tokens.Tokens {
 		token := common.NewToken(id, t.Name, t.Address, t.Decimals, t.Active, t.Internal, common.GetTimepoint())
-		if err = setting.UpdateToken(token, common.GetTimepoint()); err != nil {
+		if err = setting.UpdateToken(token, 1); err != nil {
 			return err
 		}
 	}
