@@ -28,20 +28,20 @@ type StatBlockchain struct {
 	addressSetting addressSetting
 }
 
-func (stBlockchain *StatBlockchain) GetAddress(addressType settings.AddressName) (ethereum.Address, error) {
-	return stBlockchain.addressSetting.GetAddress(addressType)
+func (sb *StatBlockchain) GetAddress(addressType settings.AddressName) (ethereum.Address, error) {
+	return sb.addressSetting.GetAddress(addressType)
 }
 
-func (stBlockchain *StatBlockchain) GetAddresses(setType settings.AddressSetName) ([]ethereum.Address, error) {
-	return stBlockchain.addressSetting.GetAddresses(setType)
+func (sb *StatBlockchain) GetAddresses(setType settings.AddressSetName) ([]ethereum.Address, error) {
+	return sb.addressSetting.GetAddresses(setType)
 }
 
-func (stBlockchain *StatBlockchain) AddOldNetwork(addr ethereum.Address) {
-	stBlockchain.addressSetting.AddAddressToSet(settings.OldNetWorks, addr)
+func (sb *StatBlockchain) AddOldNetwork(addr ethereum.Address) {
+	sb.addressSetting.AddAddressToSet(settings.OldNetworks, addr)
 }
 
-func (stBlockchain *StatBlockchain) AddOldBurners(addr ethereum.Address) {
-	stBlockchain.addressSetting.AddAddressToSet(settings.OldBurners, addr)
+func (sb *StatBlockchain) AddOldBurners(addr ethereum.Address) {
+	sb.addressSetting.AddAddressToSet(settings.OldBurners, addr)
 }
 func NewStatBlockchain(base *blockchain.BaseBlockchain, addrSetting *settings.AddressSetting) (*StatBlockchain, error) {
 	pricingAddr, err := addrSetting.GetAddress(settings.Pricing)
@@ -70,33 +70,32 @@ func NewStatBlockchain(base *blockchain.BaseBlockchain, addrSetting *settings.Ad
 	}, nil
 }
 
-// getListOfAddresses return the list of addresses that have relation to our operations
-// it is used to assemble a list of addresses for log querrying.
-func (stBlockchain *StatBlockchain) getListOfAddresses() ([]ethereum.Address, error) {
+// trackingAddresses return the list of addresses that stat is watching for new events.
+func (sb *StatBlockchain) trackingAddresses() ([]ethereum.Address, error) {
 	var addresses []ethereum.Address
-	networkAddr, err := stBlockchain.addressSetting.GetAddress(settings.Network)
+	networkAddr, err := sb.addressSetting.GetAddress(settings.Network)
 	if err != nil {
 		return nil, err
 	}
-	burnerAddr, err := stBlockchain.addressSetting.GetAddress(settings.Burner)
+	burnerAddr, err := sb.addressSetting.GetAddress(settings.Burner)
 	if err != nil {
 		return nil, err
 	}
-	whitelistAddr, err := stBlockchain.addressSetting.GetAddress(settings.Whitelist)
+	whitelistAddr, err := sb.addressSetting.GetAddress(settings.Whitelist)
 	if err != nil {
 		return nil, err
 	}
-	internalAddr, err := stBlockchain.addressSetting.GetAddress(settings.InternalNetwork)
+	internalAddr, err := sb.addressSetting.GetAddress(settings.InternalNetwork)
 	if err != nil {
 		return nil, err
 	}
 
 	addresses = append(addresses, networkAddr, burnerAddr, whitelistAddr, internalAddr)
-	oldNetworks, err := stBlockchain.addressSetting.GetAddresses(settings.OldNetWorks)
+	oldNetworks, err := sb.addressSetting.GetAddresses(settings.OldNetworks)
 	if err != nil {
 		log.Printf("WARNING: can't get old network addresses (%s)", err)
 	}
-	oldBurners, err := stBlockchain.addressSetting.GetAddresses(settings.OldBurners)
+	oldBurners, err := sb.addressSetting.GetAddresses(settings.OldBurners)
 	if err != nil {
 		log.Printf("WARNING: can't get old burners addresses (%s)", err)
 	}
@@ -105,8 +104,8 @@ func (stBlockchain *StatBlockchain) getListOfAddresses() ([]ethereum.Address, er
 	return addresses, nil
 }
 
-func (stBlockchain *StatBlockchain) GetRawLogs(fromBlock uint64, toBlock uint64) ([]types.Log, error) {
-	addresses, err := stBlockchain.getListOfAddresses()
+func (sb *StatBlockchain) GetRawLogs(fromBlock uint64, toBlock uint64) ([]types.Log, error) {
+	addresses, err := sb.trackingAddresses()
 	if err != nil {
 		return nil, err
 	}
@@ -130,11 +129,11 @@ func (stBlockchain *StatBlockchain) GetRawLogs(fromBlock uint64, toBlock uint64)
 	)
 
 	log.Printf("LogFetcher - fetching logs data from block %d, to block %d", fromBlock, to.Uint64())
-	return stBlockchain.BaseBlockchain.GetLogs(param)
+	return sb.BaseBlockchain.GetLogs(param)
 }
 
 // GetLogs gets raw logs from blockchain and process it before returning.
-func (stBlockchain *StatBlockchain) GetLogs(fromBlock uint64, toBlock uint64) ([]common.KNLog, error) {
+func (sb *StatBlockchain) GetLogs(fromBlock uint64, toBlock uint64) ([]common.KNLog, error) {
 	var (
 		err      error
 		result   []common.KNLog
@@ -142,7 +141,7 @@ func (stBlockchain *StatBlockchain) GetLogs(fromBlock uint64, toBlock uint64) ([
 	)
 
 	// get all logs from fromBlock to best block
-	logs, err := stBlockchain.GetRawLogs(fromBlock, toBlock)
+	logs, err := sb.GetRawLogs(fromBlock, toBlock)
 	if err != nil {
 		return result, err
 	}
@@ -158,7 +157,7 @@ func (stBlockchain *StatBlockchain) GetLogs(fromBlock uint64, toBlock uint64) ([
 			continue
 		}
 
-		ts, err := stBlockchain.InterpretTimestamp(
+		ts, err := sb.InterpretTimestamp(
 			logItem.BlockNumber,
 			logItem.Index,
 		)
@@ -194,7 +193,7 @@ func (stBlockchain *StatBlockchain) GetLogs(fromBlock uint64, toBlock uint64) ([
 			continue
 		}
 
-		ethRate := stBlockchain.GetEthRate(tradeLog.Timestamp / 1000000)
+		ethRate := sb.GetEthRate(tradeLog.Timestamp / 1000000)
 		if ethRate != 0 {
 			result[i] = calculateFiatAmount(tradeLog, ethRate)
 		}
@@ -204,7 +203,7 @@ func (stBlockchain *StatBlockchain) GetLogs(fromBlock uint64, toBlock uint64) ([
 	return result, nil
 }
 
-func (stBlockchain *StatBlockchain) GetReserveRates(
+func (sb *StatBlockchain) GetReserveRates(
 	atBlock, currentBlock uint64, reserveAddress ethereum.Address,
 	tokens []common.Token) (common.ReserveRates, error) {
 	result := common.ReserveTokenRateEntry{}
@@ -218,8 +217,8 @@ func (stBlockchain *StatBlockchain) GetReserveRates(
 		destAddresses = append(destAddresses, ethereum.HexToAddress(ethAddress), ethereum.HexToAddress(token.Address))
 	}
 
-	opts := stBlockchain.GetCallOpts(atBlock)
-	reserveRate, sanityRate, err := stBlockchain.GeneratedGetReserveRates(opts, reserveAddress, srcAddresses, destAddresses)
+	opts := sb.GetCallOpts(atBlock)
+	reserveRate, sanityRate, err := sb.GeneratedGetReserveRates(opts, reserveAddress, srcAddresses, destAddresses)
 	if err != nil {
 		return rates, err
 	}
@@ -240,7 +239,7 @@ func (stBlockchain *StatBlockchain) GetReserveRates(
 	return rates, err
 }
 
-func (stBlockchain *StatBlockchain) GeneratedGetReserveRates(
+func (sb *StatBlockchain) GeneratedGetReserveRates(
 	opts blockchain.CallOpts,
 	reserveAddress ethereum.Address,
 	srcAddresses []ethereum.Address,
@@ -254,15 +253,15 @@ func (stBlockchain *StatBlockchain) GeneratedGetReserveRates(
 		ret1,
 	}
 	timeOut := 2 * time.Second
-	err := stBlockchain.Call(timeOut, opts, stBlockchain.wrapper, out, "getReserveRate", reserveAddress, srcAddresses, destAddresses)
+	err := sb.Call(timeOut, opts, sb.wrapper, out, "getReserveRate", reserveAddress, srcAddresses, destAddresses)
 	if err != nil {
 		log.Println("cannot get reserve rates: ", err.Error())
 	}
 	return *ret0, *ret1, err
 }
 
-func (stBlockchain *StatBlockchain) GetPricingMethod(inputData string) (*abi.Method, error) {
-	abiPricing := &stBlockchain.pricing.ABI
+func (sb *StatBlockchain) GetPricingMethod(inputData string) (*abi.Method, error) {
+	abiPricing := &sb.pricing.ABI
 	inputDataByte, err := hexutil.Decode(inputData)
 	if err != nil {
 		log.Printf("Cannot decode data: %v", err)

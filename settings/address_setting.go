@@ -45,13 +45,13 @@ type AddressSetName int
 
 const (
 	ThirdPartyReserves AddressSetName = iota //third_party_reserves
-	OldNetWorks                              //old_networks
+	OldNetworks                              //old_networks
 	OldBurners                               //old_burners
 )
 
 var addressSetNameValues = map[string]AddressSetName{
 	"third_party_reserves": ThirdPartyReserves,
-	"old_networks":         OldNetWorks,
+	"old_networks":         OldNetworks,
 	"old_burners":          OldBurners,
 }
 

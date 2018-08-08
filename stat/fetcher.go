@@ -114,7 +114,7 @@ func (self *Fetcher) SetBlockchain(blockchain Blockchain) {
 }
 
 func (self *Fetcher) WaitForCoreAndRun() {
-	const waittime = 5 * time.Second
+	const waitTime = 5 * time.Second
 	//wait till core is ready to serve
 	for {
 		err := self.setting.ReadyToServe()
@@ -122,7 +122,7 @@ func (self *Fetcher) WaitForCoreAndRun() {
 		if err == nil {
 			break
 		}
-		time.Sleep(waittime)
+		time.Sleep(waitTime)
 	}
 
 	go self.RunBlockFetcher()
