@@ -40,7 +40,8 @@ func NewReserveStats(
 	feeSetRateStorage FeeSetRateStorage,
 	controllerRunner statpruner.ControllerRunner,
 	fetcher *Fetcher,
-	arch archive.Archive, setting Setting) *ReserveStats {
+	arch archive.Archive,
+	setting Setting) *ReserveStats {
 	storageController, err := statpruner.NewStorageController(controllerRunner, arch)
 	if err != nil {
 		panic(err)

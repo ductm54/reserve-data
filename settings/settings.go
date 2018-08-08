@@ -29,24 +29,6 @@ func WithHandleEmptyToken(pathJSON string) SettingOption {
 	}
 }
 
-// WithHandleEmptyAddress will load the address settings from default file if the
-// database is empty.
-func WithHandleEmptyAddress(pathJSON string) SettingOption {
-	return func(setting *Settings) {
-		addressCount, err := setting.Address.Storage.CountAddress()
-		if addressCount == 0 || err != nil {
-			if err != nil {
-				log.Printf("Setting Init: Address DB is faulty (%s), attempt to load Address from file", err.Error())
-			} else {
-				log.Printf("Setting Init: Address DB is empty, attempt to load address from file")
-			}
-			if err = setting.loadAddressFromFile(pathJSON); err != nil {
-				log.Printf("Setting Init: Can not load Address from file: %s, address DB is needed to be updated manually", err.Error())
-			}
-		}
-	}
-}
-
 // WithHandleEmptyFee will load the Fee settings from default file
 // if the fee database is empty. It will mutiply the Funding fee value by 2
 func WithHandleEmptyFee(pathJSON string) SettingOption {

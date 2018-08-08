@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/KyberNetwork/reserve-data/core"
+	"github.com/KyberNetwork/reserve-data/data"
 	"github.com/KyberNetwork/reserve-data/data/storage"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/settings"
@@ -86,10 +88,8 @@ func TestHTTPUpdateExchange(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	addressSetting, err := settings.NewAddressSetting(boltSettingStorage)
-	if err != nil {
-		log.Fatal(err)
-	}
+	addressSetting := &settings.AddressSetting{}
+
 	exchangeSetting, err := settings.NewExchangeSetting(boltSettingStorage)
 	if err != nil {
 		log.Fatal(err)
@@ -106,8 +106,8 @@ func TestHTTPUpdateExchange(t *testing.T) {
 	}
 
 	testServer := HTTPServer{
-		app:         nil,
-		core:        nil,
+		app:         data.NewReserveData(nil, nil, nil, nil, nil, nil, setting),
+		core:        core.NewReserveCore(nil, nil, setting),
 		metric:      testStorage,
 		authEnabled: false,
 		r:           gin.Default(),

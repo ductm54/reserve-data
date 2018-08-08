@@ -7,15 +7,18 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"time"
 
 	"github.com/KyberNetwork/reserve-data/blockchain"
 	"github.com/KyberNetwork/reserve-data/cmd/configuration"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/archive"
+	baseblockchain "github.com/KyberNetwork/reserve-data/common/blockchain"
 	"github.com/KyberNetwork/reserve-data/common/blockchain/nonce"
 	"github.com/KyberNetwork/reserve-data/core"
 	"github.com/KyberNetwork/reserve-data/data"
 	"github.com/KyberNetwork/reserve-data/data/fetcher"
+	"github.com/KyberNetwork/reserve-data/settings"
 	"github.com/KyberNetwork/reserve-data/stat"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/robfig/cron"
@@ -29,6 +32,15 @@ const (
 	// startingBlockStaging is the block the first version of
 	// staging network contract is created.
 	startingBlockStaging = 5042909
+	// defaultTimeOut is the default time out for requesting to core for setting
+	defaultTimeOut = time.Duration(10 * time.Second)
+)
+
+var (
+	oldBurners        = [2]string{"0x4E89bc8484B2c454f2F7B25b612b648c45e14A8e", "0x07f6e905f2a1559cd9fd43cb92f8a1062a3ca706"}
+	oldNetwork        = [1]string{"0x964F35fAe36d75B1e72770e244F6595B68508CF5"}
+	stagingOldBurners = [1]string{"0xB2cB365D803Ad914e63EA49c95eC663715c2F673"}
+	stagingOldNetwork = [1]string{"0xD2D21FdeF0D054D2864ce328cc56D1238d6b239e"}
 )
 
 func backupLog(arch archive.Archive) {
@@ -126,32 +138,13 @@ func CreateBlockchain(config *configuration.Config, kyberENV string) (bc *blockc
 		config.Blockchain,
 		config.Setting,
 	)
+
 	if err != nil {
 		panic(err)
 	}
 
 	// old contract addresses are used for events fetcher
-	switch kyberENV {
-	case common.ProductionMode, common.MainnetMode, common.DevMode:
-		if uErr := bc.AddOldBurners(ethereum.HexToAddress("0x4E89bc8484B2c454f2F7B25b612b648c45e14A8e")); uErr != nil {
-			log.Panic("ERROR: cannot add old burner")
-		}
-		// contract v1
-		if uErr := bc.AddOldNetwork(ethereum.HexToAddress("0x964F35fAe36d75B1e72770e244F6595B68508CF5")); uErr != nil {
-			log.Panic("ERROR: cannot add old burner")
-		}
-		if uErr := bc.AddOldBurners(ethereum.HexToAddress("0x07f6e905f2a1559cd9fd43cb92f8a1062a3ca706")); uErr != nil {
-			log.Panic("ERROR: cannot add old burner")
-		}
-	case common.StagingMode:
-		// contract v1
-		if uErr := bc.AddOldNetwork(ethereum.HexToAddress("0xD2D21FdeF0D054D2864ce328cc56D1238d6b239e")); uErr != nil {
-			log.Panic("ERROR: cannot add old burner")
-		}
-		if uErr := bc.AddOldBurners(ethereum.HexToAddress("0xB2cB365D803Ad914e63EA49c95eC663715c2F673")); uErr != nil {
-			log.Panic("ERROR: cannot add old burner")
-		}
-	}
+
 	tokens, err := config.Setting.GetInternalTokens()
 	if err != nil {
 		log.Panicf("Can't get the list of Internal Tokens for indices: %s", err)
@@ -161,6 +154,32 @@ func CreateBlockchain(config *configuration.Config, kyberENV string) (bc *blockc
 		log.Panicf("Can't load and set token indices: %s", err)
 	}
 	return
+}
+
+func CreateStatBlockChain(base *baseblockchain.BaseBlockchain, addrSetting *settings.AddressSetting, kyberENV string) (*blockchain.StatBlockchain, error) {
+	stbc, err := blockchain.NewStatBlockchain(base, addrSetting)
+	if err != nil {
+		return nil, err
+	}
+	switch kyberENV {
+	case common.ProductionMode, common.MainnetMode, common.DevMode:
+		for _, addr := range oldBurners {
+			stbc.AddOldBurners(ethereum.HexToAddress(addr))
+		}
+		for _, addr := range oldNetwork {
+			stbc.AddOldNetwork(ethereum.HexToAddress(addr))
+		}
+
+	case common.StagingMode:
+		// contract v1
+		for _, addr := range stagingOldNetwork {
+			stbc.AddOldNetwork(ethereum.HexToAddress(addr))
+		}
+		for _, addr := range stagingOldBurners {
+			stbc.AddOldBurners(ethereum.HexToAddress(addr))
+		}
+	}
+	return stbc, nil
 }
 
 func CreateDataCore(config *configuration.Config, kyberENV string, bc *blockchain.Blockchain) (*data.ReserveData, *core.ReserveCore) {
@@ -195,7 +214,7 @@ func CreateDataCore(config *configuration.Config, kyberENV string, bc *blockchai
 	return rData, rCore
 }
 
-func CreateStat(config *configuration.Config, kyberENV string, bc *blockchain.Blockchain) *stat.ReserveStats {
+func CreateStat(config *configuration.Config, kyberENV string, bc *blockchain.StatBlockchain) *stat.ReserveStats {
 	var deployBlock uint64
 
 	switch kyberENV {
@@ -204,7 +223,7 @@ func CreateStat(config *configuration.Config, kyberENV string, bc *blockchain.Bl
 	case common.StagingMode:
 		deployBlock = startingBlockStaging
 	}
-
+	settingClient := settings.NewSettingClient(config.AuthEngine, defaultTimeOut, coreURL)
 	statFetcher := stat.NewFetcher(
 		config.StatStorage,
 		config.LogStorage,
@@ -215,7 +234,7 @@ func CreateStat(config *configuration.Config, kyberENV string, bc *blockchain.Bl
 		deployBlock,
 		deployBlock,
 		config.EtherscanApiKey,
-		config.Setting,
+		settingClient,
 		config.IPlocator,
 	)
 	statFetcher.SetBlockchain(bc)
@@ -229,7 +248,7 @@ func CreateStat(config *configuration.Config, kyberENV string, bc *blockchain.Bl
 		config.StatControllerRunner,
 		statFetcher,
 		config.Archive,
-		config.Setting,
+		settingClient,
 	)
 	return rStat
 }

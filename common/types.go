@@ -926,13 +926,11 @@ type FeeSetRate struct {
 
 type AddressesResponse struct {
 	Addresses map[string]interface{} `json:"addresses"`
-	Version   uint64                 `json:"version"`
 }
 
-func NewAddressResponse(addrs map[string]interface{}, version uint64) *AddressesResponse {
+func NewAddressResponse(addrs map[string]interface{}) *AddressesResponse {
 	return &AddressesResponse{
 		Addresses: addrs,
-		Version:   version,
 	}
 }
 
