@@ -25,7 +25,7 @@ type StatBlockchain struct {
 	*blockchain.BaseBlockchain
 	wrapper        *blockchain.Contract
 	pricing        *blockchain.Contract
-	addressSetting *settings.AddressSetting
+	addressSetting addressSetting
 }
 
 func (stBlockchain *StatBlockchain) AddOldNetwork(addr ethereum.Address) {
