@@ -102,7 +102,7 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string, noCore, enable
 	hmac512auth := http.NewKNAuthenticationFromFile(setPath.secretPath)
 	addressSetting, err := settings.NewAddressSetting(setPath.settingPath)
 	if err != nil {
-		log.Panic("cannot init address setting %s", err)
+		log.Panicf("cannot init address setting %s", err)
 	}
 	var endpoint string
 	if endpointOW != "" {

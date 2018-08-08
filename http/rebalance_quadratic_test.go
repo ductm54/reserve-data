@@ -87,10 +87,8 @@ func TestHTTPServerRebalanceQuadratic(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	addressSetting, err := settings.NewAddressSetting(boltSettingStorage)
-	if err != nil {
-		t.Fatal(err)
-	}
+	addressSetting := &settings.AddressSetting{}
+
 	exchangeSetting, err := settings.NewExchangeSetting(boltSettingStorage)
 	if err != nil {
 		t.Fatal(err)
