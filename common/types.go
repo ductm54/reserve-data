@@ -925,8 +925,8 @@ type FeeSetRate struct {
 }
 
 type AddressesResponse struct {
-	Addresses map[string]interface{}
-	Version   uint64
+	Addresses map[string]interface{} `json:"addresses"`
+	Version   uint64                 `json:"version"`
 }
 
 func NewAddressResponse(addrs map[string]interface{}, version uint64) *AddressesResponse {
@@ -937,8 +937,8 @@ func NewAddressResponse(addrs map[string]interface{}, version uint64) *Addresses
 }
 
 type TokenResponse struct {
-	Tokens  []Token
-	Version uint64
+	Tokens  []Token `json:"tokens"`
+	Version uint64  `json:"version"`
 }
 
 func NewTokenResponse(tokens []Token, version uint64) *TokenResponse {
@@ -949,8 +949,8 @@ func NewTokenResponse(tokens []Token, version uint64) *TokenResponse {
 }
 
 type ExchangeResponse struct {
-	Exchanges map[string]*ExchangeSetting
-	Version   uint64
+	Exchanges map[string]*ExchangeSetting `json:"exchanges"`
+	Version   uint64                      `json:"version"`
 }
 
 func NewExchangeResponse(exs map[string]*ExchangeSetting, version uint64) *ExchangeResponse {
@@ -961,9 +961,9 @@ func NewExchangeResponse(exs map[string]*ExchangeSetting, version uint64) *Excha
 }
 
 type AllSettings struct {
-	Addresses *AddressesResponse
-	Tokens    *TokenResponse
-	Exchanges *ExchangeResponse
+	Addresses *AddressesResponse `json:"addresses"`
+	Tokens    *TokenResponse     `json:"tokens"`
+	Exchanges *ExchangeResponse  `json:"exchanges"`
 }
 
 func NewAllSettings(addrs *AddressesResponse, toks *TokenResponse, exs *ExchangeResponse) *AllSettings {
