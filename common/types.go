@@ -924,13 +924,49 @@ type FeeSetRate struct {
 	TotalGasSpent *big.Float `json:"totalGasSpent"`
 }
 
-type AllSettings struct {
-	Addresses map[string]interface{}
-	Tokens    []Token
-	Exchanges map[string]*ExchangeSetting
+type AddressesResponse struct {
+	Addresses map[string]interface{} `json:"addresses"`
+	Version   uint64                 `json:"version"`
 }
 
-func NewAllSettings(addrs map[string]interface{}, toks []Token, exs map[string]*ExchangeSetting) *AllSettings {
+func NewAddressResponse(addrs map[string]interface{}, version uint64) *AddressesResponse {
+	return &AddressesResponse{
+		Addresses: addrs,
+		Version:   version,
+	}
+}
+
+type TokenResponse struct {
+	Tokens  []Token `json:"tokens"`
+	Version uint64  `json:"version"`
+}
+
+func NewTokenResponse(tokens []Token, version uint64) *TokenResponse {
+	return &TokenResponse{
+		Tokens:  tokens,
+		Version: version,
+	}
+}
+
+type ExchangeResponse struct {
+	Exchanges map[string]*ExchangeSetting `json:"exchanges"`
+	Version   uint64                      `json:"version"`
+}
+
+func NewExchangeResponse(exs map[string]*ExchangeSetting, version uint64) *ExchangeResponse {
+	return &ExchangeResponse{
+		Exchanges: exs,
+		Version:   version,
+	}
+}
+
+type AllSettings struct {
+	Addresses *AddressesResponse `json:"addresses"`
+	Tokens    *TokenResponse     `json:"tokens"`
+	Exchanges *ExchangeResponse  `json:"exchanges"`
+}
+
+func NewAllSettings(addrs *AddressesResponse, toks *TokenResponse, exs *ExchangeResponse) *AllSettings {
 	return &AllSettings{
 		Addresses: addrs,
 		Tokens:    toks,

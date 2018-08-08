@@ -103,7 +103,3 @@ func NewSetting(token *TokenSetting, address *AddressSetting, exchange *Exchange
 	}
 	return setting, nil
 }
-
-func (setting *Settings) GetAllSettingVersion() (uint64, error) {
-	return setting.Tokens.Storage.GetAllSettingVersion()
-}

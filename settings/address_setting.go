@@ -3,6 +3,8 @@ package settings
 import (
 	"encoding/json"
 	"io/ioutil"
+
+	"github.com/KyberNetwork/reserve-data/common"
 )
 
 // AddressName is the name of ethereum address used in core.
@@ -92,32 +94,32 @@ func (setting *Settings) loadAddressFromFile(path string) error {
 	if err = json.Unmarshal(data, &addrs); err != nil {
 		return err
 	}
-	if err = setting.Address.Storage.UpdateOneAddress(Bank, addrs.Bank); err != nil {
+	if err = setting.Address.Storage.UpdateOneAddress(Bank, addrs.Bank, common.GetTimepoint()); err != nil {
 		return err
 	}
-	if err = setting.Address.Storage.UpdateOneAddress(Reserve, addrs.Reserve); err != nil {
+	if err = setting.Address.Storage.UpdateOneAddress(Reserve, addrs.Reserve, common.GetTimepoint()); err != nil {
 		return err
 	}
-	if err = setting.Address.Storage.UpdateOneAddress(Network, addrs.Network); err != nil {
+	if err = setting.Address.Storage.UpdateOneAddress(Network, addrs.Network, common.GetTimepoint()); err != nil {
 		return err
 	}
-	if err = setting.Address.Storage.UpdateOneAddress(Wrapper, addrs.Wrapper); err != nil {
+	if err = setting.Address.Storage.UpdateOneAddress(Wrapper, addrs.Wrapper, common.GetTimepoint()); err != nil {
 		return err
 	}
-	if err = setting.Address.Storage.UpdateOneAddress(Pricing, addrs.Pricing); err != nil {
+	if err = setting.Address.Storage.UpdateOneAddress(Pricing, addrs.Pricing, common.GetTimepoint()); err != nil {
 		return err
 	}
-	if err = setting.Address.Storage.UpdateOneAddress(Burner, addrs.FeeBurner); err != nil {
+	if err = setting.Address.Storage.UpdateOneAddress(Burner, addrs.FeeBurner, common.GetTimepoint()); err != nil {
 		return err
 	}
-	if err = setting.Address.Storage.UpdateOneAddress(Whitelist, addrs.Whitelist); err != nil {
+	if err = setting.Address.Storage.UpdateOneAddress(Whitelist, addrs.Whitelist, common.GetTimepoint()); err != nil {
 		return err
 	}
-	if err = setting.Address.Storage.UpdateOneAddress(InternalNetwork, addrs.InternalNetwork); err != nil {
+	if err = setting.Address.Storage.UpdateOneAddress(InternalNetwork, addrs.InternalNetwork, common.GetTimepoint()); err != nil {
 		return err
 	}
 	for _, addr := range addrs.ThirdPartyReserves {
-		if err = setting.Address.Storage.AddAddressToSet(ThirdPartyReserves, addr); err != nil {
+		if err = setting.Address.Storage.AddAddressToSet(ThirdPartyReserves, addr, common.GetTimepoint()); err != nil {
 			return err
 		}
 	}

@@ -10,6 +10,8 @@ import (
 	"github.com/boltdb/bolt"
 )
 
+const address_version = "address_version"
+
 func (boltSettingStorage *BoltSettingStorage) GetAllAddresses() (map[string]interface{}, error) {
 	result := make(map[string]interface{})
 	err := boltSettingStorage.db.View(func(tx *bolt.Tx) error {
@@ -45,14 +47,33 @@ func (boltSettingStorage *BoltSettingStorage) GetAllAddresses() (map[string]inte
 	return result, err
 }
 
-func (boltSettingStorage *BoltSettingStorage) UpdateOneAddress(name settings.AddressName, address string) error {
+func updateAddressVersion(tx *bolt.Tx, timestamp uint64) error {
+	b := tx.Bucket([]byte(address_version))
+	return b.Put([]byte(address_version), boltutil.Uint64ToBytes(timestamp))
+}
+
+func (boltSettingStorage *BoltSettingStorage) GetAddressVersion() (uint64, error) {
+	var result uint64
+	err := boltSettingStorage.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(address_version))
+		v := b.Get([]byte(address_version))
+		if v == nil {
+			return errors.New("Cannot find address version")
+		}
+		result = boltutil.BytesToUint64(v)
+		return nil
+	})
+	return result, err
+}
+
+func (boltSettingStorage *BoltSettingStorage) UpdateOneAddress(name settings.AddressName, address string, timestamp uint64) error {
 	address = strings.ToLower(address)
 	err := boltSettingStorage.db.Update(func(tx *bolt.Tx) error {
-		b, uErr := tx.CreateBucketIfNotExists([]byte(ADDRESS_SETTING_BUCKET))
-		if uErr != nil {
+		if uErr := updateAddressVersion(tx, timestamp); uErr != nil {
 			return uErr
 		}
-		if uErr := updateVersion(tx); uErr != nil {
+		b, uErr := tx.CreateBucketIfNotExists([]byte(ADDRESS_SETTING_BUCKET))
+		if uErr != nil {
 			return uErr
 		}
 		return b.Put(boltutil.Uint64ToBytes(uint64(name)), []byte(address))
@@ -77,10 +98,13 @@ func (boltSettingStorage *BoltSettingStorage) GetAddress(add settings.AddressNam
 	return address, err
 }
 
-func (boltSettingStorage *BoltSettingStorage) AddAddressToSet(setName settings.AddressSetName, address string) error {
+func (boltSettingStorage *BoltSettingStorage) AddAddressToSet(setName settings.AddressSetName, address string, timestamp uint64) error {
 	address = strings.ToLower(address)
 	defaultValue := "1"
 	err := boltSettingStorage.db.Update(func(tx *bolt.Tx) error {
+		if uErr := updateAddressVersion(tx, timestamp); uErr != nil {
+			return uErr
+		}
 		b, uErr := tx.CreateBucketIfNotExists([]byte(ADDRESS_SET_SETTING_BUCKET))
 		if uErr != nil {
 			return uErr
@@ -89,10 +113,8 @@ func (boltSettingStorage *BoltSettingStorage) AddAddressToSet(setName settings.A
 		if uErr != nil {
 			return uErr
 		}
-		if uErr := updateVersion(tx); uErr != nil {
-			return uErr
-		}
 		return s.Put([]byte(address), []byte(defaultValue))
+
 	})
 	return err
 }
