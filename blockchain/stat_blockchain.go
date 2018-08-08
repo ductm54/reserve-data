@@ -28,6 +28,14 @@ type StatBlockchain struct {
 	addressSetting addressSetting
 }
 
+func (stBlockchain *StatBlockchain) GetAddress(addressType settings.AddressName) (ethereum.Address, error) {
+	return stBlockchain.addressSetting.GetAddress(addressType)
+}
+
+func (stBlockchain *StatBlockchain) GetAddresses(setType settings.AddressSetName) ([]ethereum.Address, error) {
+	return stBlockchain.addressSetting.GetAddresses(setType)
+}
+
 func (stBlockchain *StatBlockchain) AddOldNetwork(addr ethereum.Address) {
 	stBlockchain.addressSetting.AddAddressToSet(settings.OldNetWorks, addr)
 }

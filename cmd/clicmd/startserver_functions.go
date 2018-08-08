@@ -28,10 +28,10 @@ import (
 const (
 	// startingBlockProduction is the block the first version of
 	// production network contract is created.
-	startingBlockProduction = 5069586
+	startingBlockProduction = 6073000
 	// startingBlockStaging is the block the first version of
 	// staging network contract is created.
-	startingBlockStaging = 5042909
+	startingBlockStaging = 6073000
 	// defaultTimeOut is the default time out for requesting to core for setting
 	defaultTimeOut = time.Duration(10 * time.Second)
 )
