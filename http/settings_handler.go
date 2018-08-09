@@ -6,12 +6,20 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"strconv"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/settings"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
+)
+
+const (
+	pricingOPAddressName      = "pricing_operator"
+	depositOPAddressName      = "deposit_operator"
+	intermediateOPAddressName = "intermediate_operator"
+	validAddressLength        = 42
 )
 
 func (self *HTTPServer) updateInternalTokensIndices(tokenUpdates map[string]common.TokenUpdate) error {
@@ -45,19 +53,36 @@ func (self *HTTPServer) ensureRunningExchange(ex string) (settings.ExchangeName,
 func (self *HTTPServer) getExchangeSetting(exName settings.ExchangeName) (*common.ExchangeSetting, error) {
 	exFee, err := self.setting.GetFee(exName)
 	if err != nil {
-		return nil, err
+		if err != settings.ErrExchangeRecordNotFound {
+			return nil, err
+		}
+		log.Printf("the current exchange fee for %s hasn't existed yet.", exName.String())
+		fundingFee := common.NewFundingFee(make(map[string]float64), make(map[string]float64))
+		exFee = common.NewExchangeFee(make(common.TradingFee), fundingFee)
 	}
 	exMinDep, err := self.setting.GetMinDeposit(exName)
 	if err != nil {
-		return nil, err
+		if err != settings.ErrExchangeRecordNotFound {
+			return nil, err
+		}
+		log.Printf("the current exchange MinDeposit for %s hasn't existed yet.", exName.String())
+		exMinDep = make(common.ExchangesMinDeposit)
 	}
 	exInfos, err := self.setting.GetExchangeInfo(exName)
 	if err != nil {
-		return nil, err
+		if err != settings.ErrExchangeRecordNotFound {
+			return nil, err
+		}
+		log.Printf("the current exchange Info for %s hasn't existed yet.", exName.String())
+		exInfos = make(common.ExchangeInfo)
 	}
 	depAddrs, err := self.setting.GetDepositAddresses(exName)
 	if err != nil {
-		return nil, err
+		if err != settings.ErrExchangeRecordNotFound {
+			return nil, err
+		}
+		log.Printf("the current exchange deposit addresses  for %s hasn't existed yet.", exName.String())
+		depAddrs = make(common.ExchangeAddresses)
 	}
 	return common.NewExchangeSetting(depAddrs, exMinDep, exFee, exInfos), nil
 }
@@ -132,6 +157,14 @@ func (self *HTTPServer) SetTokenUpdate(c *gin.Context) {
 	for tokenID, tokenUpdate := range tokenUpdates {
 		token := tokenUpdate.Token
 		token.ID = tokenID
+		if len(token.Address) != validAddressLength {
+			httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Token %s's address is invalid length. Token field in token request might be empty ", tokenID)))
+			return
+		}
+		if len(token.Name) == 0 {
+			httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Token %s's name is empty. Token field in token request might be empty ", tokenID)))
+			return
+		}
 		// if the token is internal, it must come with PWIEq, targetQty and QuadraticEquation and exchange setting
 		if token.Internal {
 			if uErr := self.ensureInternalSetting(tokenUpdate); uErr != nil {
@@ -184,11 +217,13 @@ func (self *HTTPServer) GetPendingTokenUpdates(c *gin.Context) {
 }
 
 func (self *HTTPServer) ConfirmTokenUpdate(c *gin.Context) {
-	postForm, ok := self.Authenticated(c, []string{"data"}, []Permission{ConfigurePermission})
+	postForm, ok := self.Authenticated(c, []string{"data"}, []Permission{ConfirmConfPermission})
 	if !ok {
 		return
 	}
 	data := []byte(postForm.Get("data"))
+	//no need to handle error here, if timestamp==0 the program will use UNIX timestamp instead
+	timestamp, _ := strconv.ParseUint(postForm.Get("timestamp"), 10, 64)
 	var tokenUpdates map[string]common.TokenUpdate
 	if err := json.Unmarshal(data, &tokenUpdates); err != nil {
 		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("cant not unmarshall token request %s", err.Error())))
@@ -270,7 +305,7 @@ func (self *HTTPServer) ConfirmTokenUpdate(c *gin.Context) {
 		}
 	}
 	// Apply the change into setting database
-	if err = self.setting.ApplyTokenWithExchangeSetting(preparedToken, preparedExchangeSetting); err != nil {
+	if err = self.setting.ApplyTokenWithExchangeSetting(preparedToken, preparedExchangeSetting, timestamp); err != nil {
 		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Can not apply token and exchange setting for token listing (%s). Metric data and token indices changes has to be manually revert", err.Error())))
 		return
 	}
@@ -391,46 +426,6 @@ func (self *HTTPServer) TokenSettings(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(data))
 }
 
-func (self *HTTPServer) UpdateAddress(c *gin.Context) {
-	postForm, ok := self.Authenticated(c, []string{"name", "address"}, []Permission{RebalancePermission, ConfigurePermission})
-	if !ok {
-		return
-	}
-	addrStr := postForm.Get("address")
-	name := postForm.Get("name")
-	addressName, ok := settings.AddressNameValues()[name]
-	if !ok {
-		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("invalid address name: %s", name)))
-		return
-	}
-	addr := ethereum.HexToAddress(addrStr)
-	if err := self.setting.UpdateAddress(addressName, addr); err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c)
-}
-
-func (self *HTTPServer) AddAddressToSet(c *gin.Context) {
-	postForm, ok := self.Authenticated(c, []string{"name", "address"}, []Permission{RebalancePermission, ConfigurePermission})
-	if !ok {
-		return
-	}
-	addrStr := postForm.Get("address")
-	addr := ethereum.HexToAddress(addrStr)
-	setName := postForm.Get("name")
-	addrSetName, ok := settings.AddressSetNameValues()[setName]
-	if !ok {
-		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("invalid address set name: %s", setName)))
-		return
-	}
-	if err := self.setting.AddAddressToSet(addrSetName, addr); err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c)
-}
-
 func (self *HTTPServer) UpdateExchangeFee(c *gin.Context) {
 	postForm, ok := self.Authenticated(c, []string{"name", "data"}, []Permission{RebalancePermission, ConfigurePermission})
 	if !ok {
@@ -443,12 +438,17 @@ func (self *HTTPServer) UpdateExchangeFee(c *gin.Context) {
 		return
 	}
 	data := []byte(postForm.Get("data"))
+	//no need to handle error here, if timestamp==0 the program will use UNIX timestamp instead
+	timestamp, _ := strconv.ParseUint(postForm.Get("timestamp"), 10, 64)
 	var exFee common.ExchangeFees
 	if err := json.Unmarshal(data, &exFee); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	if err := self.setting.UpdateFee(exName, exFee); err != nil {
+	if exFee.Trading == nil || exFee.Funding.Deposit == nil || exFee.Funding.Withdraw == nil {
+		httputil.ResponseFailure(c, httputil.WithReason("Data is in the wrong format: there is nil map inside the data"))
+	}
+	if err := self.setting.UpdateFee(exName, exFee, timestamp); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -467,12 +467,14 @@ func (self *HTTPServer) UpdateExchangeMinDeposit(c *gin.Context) {
 		return
 	}
 	data := []byte(postForm.Get("data"))
+	//no need to handle error here, if timestamp==0 the program will use UNIX timestamp instead
+	timestamp, _ := strconv.ParseUint(postForm.Get("timestamp"), 10, 64)
 	var exMinDeposit common.ExchangesMinDeposit
 	if err := json.Unmarshal(data, &exMinDeposit); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	if err := self.setting.UpdateMinDeposit(exName, exMinDeposit); err != nil {
+	if err := self.setting.UpdateMinDeposit(exName, exMinDeposit, timestamp); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -491,6 +493,8 @@ func (self *HTTPServer) UpdateDepositAddress(c *gin.Context) {
 		return
 	}
 	data := []byte(postForm.Get("data"))
+	//no need to handle error here, if timestamp==0 the program will use UNIX timestamp instead
+	timestamp, _ := strconv.ParseUint(postForm.Get("timestamp"), 10, 64)
 	var exDepositAddressStr map[string]string
 	if err := json.Unmarshal(data, &exDepositAddressStr); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -502,7 +506,7 @@ func (self *HTTPServer) UpdateDepositAddress(c *gin.Context) {
 		exDepositAddress[tokenID] = ethereum.HexToAddress(addrStr)
 		log.Printf(exDepositAddress[tokenID].Hex())
 	}
-	if err := self.setting.UpdateDepositAddress(exName, exDepositAddress); err != nil {
+	if err := self.setting.UpdateDepositAddress(exName, exDepositAddress, timestamp); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -521,6 +525,8 @@ func (self *HTTPServer) UpdateExchangeInfo(c *gin.Context) {
 		return
 	}
 	data := []byte(postForm.Get("data"))
+	//no need to handle error here, if timestamp==0 the program will use UNIX timestamp instead
+	timestamp, _ := strconv.ParseUint(postForm.Get("timestamp"), 10, 64)
 	var exInfo common.ExchangeInfo
 	if err := json.Unmarshal(data, &exInfo); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -551,7 +557,7 @@ func (self *HTTPServer) UpdateExchangeInfo(c *gin.Context) {
 			exInfo[tokenPairID] = epl
 		}
 	}
-	if err := self.setting.UpdateExchangeInfo(exName, exInfo); err != nil {
+	if err := self.setting.UpdateExchangeInfo(exName, exInfo, timestamp); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -563,31 +569,181 @@ func (self *HTTPServer) GetAllSetting(c *gin.Context) {
 	if !ok {
 		return
 	}
-	tokenSettings, err := self.setting.GetAllTokens()
+	addrReponse, err := self.getAddressResponse()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
+	tokResponse, err := self.getTokenResponse()
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	exchangeResponse, err := self.getExchangeResponse()
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	timepoint := common.GetTimepoint()
+	allSetting := common.NewAllSettings(addrReponse, tokResponse, exchangeResponse)
+	httputil.ResponseSuccess(c, httputil.WithMultipleFields(gin.H{
+		"timestamp": timepoint,
+		"data":      allSetting,
+	}))
+}
+
+func (self *HTTPServer) getAddressResponse() (*common.AddressesResponse, error) {
 	addressSettings, err := self.setting.GetAllAddresses()
 	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
+		return nil, err
 	}
+	addressSettings[pricingOPAddressName] = self.blockchain.GetPricingOPAddress().Hex()
+	addressSettings[depositOPAddressName] = self.blockchain.GetDepositOPAddress().Hex()
+	if _, ok := common.SupportedExchanges["huobi"]; ok {
+		addressSettings[intermediateOPAddressName] = self.blockchain.GetIntermediatorOPAddress().Hex()
+	}
+	if err != nil {
+		return nil, err
+	}
+	addressResponse := common.NewAddressResponse(addressSettings)
+	return addressResponse, nil
+}
+
+func (self *HTTPServer) getTokenResponse() (*common.TokenResponse, error) {
+	tokens, err := self.setting.GetAllTokens()
+	if err != nil {
+		return nil, err
+	}
+	version, err := self.setting.GetTokenVersion()
+	if err != nil {
+		return nil, err
+	}
+	tokenResponse := common.NewTokenResponse(tokens, version)
+	return tokenResponse, nil
+}
+
+func (self *HTTPServer) getExchangeResponse() (*common.ExchangeResponse, error) {
 	exchangeSettings := make(map[string]*common.ExchangeSetting)
 	for exID := range common.SupportedExchanges {
-		exName, vErr := self.ensureRunningExchange(string(exID))
-		if vErr != nil {
-			httputil.ResponseFailure(c, httputil.WithError(vErr))
-			return
+		exName, err := self.ensureRunningExchange(string(exID))
+		if err != nil {
+			return nil, err
 		}
-		exSett, vErr := self.getExchangeSetting(exName)
-		if vErr != nil {
-			httputil.ResponseFailure(c, httputil.WithError(vErr))
-			return
+		exSett, err := self.getExchangeSetting(exName)
+		if err != nil {
+			return nil, err
 		}
 		exchangeSettings[string(exID)] = exSett
 	}
+	version, err := self.setting.GetExchangeVersion()
+	if err != nil {
+		return nil, err
+	}
+	return common.NewExchangeResponse(exchangeSettings, version), nil
+}
 
-	allSetting := common.NewAllSettings(addressSettings, tokenSettings, exchangeSettings)
-	httputil.ResponseSuccess(c, httputil.WithData(allSetting))
+func (self *HTTPServer) GetInternalTokens(c *gin.Context) {
+	_, ok := self.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
+	if !ok {
+		return
+	}
+	tokens, err := self.setting.GetInternalTokens()
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithData(tokens))
+}
+
+func (self *HTTPServer) GetActiveTokens(c *gin.Context) {
+	_, ok := self.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
+	if !ok {
+		return
+	}
+	tokens, err := self.setting.GetActiveTokens()
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithData(tokens))
+}
+
+func (self *HTTPServer) GetTokenByAddress(c *gin.Context) {
+	_, ok := self.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
+	if !ok {
+		return
+	}
+	addr := c.Query("address")
+	if len(addr) != validAddressLength {
+		httputil.ResponseFailure(c, httputil.WithReason("address is invalid length "))
+		return
+	}
+	token, err := self.setting.GetTokenByAddress(ethereum.HexToAddress(addr))
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithData(token))
+}
+
+func (self *HTTPServer) GetActiveTokenByID(c *gin.Context) {
+	_, ok := self.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
+	if !ok {
+		return
+	}
+	ID := c.Query("ID")
+	token, err := self.setting.GetActiveTokenByID((ID))
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithData(token))
+}
+
+func (self *HTTPServer) GetAddress(c *gin.Context) {
+	_, ok := self.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
+	if !ok {
+		return
+	}
+	name := c.Query("name")
+	addressNames := settings.AddressNameValues()
+	addrName, ok := addressNames[name]
+	if !ok {
+		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("address name %s is not avail in this list of valid address name", name)))
+		return
+	}
+	address, err := self.setting.GetAddress(addrName)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithData(address))
+}
+
+func (self *HTTPServer) GetAddresses(c *gin.Context) {
+	_, ok := self.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
+	if !ok {
+		return
+	}
+	name := c.Query("name")
+	addressSetNames := settings.AddressSetNameValues()
+	addrSetName, ok := addressSetNames[name]
+	if !ok {
+		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("address set name %s is not avail in this list of valid address set name", name)))
+		return
+	}
+	address, err := self.setting.GetAddresses(addrSetName)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithData(address))
+}
+
+func (self *HTTPServer) ReadyToServe(c *gin.Context) {
+	_, ok := self.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
+	if !ok {
+		return
+	}
+	httputil.ResponseSuccess(c)
 }

@@ -3,14 +3,18 @@ package storage
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/KyberNetwork/reserve-data/boltutil"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/settings"
 	"github.com/boltdb/bolt"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
+
+const token_version = "token_version"
 
 func addTokenByID(tx *bolt.Tx, t common.Token) error {
 	b, uErr := tx.CreateBucketIfNotExists([]byte(TOKEN_BUCKET_BY_ID))
@@ -36,7 +40,15 @@ func addTokenByAddress(tx *bolt.Tx, t common.Token) error {
 	return b.Put([]byte(strings.ToLower(t.Address)), dataJson)
 }
 
-func (boltSettingStorage *BoltSettingStorage) UpdateToken(t common.Token) error {
+func updateTokenVersion(tx *bolt.Tx, timestamp uint64) error {
+	b := tx.Bucket([]byte(token_version))
+	if uErr := b.Put([]byte(token_version), boltutil.Uint64ToBytes(timestamp)); uErr != nil {
+		return uErr
+	}
+	return nil
+}
+
+func (boltSettingStorage *BoltSettingStorage) UpdateToken(t common.Token, timestamp uint64) error {
 	err := boltSettingStorage.db.Update(func(tx *bolt.Tx) error {
 		if uErr := addTokenByID(tx, t); uErr != nil {
 			return uErr
@@ -44,12 +56,15 @@ func (boltSettingStorage *BoltSettingStorage) UpdateToken(t common.Token) error 
 		if uErr := addTokenByAddress(tx, t); uErr != nil {
 			return uErr
 		}
+		if uErr := updateTokenVersion(tx, timestamp); uErr != nil {
+			return uErr
+		}
 		return nil
 	})
 	return err
 }
 
-func (boltSettingStorage *BoltSettingStorage) AddTokenByID(t common.Token) error {
+func (boltSettingStorage *BoltSettingStorage) AddTokenByID(t common.Token, timestamp uint64) error {
 	err := boltSettingStorage.db.Update(func(tx *bolt.Tx) error {
 		b, uErr := tx.CreateBucketIfNotExists([]byte(TOKEN_BUCKET_BY_ID))
 		if uErr != nil {
@@ -59,12 +74,15 @@ func (boltSettingStorage *BoltSettingStorage) AddTokenByID(t common.Token) error
 		if uErr != nil {
 			return uErr
 		}
+		if uErr := updateTokenVersion(tx, timestamp); uErr != nil {
+			return uErr
+		}
 		return b.Put([]byte(strings.ToLower(t.ID)), dataJSON)
 	})
 	return err
 }
 
-func (boltSettingStorage *BoltSettingStorage) AddTokenByAddress(t common.Token) error {
+func (boltSettingStorage *BoltSettingStorage) AddTokenByAddress(t common.Token, timestamp uint64) error {
 	err := boltSettingStorage.db.Update(func(tx *bolt.Tx) error {
 		b, uErr := tx.CreateBucketIfNotExists([]byte(TOKEN_BUCKET_BY_ADDRESS))
 		if uErr != nil {
@@ -72,6 +90,9 @@ func (boltSettingStorage *BoltSettingStorage) AddTokenByAddress(t common.Token) 
 		}
 		dataJson, uErr := json.Marshal(t)
 		if uErr != nil {
+			return uErr
+		}
+		if uErr := updateTokenVersion(tx, timestamp); uErr != nil {
 			return uErr
 		}
 		return b.Put([]byte(strings.ToLower(t.Address)), dataJson)
@@ -198,7 +219,7 @@ func (boltSettingStorage *BoltSettingStorage) GetExternalTokenByAddress(Addr eth
 
 // UpdateTokenWithExchangeSetting will attempt to apply all the token and exchange settings
 // as well as remove pending Token listing in one TX. reroll and return err if occur
-func (boltSettingStorage *BoltSettingStorage) UpdateTokenWithExchangeSetting(tokens []common.Token, exSetting map[settings.ExchangeName]*common.ExchangeSetting) error {
+func (boltSettingStorage *BoltSettingStorage) UpdateTokenWithExchangeSetting(tokens []common.Token, exSetting map[settings.ExchangeName]*common.ExchangeSetting, timestamp uint64) error {
 	err := boltSettingStorage.db.Update(func(tx *bolt.Tx) error {
 		//Apply tokens setting
 		for _, t := range tokens {
@@ -223,6 +244,13 @@ func (boltSettingStorage *BoltSettingStorage) UpdateTokenWithExchangeSetting(tok
 			if uErr := putMinDeposit(tx, exName, exSett.MinDeposit); uErr != nil {
 				return uErr
 			}
+		}
+		if uErr := updateExchangeVersion(tx, timestamp); uErr != nil {
+			return uErr
+		}
+
+		if uErr := updateTokenVersion(tx, timestamp); uErr != nil {
+			return uErr
 		}
 		//delete pending token listings
 		if uErr := deletePendingTokenUpdates(tx); uErr != nil {
@@ -292,4 +320,18 @@ func (boltSettingStorage *BoltSettingStorage) RemovePendingTokenUpdates() error 
 		return deletePendingTokenUpdates(tx)
 	})
 	return err
+}
+
+func (boltSettingStorage *BoltSettingStorage) GetTokenVersion() (uint64, error) {
+	var result uint64
+	err := boltSettingStorage.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(token_version))
+		data := b.Get([]byte(token_version))
+		if data == nil {
+			return errors.New("No version is currently available")
+		}
+		result = boltutil.BytesToUint64(data)
+		return nil
+	})
+	return result, err
 }

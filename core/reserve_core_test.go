@@ -105,10 +105,6 @@ func (self testBlockchain) SetRateMinedNonce() (uint64, error) {
 	return 0, nil
 }
 
-func (self testBlockchain) GetAddresses() (*common.Addresses, error) {
-	return &common.Addresses{}, nil
-}
-
 type testActivityStorage struct {
 	PendingDeposit bool
 }
@@ -154,10 +150,7 @@ func getTestCore(hasPendingDeposit bool) *ReserveCore {
 	if err != nil {
 		log.Fatal(err)
 	}
-	addressSetting, err := settings.NewAddressSetting(boltSettingStorage)
-	if err != nil {
-		log.Fatal(err)
-	}
+	addressSetting := &settings.AddressSetting{}
 	exchangeSetting, err := settings.NewExchangeSetting(boltSettingStorage)
 	if err != nil {
 		log.Fatal(err)

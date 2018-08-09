@@ -82,12 +82,12 @@ func (self *Huobi) UpdateDepositAddress(token common.Token, address string) erro
 		log.Printf("WARNING: Get Huobi live deposit address for token %s failed: (%v) or the replied address is empty. Check the currently available address instead", token.ID, err)
 		addrs := common.NewExchangeAddresses()
 		addrs.Update(token.ID, ethereum.HexToAddress(address))
-		return self.setting.UpdateDepositAddress(settings.Huobi, *addrs)
+		return self.setting.UpdateDepositAddress(settings.Huobi, *addrs, common.GetTimepoint())
 	}
 	log.Printf("Got Huobi live deposit address for token %s, attempt to update it to current setting", token.ID)
 	addrs := common.NewExchangeAddresses()
 	addrs.Update(token.ID, ethereum.HexToAddress(liveAddress.Address))
-	return self.setting.UpdateDepositAddress(settings.Huobi, *addrs)
+	return self.setting.UpdateDepositAddress(settings.Huobi, *addrs, common.GetTimepoint())
 }
 
 // GetLiveExchangeInfos querry the Exchange Endpoint for exchange precision and limit of a list of tokenPairIDs
@@ -144,7 +144,7 @@ func (self *Huobi) UpdatePairsPrecision() error {
 		}
 		exInfo[pair] = exchangePrecisionLimit
 	}
-	return self.setting.UpdateExchangeInfo(settings.Huobi, exInfo)
+	return self.setting.UpdateExchangeInfo(settings.Huobi, exInfo, common.GetTimepoint())
 }
 
 func (self *Huobi) GetInfo() (common.ExchangeInfo, error) {

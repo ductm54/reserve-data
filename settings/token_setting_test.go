@@ -23,10 +23,8 @@ func newTestSetting(t *testing.T, tmpDir string) *settings.Settings {
 	if err != nil {
 		t.Fatal(err)
 	}
-	addressSetting, err := settings.NewAddressSetting(boltSettingStorage)
-	if err != nil {
-		t.Fatal(err)
-	}
+	addressSetting := &settings.AddressSetting{}
+
 	exchangeSetting, err := settings.NewExchangeSetting(boltSettingStorage)
 	if err != nil {
 		t.Fatal(err)
@@ -149,7 +147,7 @@ func TestInternaTokenSetting(t *testing.T) {
 			t.Error(rErr)
 		}
 	}()
-	if err := setting.UpdateToken(testInternalToken); err != nil {
+	if err := setting.UpdateToken(testInternalToken, 0); err != nil {
 		t.Fatal(err)
 	}
 	testPositiveGetInternalToken(t, setting, testInternalToken)
@@ -169,7 +167,7 @@ func TestExternalTokenSetting(t *testing.T) {
 			t.Error(rErr)
 		}
 	}()
-	if err := setting.UpdateToken(testExternalToken); err != nil {
+	if err := setting.UpdateToken(testExternalToken, 0); err != nil {
 		t.Fatal(err)
 	}
 	testGetToken(t, setting, testExternalToken)

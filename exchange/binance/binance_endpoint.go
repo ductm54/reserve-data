@@ -118,7 +118,7 @@ func (self *BinanceEndpoint) GetDepthOnePair(pair common.TokenPair) (exchange.Bi
 		"GET", self.interf.PublicEndpoint()+"/api/v1/depth",
 		map[string]string{
 			"symbol": fmt.Sprintf("%s%s", pair.Base.ID, pair.Quote.ID),
-			"limit":  "50",
+			"limit":  "100",
 		},
 		false,
 		common.GetTimepoint(),

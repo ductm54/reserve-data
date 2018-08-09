@@ -87,10 +87,8 @@ func TestHTTPServerRebalanceQuadratic(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	addressSetting, err := settings.NewAddressSetting(boltSettingStorage)
-	if err != nil {
-		t.Fatal(err)
-	}
+	addressSetting := &settings.AddressSetting{}
+
 	exchangeSetting, err := settings.NewExchangeSetting(boltSettingStorage)
 	if err != nil {
 		t.Fatal(err)
@@ -106,10 +104,10 @@ func TestHTTPServerRebalanceQuadratic(t *testing.T) {
 		}
 	}()
 
-	if uErr := setting.UpdateToken(common.NewToken("KNC", "KyberNetwork", "xxx", 18, true, true, 0)); err != nil {
+	if uErr := setting.UpdateToken(common.NewToken("KNC", "KyberNetwork", "xxx", 18, true, true, 0), 0); err != nil {
 		t.Fatal(uErr)
 	}
-	if uErr := setting.UpdateToken(common.NewToken("ETH", "Etherium", "xxx", 18, true, true, 0)); err != nil {
+	if uErr := setting.UpdateToken(common.NewToken("ETH", "Etherium", "xxx", 18, true, true, 0), 0); err != nil {
 		t.Error(uErr)
 	}
 	rqStorage, err := storage.NewBoltStorage(filepath.Join(tmpDir, "test.db"))

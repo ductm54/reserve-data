@@ -9,11 +9,11 @@ import (
 //All key for update and lookup inside the storage must be in lower key
 type TokenStorage interface {
 	//Add Tokens by ID
-	AddTokenByID(common.Token) error
+	AddTokenByID(common.Token, uint64) error
 	//Add Tokens by Address
-	AddTokenByAddress(common.Token) error
+	AddTokenByAddress(common.Token, uint64) error
 	//Update common
-	UpdateToken(common.Token) error
+	UpdateToken(common.Token, uint64) error
 
 	//Active Tokens (Network Tokens)
 	GetActiveTokens() ([]common.Token, error)
@@ -34,6 +34,7 @@ type TokenStorage interface {
 	GetExternalTokenByAddress(ethereum.Address) (common.Token, error)
 	StorePendingTokenUpdates(map[string]common.TokenUpdate) error
 	GetPendingTokenUpdates() (map[string]common.TokenUpdate, error)
-	UpdateTokenWithExchangeSetting(t []common.Token, exSetting map[ExchangeName]*common.ExchangeSetting) error
+	UpdateTokenWithExchangeSetting(t []common.Token, exSetting map[ExchangeName]*common.ExchangeSetting, timestamp uint64) error
 	RemovePendingTokenUpdates() error
+	GetTokenVersion() (uint64, error)
 }

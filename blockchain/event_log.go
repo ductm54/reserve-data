@@ -14,13 +14,13 @@ import (
 // calculateFiatAmount returns new TradeLog with fiat amount calculated.
 // * For ETH-Token or Token-ETH conversions, the ETH amount is taken from ExecuteTrade event.
 // * For Token-Token, the ETH amount is reading from EtherReceival event.
-func calculateFiatAmount(tradeLog common.TradeLog, rate float64, eth common.Token) common.TradeLog {
+func calculateFiatAmount(tradeLog common.TradeLog, rate float64) common.TradeLog {
 	ethAmount := new(big.Float)
 
-	if strings.ToLower(eth.Address) == strings.ToLower(tradeLog.SrcAddress.String()) {
+	if strings.ToLower(ethAddress) == strings.ToLower(tradeLog.SrcAddress.String()) {
 		// ETH-Token
 		ethAmount.SetInt(tradeLog.SrcAmount)
-	} else if strings.ToLower(eth.Address) == strings.ToLower(tradeLog.DestAddress.String()) {
+	} else if strings.ToLower(ethAddress) == strings.ToLower(tradeLog.DestAddress.String()) {
 		// Token-ETH
 		ethAmount.SetInt(tradeLog.DestAmount)
 	} else if tradeLog.EtherReceivalAmount != nil {
@@ -30,7 +30,7 @@ func calculateFiatAmount(tradeLog common.TradeLog, rate float64, eth common.Toke
 
 	// fiat amount = ETH amount * rate
 	ethAmount = ethAmount.Mul(ethAmount, new(big.Float).SetFloat64(rate))
-	ethAmount.Quo(ethAmount, new(big.Float).SetFloat64(math.Pow10(int(eth.Decimals))))
+	ethAmount.Quo(ethAmount, new(big.Float).SetFloat64(math.Pow10(int(ethDecimals))))
 	tradeLog.FiatAmount, _ = ethAmount.Float64()
 
 	return tradeLog

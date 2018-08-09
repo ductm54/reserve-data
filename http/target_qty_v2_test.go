@@ -131,10 +131,8 @@ func TestHTTPServerTargetQtyV2(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	addressSetting, err := settings.NewAddressSetting(boltSettingStorage)
-	if err != nil {
-		log.Fatal(err)
-	}
+	addressSetting := &settings.AddressSetting{}
+
 	exchangeSetting, err := settings.NewExchangeSetting(boltSettingStorage)
 	if err != nil {
 		log.Fatal(err)
@@ -148,7 +146,7 @@ func TestHTTPServerTargetQtyV2(t *testing.T) {
 		Address:  "xxx",
 		Internal: true,
 		Active:   true,
-	})
+	}, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -157,7 +155,7 @@ func TestHTTPServerTargetQtyV2(t *testing.T) {
 		Address:  "xxx",
 		Internal: true,
 		Active:   true,
-	})
+	}, 0)
 	if err != nil {
 		t.Fatal(err)
 	}

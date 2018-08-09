@@ -2252,7 +2252,8 @@ response
 ##### Update address - (signing required) update a single address
 POST request 
 Post form: {"name" : "Name of the address (reserve, deposit etc...)",
-            "address" : "Hex form of the new address"}
+            "address" : "Hex form of the new address"
+            "timestamp" (optional) uint64 "this will overwrite version in address setting"  }
 Note: This is used to update single address object. For list of address object, use add-address-to-set instead
 ```
 <host>:8000/setting/update-address
@@ -2264,7 +2265,8 @@ Example
 curl -X "POST" "http://localhost:8000/setting/update-address" \
      -H 'Content-Type: application/x-www-form-urlencoded'\
      --data-urlencode "name=bank"\
-     --data-urlencode "address=0x123456789aabbcceeeddff" 
+     --data-urlencode "address=0x123456789aabbcceeeddff"\
+     --data-urlencode "timestamp=1111111111"
 
 ```
 response
@@ -2280,7 +2282,8 @@ on failure:
 ##### Add address to set- (signing required) add address to a list of address
 POST request 
 Post form: {"name" : <Name of the address set(oldBurners etc...)>,
-            "address" : <Hex form of the new address>}
+            "address" : <Hex form of the new address>
+            "timestamp" (optional) uint64 <this will overwrite version in address setting> }
 ```
 <host>:8000/setting/add-address-to-set
 ```
@@ -2309,7 +2312,9 @@ on failure:
 ##### Update exchange fee - (signing required) update one exchange fee setting
 POST request 
 Post form: {"name" : <Name of the exchange (binance, huobi etc...)>,
-            "data" : <JSON encoded form of fee setting >}
+            "data" : <JSON encoded form of fee setting >
+            "timestamp" (optional) uint64 <this will overwrite version in exchange setting> }
+}
 **Note**: 
 UpdateFee will merge the new fee setting to the current fee setting,
 Any different key will be overwriten from new fee to current fee. This allows update
@@ -2347,7 +2352,9 @@ Example
 ##### Update exchange mindeposit - (signing required) update one exchange min deposit
 POST request 
 Post form: {"name" : <Name of the exchange (binance, huobi etc...)>,
-            "data" : <JSON encoded form of min deposit>}
+            "data" : <JSON encoded form of min deposit>
+            "timestamp" (optional) uint64 <this will overwrite version in exchange setting> }
+
 **Note**: 
 Update Exchange minDeposit will merge the new minDeposit setting to the current minDeposit setting,
 Any different key will be overwriten from new minDeposit to current minDeposit. This allows update
@@ -2372,7 +2379,9 @@ Example
 #####  Update exchange deposit address - (signing required) update one exchange deposit address
 POST request 
 Post form: {"name" : <Name of the exchange (binance, huobi etc...)>,
-            "data" : <JSON encoded form of a map of token : depositaddress >}
+            "data" : <JSON encoded form of a map of token : depositaddress >
+            "timestamp" (optional) uint64 <this will overwrite version in exchange setting> }
+
 **Note**: 
 Update Exchange deposit address will merge the new deposit address setting to the current deposit address setting,
 Any different key will be overwriten from new deposit address to current deposit address. This allows update
@@ -2396,7 +2405,9 @@ Example
 
 POST request 
 Post form: {"name" : <Name of the exchange (binance, huobi etc...)>,
-            "data" : <JSON encoded form of exchange info >}
+            "data" : <JSON encoded form of exchange info >
+            "timestamp" (optional) uint64 <this will overwrite version in exchange setting> }
+}
 **Note**: 
 Update Exchange minDeposit will merge the new exchange info setting to the current exchange info setting,
 Any different key will be overwriten from new exchange info to current exchange info. This allows update
@@ -2450,154 +2461,189 @@ Response
 {
   "data": {
     "Addresses": {
-      "bank": "",
-      "burner": "0x07f6e905f2a1559cd9fd43cb92f8a1062a3ca706",
-      "network": "0x964f35fae36d75b1e72770e244f6595b68508cf5",
-      "old_burners": [
-        "0x4e89bc8484b2c454f2f7b25b612b648c45e14a8e"
-      ],
-      "pricing": "0x798abda6cc246d0edba912092a2a3dbd3d11191b",
-      "reserve": "0x63825c174ab367968ec60f061753d3bbd36a0d8f",
-      "setrate": "",
-      "third_party_reserves": [
-        "0x2aab2b157a03915c8a73adae735d0cf51c872f31",
-        "0x4d864b5b4f866f65f53cbaad32eb9574760865e6",
-        "0x6f50e41885fdc44dbdf7797df0393779a9c0a3a6"
-      ],
-      "whitelist": "0x6e106a75d369d09a9ea1dcc16da844792aa669a3",
-      "wrapper": "0x6172afc8c00c46e0d07ce3af203828198194620a"
+      "Addresses": {
+        "bank": "",
+        "burner": "0xed4f53268bfdff39b36e8786247ba3a02cf34b04",
+        "deposit_operator": "0xEDd15B61505180B3A0C25B193dF27eF10214D851",
+        "intermediate_operator": "0x13922F1857C0677F79e4BbB16Ad2c49fAa620829",
+        "internal_network": "0x91a502c678605fbce581eae053319747482276b9",
+        "network": "0x818e6fecd516ecc3849daf6845e3ec868087b755",
+        "old_burners": [
+          "0x07f6e905f2a1559cd9fd43cb92f8a1062a3ca706",
+          "0x4e89bc8484b2c454f2f7b25b612b648c45e14a8e"
+        ],
+        "old_networks": [
+          "0x964f35fae36d75b1e72770e244f6595b68508cf5"
+        ],
+        "pricing": "0x798abda6cc246d0edba912092a2a3dbd3d11191b",
+        "pricing_operator": "0x760d30979EB313A2d23C53E4Fb55986183B0ffd9",
+        "reserve": "0x63825c174ab367968ec60f061753d3bbd36a0d8f",
+        "third_party_reserves": [
+          "0x2aab2b157a03915c8a73adae735d0cf51c872f31",
+          "0x4d864b5b4f866f65f53cbaad32eb9574760865e6",
+          "0x6f50e41885fdc44dbdf7797df0393779a9c0a3a6"
+        ],
+        "whitelist": "0x6e106a75d369d09a9ea1dcc16da844792aa669a3",
+        "wrapper": "0x6172afc8c00c46e0d07ce3af203828198194620a"
+      },
+      "Version": 1533615419127
     },
-    "Tokens": [
-      {
-        "id": "ABT",
-        "name": "",
-        "address": "0xb98d4c97425d9908e66e53a6fdf673acca0be986",
-        "decimals": 18,
-        "active": true,
-        "internal": true
-      },
-      {
-        "id": "ZIL",
-        "name": "",
-        "address": "0x05f4a42e251f2d52b8ed15e9fedaacfcef1fad27",
-        "decimals": 12,
-        "active": true,
-        "internal": true
-      }
-    ],
+    "Tokens": {
+      "Tokens": [
+        {
+          "id": "ABT",
+          "name": "ArcBlock",
+          "address": "0xb98d4c97425d9908e66e53a6fdf673acca0be986",
+          "decimals": 18,
+          "active": true,
+          "internal": true,
+          "last_activation_change": 1533615415641
+        },
+        {
+          "id": "ZIL",
+          "name": "Zilliqa",
+          "address": "0x05f4a42e251f2d52b8ed15e9fedaacfcef1fad27",
+          "decimals": 12,
+          "active": true,
+          "internal": true,
+          "last_activation_change": 1533615415657
+        }
+      ],
+      "Version": 1533615415671
+    },
     "Exchanges": {
-      "binance": {
-        "echange_addresses": {
-          "AE": "0x44d34a119ba21a42167ff8b77a88f0fc7bb2db90",
-          "ZIL": "0x44d34a119ba21a42167ff8b77a88f0fc7bb2db90"
-        },
-        "min_deposit": {
-          "YOYO": 0,
-          "ZEC": 0,
-          "ZIL": 0,
-          "ZRX": 0
-        },
-        "fee": {
-          "Trading": {
-            "maker": 0.001,
-            "taker": 0.001
+      "Exchanges": {
+        "binance": {
+          "deposit_address": {
+            "TUSD": "0x44d34a119ba21a42167ff8b77a88f0fc7bb2db90",
+            "ZIL": "0xa34c7ac0980c738e4fbf190568f44997a0d4f2dc"
           },
-          "Funding": {
-            "Withdraw": {
-              "ZEC": 0.005,
-              "ZIL": 100,
-              "ZRX": 5.8
+          "min_deposit": {
+            "ADA": 0,
+            "ADX": 0,
+            "AE": 0,
+            "ZRX": 0
+          },
+          "fee": {
+            "Trading": {
+              "maker": 0.001,
+              "taker": 0.001
             },
-            "Deposit": {
-              "ZIL": 0,
-              "ZRX": 2
+            "Funding": {
+              "Withdraw": {
+                "ADA": 2,
+                "ADX": 8,
+                "AE": 4.6,
+                "ZIL": 200,
+                "ZRX": 11.6
+              },
+              "Deposit": {
+                "ADA": 0,
+                "ADX": 0,
+                "AE": 0,
+                "AION": 0,
+                "ZRX": 0
+              }
+            }
+          },
+          "info": {
+            "TUSD-ETH": {
+              "precision": {
+                "amount": 0,
+                "price": 8
+              },
+              "amount_limit": {
+                "min": 1,
+                "max": 90000000
+              },
+              "price_limit": {
+                "min": 0.0002475,
+                "max": 0.0247499
+              },
+              "min_notional": 0.01
+            },
+            "ZIL-ETH": {
+              "precision": {
+                "amount": 0,
+                "price": 8
+              },
+              "amount_limit": {
+                "min": 1,
+                "max": 90000000
+              },
+              "price_limit": {
+                "min": 0.00001249,
+                "max": 0.0012483
+              },
+              "min_notional": 0.01
             }
           }
         },
-        "info": {
-          "AE-ETH": {
-            "precision": {
-              "amount": 2,
-              "price": 6
-            },
-            "amount_limit": {
-              "min": 0.01,
-              "max": 90000000
-            },
-            "price_limit": {
-              "min": 0.000001,
-              "max": 100000
-            },
-            "min_notional": 0.01
+        "huobi": {
+          "deposit_address": {
+            "ABT": "0x0c8fd73eaf6089ef1b91231d0a07d0d2ca2b9d66",
+            "WAX": "0x0c8fd73eaf6089ef1b91231d0a07d0d2ca2b9d66"
           },
-          "AION-ETH": {
-            "precision": {
-              "amount": 2,
-              "price": 6
+          "min_deposit": {
+            "ABT": 4,
+            "APPC": 1,
+            "ZIL": 200
+          },
+          "fee": {
+            "Trading": {
+              "maker": 0.002,
+              "taker": 0.002
             },
-            "amount_limit": {
-              "min": 0.01,
-              "max": 90000000
+            "Funding": {
+              "Withdraw": {
+                "ZLA": 2,
+                "ZRX": 10
+              },
+              "Deposit": {
+                "ZLA": 0,
+                "ZRX": 0
+              }
+            }
+          },
+          "info": {
+            "POLY-ETH": {
+              "precision": {
+                "amount": 4,
+                "price": 6
+              },
+              "amount_limit": {
+                "min": 0,
+                "max": 0
+              },
+              "price_limit": {
+                "min": 0,
+                "max": 0
+              },
+              "min_notional": 0.02
             },
-            "price_limit": {
-              "min": 0.000001,
-              "max": 100000
-            },
-            "min_notional": 0.01
+            "WAX-ETH": {
+              "precision": {
+                "amount": 4,
+                "price": 6
+              },
+              "amount_limit": {
+                "min": 0,
+                "max": 0
+              },
+              "price_limit": {
+                "min": 0,
+                "max": 0
+              },
+              "min_notional": 0.02
+            }
           }
         }
       },
-      "huobi": {
-        "deposit_address": {
-          "ABT": "0x0c8fd73eaf6089ef1b91231d0a07d0d2ca2b9d66",
-          "CVC": "0x0c8fd73eaf6089ef1b91231d0a07d0d2ca2b9d66",
-          "EDU": "0x0c8fd73eaf6089ef1b91231d0a07d0d2ca2b9d66",
-         
-        },
-        "min_deposit": {
-          "ABT": 2,
-          "APPC": 0.5,
-          "AST": 5,
-          "SNT": 50,
-          "ZIL": 100
-        },
-        "fee": {
-          "Trading": {
-            "maker": 0.002,
-            "taker": 0.002
-          },
-          "Funding": {
-            "Withdraw": {
-              "ABT": 2,
-              "ZRX": 5
-            },
-            "Deposit": {
-              "ABT": 0,
-              "ZRX": 0
-            }
-          }
-        },
-        "info": {
-          "POLY-ETH": {
-            "precision": {
-              "amount": 4,
-              "price": 6
-            },
-            "amount_limit": {
-              "min": 0,
-              "max": 0
-            },
-            "price_limit": {
-              "min": 0,
-              "max": 0
-            },
-            "min_notional": 0.02
-          }
-        }
-      }
+      "Version": 1533615419111
     }
   },
-  "success": true
+  "success": true,
+  "timestamp": 1533615425492
 }
 
 ```json

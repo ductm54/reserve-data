@@ -3,6 +3,8 @@ package settings
 import (
 	"encoding/json"
 	"io/ioutil"
+
+	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 // AddressName is the name of ethereum address used in core.
@@ -10,25 +12,25 @@ import (
 type AddressName int
 
 const (
-	Reserve   AddressName = iota //reserve
-	Burner                       //burner
-	Bank                         //bank
-	Network                      //network
-	Wrapper                      //wrapper
-	Pricing                      //pricing
-	Whitelist                    //whitelist
-	SetRate                      //setrate
+	Reserve         AddressName = iota //reserve
+	Burner                             //burner
+	Bank                               //bank
+	Network                            //network
+	Wrapper                            //wrapper
+	Pricing                            //pricing
+	Whitelist                          //whitelist
+	InternalNetwork                    //internal_network
 )
 
 var addressNameValues = map[string]AddressName{
-	"reserve":   Reserve,
-	"burner":    Burner,
-	"bank":      Bank,
-	"network":   Network,
-	"wrapper":   Wrapper,
-	"pricing":   Pricing,
-	"whitelist": Whitelist,
-	"setrate":   SetRate,
+	"reserve":          Reserve,
+	"burner":           Burner,
+	"bank":             Bank,
+	"network":          Network,
+	"wrapper":          Wrapper,
+	"pricing":          Pricing,
+	"whitelist":        Whitelist,
+	"internal_network": InternalNetwork,
 }
 
 // AddressNameValues returns the mapping of the string presentation
@@ -43,13 +45,13 @@ type AddressSetName int
 
 const (
 	ThirdPartyReserves AddressSetName = iota //third_party_reserves
-	OldNetWorks                              //old_networks
+	OldNetworks                              //old_networks
 	OldBurners                               //old_burners
 )
 
 var addressSetNameValues = map[string]AddressSetName{
 	"third_party_reserves": ThirdPartyReserves,
-	"old_networks":         OldNetWorks,
+	"old_networks":         OldNetworks,
 	"old_burners":          OldBurners,
 }
 
@@ -70,20 +72,30 @@ type AddressConfig struct {
 	FeeBurner          string   `json:"feeburner"`
 	Whitelist          string   `json:"whitelist"`
 	ThirdPartyReserves []string `json:"third_party_reserves"`
-	SetRate            string   `json:"setrate"`
+	InternalNetwork    string   `json:"internal network"`
 }
 
 // AddressSetting type defines component to handle all address setting in core.
 // It contains the storage interface used to query addresses.
 type AddressSetting struct {
-	Storage AddressStorage
+	Addresses   map[AddressName]ethereum.Address
+	AddressSets map[AddressSetName]([]ethereum.Address)
 }
 
-func NewAddressSetting(addressStorage AddressStorage) (*AddressSetting, error) {
-	return &AddressSetting{addressStorage}, nil
+func NewAddressSetting(path string) (*AddressSetting, error) {
+	address := make(map[AddressName]ethereum.Address)
+	addressSets := make(map[AddressSetName]([]ethereum.Address))
+	addressSetting := &AddressSetting{
+		Addresses:   address,
+		AddressSets: addressSets,
+	}
+	if err := addressSetting.loadAddressFromFile(path); err != nil {
+		return addressSetting, err
+	}
+	return addressSetting, nil
 }
 
-func (setting *Settings) loadAddressFromFile(path string) error {
+func (addrSetting *AddressSetting) loadAddressFromFile(path string) error {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return err
@@ -92,34 +104,19 @@ func (setting *Settings) loadAddressFromFile(path string) error {
 	if err = json.Unmarshal(data, &addrs); err != nil {
 		return err
 	}
-	if err = setting.Address.Storage.UpdateOneAddress(Bank, addrs.Bank); err != nil {
-		return err
-	}
-	if err = setting.Address.Storage.UpdateOneAddress(Reserve, addrs.Reserve); err != nil {
-		return err
-	}
-	if err = setting.Address.Storage.UpdateOneAddress(Network, addrs.Network); err != nil {
-		return err
-	}
-	if err = setting.Address.Storage.UpdateOneAddress(Wrapper, addrs.Wrapper); err != nil {
-		return err
-	}
-	if err = setting.Address.Storage.UpdateOneAddress(Pricing, addrs.Pricing); err != nil {
-		return err
-	}
-	if err = setting.Address.Storage.UpdateOneAddress(Burner, addrs.FeeBurner); err != nil {
-		return err
-	}
-	if err = setting.Address.Storage.UpdateOneAddress(Whitelist, addrs.Whitelist); err != nil {
-		return err
-	}
-	if err = setting.Address.Storage.UpdateOneAddress(SetRate, addrs.SetRate); err != nil {
-		return err
-	}
+	addrSetting.Addresses[Bank] = ethereum.HexToAddress(addrs.Bank)
+	addrSetting.Addresses[Reserve] = ethereum.HexToAddress(addrs.Reserve)
+	addrSetting.Addresses[Network] = ethereum.HexToAddress(addrs.Network)
+	addrSetting.Addresses[Wrapper] = ethereum.HexToAddress(addrs.Wrapper)
+	addrSetting.Addresses[Pricing] = ethereum.HexToAddress(addrs.Pricing)
+	addrSetting.Addresses[Burner] = ethereum.HexToAddress(addrs.FeeBurner)
+	addrSetting.Addresses[Whitelist] = ethereum.HexToAddress(addrs.Whitelist)
+	addrSetting.Addresses[InternalNetwork] = ethereum.HexToAddress(addrs.InternalNetwork)
+	thirdParty := []ethereum.Address{}
+
 	for _, addr := range addrs.ThirdPartyReserves {
-		if err = setting.Address.Storage.AddAddressToSet(ThirdPartyReserves, addr); err != nil {
-			return err
-		}
+		thirdParty = append(thirdParty, ethereum.HexToAddress(addr))
 	}
+	addrSetting.AddressSets[ThirdPartyReserves] = thirdParty
 	return nil
 }
