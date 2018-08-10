@@ -12,6 +12,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/cmd/configuration"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/archive"
+	baseblockchain "github.com/KyberNetwork/reserve-data/common/blockchain"
 	"github.com/KyberNetwork/reserve-data/common/blockchain/nonce"
 	"github.com/KyberNetwork/reserve-data/core"
 	"github.com/KyberNetwork/reserve-data/data"
@@ -223,6 +224,7 @@ func CreateStat(config *configuration.Config, kyberENV string, bc *blockchain.Bl
 		config.StatControllerRunner,
 		statFetcher,
 		config.Archive,
+		baseblockchain.NewCMCEthUSDRate(),
 	)
 	return rStat
 }
