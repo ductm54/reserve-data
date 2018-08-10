@@ -16,7 +16,7 @@ import (
 const (
 	// HIGH_BOUND_GAS_PRICE is the price we will try to use to get higher priority
 	// than trade tx to avoid price front running from users.
-	HIGH_BOUND_GAS_PRICE float64 = 50.1
+	HIGH_BOUND_GAS_PRICE float64 = 100.1
 
 	statusFailed    = "failed"
 	statusSubmitted = "submitted"
