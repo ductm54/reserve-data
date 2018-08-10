@@ -940,3 +940,17 @@ type FeeSetRate struct {
 	GasUsed       *big.Float `json:"gasUsed"`
 	TotalGasSpent *big.Float `json:"totalGasSpent"`
 }
+
+type ExportedReserverRateRecord struct {
+	ReserveAddress string
+	Rate           ReserveRates
+	Timestamp      uint64
+}
+
+func NewExportedReserverRateRecord(addr ethereum.Address, rate ReserveRates, timestamp uint64) ExportedReserverRateRecord {
+	return ExportedReserverRateRecord{
+		ReserveAddress: addr.Hex(),
+		Rate:           rate,
+		Timestamp:      timestamp,
+	}
+}
