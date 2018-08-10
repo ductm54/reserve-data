@@ -1577,6 +1577,27 @@ response
   }
 ```
 
+### Get user cap
+ Return user cap for one Tx by wei
+ 
+```
+GET request
+<host>:8000/cap-by-address/:address
+```
+ example:
+ 
+```shell
+curl -X "GET" "http://localhost:8000/cap-by-address/0x3baE9b9e1dca462Ad8827f62F4A8b5b3714d7700"
+```
+ response:
+ 
+```json
+{	
+	  "data": 7093758000000000000,
+	  "success": true
+}
+```
+
 ## Authentication
 All APIs that are marked with (signing required) must follow authentication mechanism below:
 

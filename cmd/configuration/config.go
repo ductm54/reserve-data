@@ -291,6 +291,7 @@ var ConfigPaths = map[string]SettingPaths{
 		"config.json",
 		"https://mainnet.infura.io",
 		[]string{
+			"https://api.mycryptoapi.com/eth",
 			"https://api.myetherapi.com/eth",
 		},
 	),
