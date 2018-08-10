@@ -138,10 +138,10 @@ func (self *BoltRateStorage) ExportExpiredRateData(currentTime uint64, fileName 
 	}()
 
 	err = self.db.View(func(tx *bolt.Tx) error {
-		var uErr error
-		fromTime, uErr = getFirstRecordTimestamp(tx)
-		if uErr != nil {
-			return uErr
+		var vErr error
+		fromTime, vErr = getFirstRecordTimestamp(tx)
+		if vErr != nil {
+			return vErr
 		}
 		if fromTime == 0 {
 			log.Printf("There are no first time record. return now")
