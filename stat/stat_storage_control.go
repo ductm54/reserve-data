@@ -89,7 +89,7 @@ func (self ReserveStats) uploadAndVerify(fileName, remotePath string) (bool, err
 
 // ControlRateSize will check the rate database and export all the record that is more than 30 days old from now
 // It will export these record to mutiple gz file, each contain all the expired record in a certain date
-// in format ExpiredRateData_<firstTimestamp>_<lastTimestmap>.gz
+// in format ExpiredRateData_<firstTimestamp>_<lastTimestmap>.gz, in which time stamp is second
 func (self ReserveStats) ControlRateSize() error {
 	for {
 		t := <-self.storageController.Runner.GetRateStorageControlTicker()
@@ -99,7 +99,7 @@ func (self ReserveStats) ControlRateSize() error {
 		for {
 			tempfileName := fmt.Sprintf("./exported/TempExpireRateData.gz")
 			fromTime, toTime, nRecord, err := self.rateStorage.ExportExpiredRateData(common.GetTimepoint(), tempfileName)
-			fileName := fmt.Sprintf("./exported/ExpiredRateData_%d_%d.gz", fromTime, toTime)
+			fileName := fmt.Sprintf("./exported/ExpiredRateData_%d_%d.gz", fromTime/1000, toTime/1000)
 			if rErr := os.Rename(tempfileName, fileName); rErr != nil {
 				log.Printf("StatPruner: cannot rename file (%s)", rErr)
 				break
