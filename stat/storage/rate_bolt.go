@@ -155,18 +155,18 @@ func (self *BoltRateStorage) ExportExpiredRateData(currentTime uint64, fileName 
 			c := b.Cursor()
 			for k, v := c.First(); k != nil && bytes.Compare(k, expiredTimestampByte) <= 0 && bytes.Compare(k, toTimeByte) == -1; k, v = c.Next() {
 				rates := common.ReserveRates{}
-				if bUerr := json.Unmarshal(v, &rates); bUerr != nil {
-					return bUerr
+				if bVErr := json.Unmarshal(v, &rates); bVErr != nil {
+					return bVErr
 				}
 				record := common.NewExportedReserverRateRecord(ethereum.HexToAddress(addrStr), rates, boltutil.BytesToUint64(k))
 				var output []byte
-				output, bUerr := json.Marshal(record)
-				if bUerr != nil {
-					return bUerr
+				output, bVErr := json.Marshal(record)
+				if bVErr != nil {
+					return bVErr
 				}
-				_, bUerr = zw.Write([]byte((string(output) + "\n")))
-				if bUerr != nil {
-					return bUerr
+				_, bVErr = zw.Write([]byte((string(output) + "\n")))
+				if bVErr != nil {
+					return bVErr
 				}
 				nRecord++
 				if boltutil.BytesToUint64(k) > toTime {

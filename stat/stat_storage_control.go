@@ -60,7 +60,7 @@ func (self ReserveStats) ControllPriceAnalyticSize() error {
 	}
 }
 
-// uploadAndVerify upload the file to remote storage and check its intergrity
+// uploadAndVerify upload the file to remote storage and check its integrity
 // return error if occur and backup integrity
 
 func (self ReserveStats) uploadAndVerify(fileName, remotePath string) (bool, error) {
@@ -90,7 +90,7 @@ func (self ReserveStats) uploadAndVerify(fileName, remotePath string) (bool, err
 // ControlRateSize will check the rate database and export all the record that is more than 30 days old from now
 // It will export these record to mutiple gz file, each contain all the expired record in a certain date
 // in format ExpiredRateData_<firstTimestamp>_<lastTimestmap>.gz
-func (self ReserveStats) ControllRateSize() error {
+func (self ReserveStats) ControlRateSize() error {
 	for {
 		t := <-self.storageController.Runner.GetRateStorageControlTicker()
 		timepoint := common.TimeToTimepoint(t)
@@ -146,7 +146,7 @@ func (self ReserveStats) RunStorageController() error {
 		}
 	}()
 	go func() {
-		if rErr := self.ControllRateSize(); rErr != nil {
+		if rErr := self.ControlRateSize(); rErr != nil {
 			log.Printf("StatPruner: Control rate analytic failed: %s", rErr.Error())
 		}
 	}()

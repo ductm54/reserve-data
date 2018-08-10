@@ -13,18 +13,18 @@ type ControllerRunner interface {
 }
 
 type ControllerTickerRunner struct {
-	ascduration  time.Duration
+	ascDuration  time.Duration
 	rateDuration time.Duration
-	ascclock     *time.Ticker
+	ascClock     *time.Ticker
 	rateClock    *time.Ticker
 	signal       chan bool
 }
 
 func (self *ControllerTickerRunner) GetAnalyticStorageControlTicker() <-chan time.Time {
-	if self.ascclock == nil {
+	if self.ascClock == nil {
 		<-self.signal
 	}
-	return self.ascclock.C
+	return self.ascClock.C
 }
 
 func (self *ControllerTickerRunner) GetRateStorageControlTicker() <-chan time.Time {
@@ -35,7 +35,7 @@ func (self *ControllerTickerRunner) GetRateStorageControlTicker() <-chan time.Ti
 }
 
 func (self *ControllerTickerRunner) Start() error {
-	self.ascclock = time.NewTicker(self.ascduration)
+	self.ascClock = time.NewTicker(self.ascDuration)
 	self.signal <- true
 	self.rateClock = time.NewTicker(self.rateDuration)
 	self.signal <- true
@@ -43,17 +43,18 @@ func (self *ControllerTickerRunner) Start() error {
 }
 
 func (self *ControllerTickerRunner) Stop() error {
-	self.ascclock.Stop()
+	self.rateClock.Stop()
+	self.ascClock.Stop()
 	return nil
 }
 
 func NewControllerTickerRunner(
-	ascduration time.Duration,
+	ascDuration time.Duration,
 	rateDuration time.Duration) *ControllerTickerRunner {
 	return &ControllerTickerRunner{
-		ascduration:  ascduration,
+		ascDuration:  ascDuration,
 		rateDuration: rateDuration,
-		ascclock:     nil,
+		ascClock:     nil,
 		rateClock:    nil,
 		signal:       make(chan bool, 2),
 	}
