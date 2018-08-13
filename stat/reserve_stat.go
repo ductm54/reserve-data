@@ -335,28 +335,29 @@ func (self ReserveStats) GetCapByAddress(addr ethereum.Address) (*common.UserCap
 }
 
 //GetTxCapByAddress return user Tx limit by wei
-func (rs ReserveStats) GetTxCapByAddress(addr ethereum.Address) (*big.Int, error) {
+//return true if address kyced, and return false if address is non-kyced
+func (rs ReserveStats) GetTxCapByAddress(addr ethereum.Address) (*big.Int, bool, error) {
 	email, err := rs.userStorage.GetKYCAddress(addr)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	var usdCap float64
+	kyced := false
 	if email != "" {
-		usdCap = common.KycedCap().TxLimit
+		usdCap = common.KycedCap().DailyLimit
+		kyced = true
 	} else {
 		usdCap = common.NonKycedCap().TxLimit
 	}
-	log.Printf("usd cap: %+v", usdCap)
 	timepoint := common.GetTimepoint()
 	rate := rs.cmcEthUSDRate.GetUSDRate(timepoint)
-	log.Printf("rate: %+v", rate)
 	var txLimit *big.Int
 	if rate == 0 {
-		return txLimit, errors.New("cannot get eth usd rate from cmc")
+		return txLimit, kyced, errors.New("cannot get eth usd rate from cmc")
 	}
 	ethLimit := usdCap / rate
 	txLimit = common.EthToWei(ethLimit)
-	return txLimit, nil
+	return txLimit, kyced, nil
 }
 
 func (self ReserveStats) GetCapByUser(userID string) (*common.UserCap, error) {
