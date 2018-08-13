@@ -1167,8 +1167,8 @@ func (self *HTTPServer) GetCapByAddress(c *gin.Context) {
 	} else {
 		httputil.ResponseSuccess(c, httputil.WithMultipleFields(
 			gin.H{
-				"data":  data,
-				"kyced": kyced,
+				"data": data,
+				"kyc":  kyced,
 			},
 		))
 	}
