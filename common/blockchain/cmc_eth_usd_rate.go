@@ -15,7 +15,6 @@ import (
 
 const (
 	cmcEthereumPricingAPIEndpoint = "https://graphs2.coinmarketcap.com/currencies/ethereum/"
-	cmcTopUSDPricingAPIEndpoint   = "https://api.coinmarketcap.com/v1/ticker/?convert=USD&limit=10"
 )
 
 type CoinCapRateResponse []struct {
@@ -172,7 +171,8 @@ func (self *CMCEthUSDRate) Run() {
 
 func NewCMCEthUSDRate(client CMCProInterface) *CMCEthUSDRate {
 	result := &CMCEthUSDRate{
-		mu: &sync.RWMutex{},
+		mu:     &sync.RWMutex{},
+		client: client,
 	}
 	result.Run()
 	return result
