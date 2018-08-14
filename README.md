@@ -1591,9 +1591,15 @@ curl -X "GET" "http://localhost:8000/cap-by-address/0x3baE9b9e1dca462Ad8827f62F4
 ```
  response:
  
+`data` is user cap user one transaction by wei.  
+`kyc` is `true` if user is kyced, else `kyc` is `false`
+
+ sample
+ 
 ```json
 {	
 	  "data": 7093758000000000000,
+	  "kyc": false,
 	  "success": true
 }
 ```
