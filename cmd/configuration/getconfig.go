@@ -3,6 +3,7 @@ package configuration
 import (
 	"log"
 	"path/filepath"
+	"time"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/archive"
@@ -134,10 +135,14 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string, noCore, enable
 		}
 	}
 
+	cmcProClient, err := blockchain.NewCMCProClient(5*time.Second, setPath.secretPath)
+	if err != nil {
+		log.Panicf("cannot create Coinmarketcap pro client %s", err.Error())
+	}
 	blockchain := blockchain.NewBaseBlockchain(
 		client, infura, map[string]*blockchain.Operator{},
 		blockchain.NewBroadcaster(bkclients),
-		blockchain.NewCMCEthUSDRate(),
+		blockchain.NewCMCEthUSDRate(cmcProClient),
 		chainType,
 		blockchain.NewContractCaller(callClients, setPath.bkendpoints),
 	)

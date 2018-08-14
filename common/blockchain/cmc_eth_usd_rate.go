@@ -32,6 +32,7 @@ type CMCEthUSDRate struct {
 	currentCacheMonth uint64
 	realtimeTimepoint uint64
 	realtimeRate      float64
+	client            CMCProInterface
 }
 
 type RateLogResponse struct {
@@ -150,39 +151,17 @@ func (self *CMCEthUSDRate) RunGetEthRate() {
 }
 
 func (self *CMCEthUSDRate) FetchEthRate() (err error) {
-	resp, err := http.Get(cmcTopUSDPricingAPIEndpoint)
+	newrate, err := self.client.GetETHRate()
 	if err != nil {
+		log.Printf("Cannot get usd rate: %s", err.Error())
 		return err
 	}
-	defer func() {
-		if cErr := resp.Body.Close(); cErr != nil {
-			log.Printf("Response body close error: %s", cErr.Error())
-		}
-	}()
-	body, err := ioutil.ReadAll(resp.Body)
-	rateResponse := CoinCapRateResponse{}
-	err = json.Unmarshal(body, &rateResponse)
-	if err != nil {
-		log.Printf("Getting eth-usd rate failed: %+v", err)
-	} else {
-		for _, rate := range rateResponse {
-			if rate.Symbol == "ETH" {
-				newrate, err := strconv.ParseFloat(rate.PriceUSD, 64)
-				if err != nil {
-					log.Printf("Cannot get usd rate: %s", err.Error())
-					return err
-				} else {
-					if self.realtimeRate == 0 {
-						// set realtimeTimepoint to the timepoint that realtime rate is updated for the
-						// first time
-						self.realtimeTimepoint = common.GetTimepoint()
-					}
-					self.realtimeRate = newrate
-					return nil
-				}
-			}
-		}
+	if self.realtimeRate == 0 {
+		// set realtimeTimepoint to the timepoint that realtime rate is updated for the
+		// first time
+		self.realtimeTimepoint = common.GetTimepoint()
 	}
+	self.realtimeRate = newrate
 	return nil
 }
 
@@ -191,7 +170,7 @@ func (self *CMCEthUSDRate) Run() {
 	self.RunGetEthRate()
 }
 
-func NewCMCEthUSDRate() *CMCEthUSDRate {
+func NewCMCEthUSDRate(client CMCProInterface) *CMCEthUSDRate {
 	result := &CMCEthUSDRate{
 		mu: &sync.RWMutex{},
 	}

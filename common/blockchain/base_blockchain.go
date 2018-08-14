@@ -383,7 +383,7 @@ func (self *BaseBlockchain) GetEthRate(timepoint uint64) float64 {
 }
 
 func NewMinimalBaseBlockchain(
-	endpoints []string, operators map[string]*Operator, chainType string) (*BaseBlockchain, error) {
+	endpoints []string, operators map[string]*Operator, chainType string, client CMCProInterface) (*BaseBlockchain, error) {
 
 	if len(endpoints) == 0 {
 		return nil, errors.New("At least one endpoint is required to init a blockchain")
@@ -408,7 +408,7 @@ func NewMinimalBaseBlockchain(
 	return NewBaseBlockchain(
 		rpcClient, ethClient, operators,
 		NewBroadcaster(bkclients),
-		NewCMCEthUSDRate(),
+		NewCMCEthUSDRate(client),
 		chainType,
 		NewContractCaller(callClients, endpoints),
 	), nil
