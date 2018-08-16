@@ -1161,11 +1161,16 @@ func (self *HTTPServer) GetCapByAddress(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithReason("address is not valid"))
 		return
 	}
-	data, err := self.stat.GetTxCapByAddress(address)
+	data, kyced, err := self.stat.GetTxCapByAddress(address)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	} else {
-		httputil.ResponseSuccess(c, httputil.WithData(data))
+		httputil.ResponseSuccess(c, httputil.WithMultipleFields(
+			gin.H{
+				"data": data,
+				"kyc":  kyced,
+			},
+		))
 	}
 }
 
