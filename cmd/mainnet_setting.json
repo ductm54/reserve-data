@@ -442,6 +442,13 @@
       "internal use": false,
       "listed": true
     },
+    "MOC": {
+      "name": "Moss Coin",
+      "decimal": 18,
+      "address": "0x865ec58b06bf6305b886793aa20a2da31d034e68",
+      "internal use": false,
+      "listed": true
+    },
     "ETH": {
       "name": "Ethereum",
       "decimals": 18,
