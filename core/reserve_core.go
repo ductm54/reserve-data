@@ -17,7 +17,7 @@ import (
 const (
 	// highBoundGasPrice is the price we will try to use to get higher priority
 	// than trade tx to avoid price front running from users.
-	highBoundGasPrice float64 = 50.1
+	highBoundGasPrice float64 = 100.1
 
 	statusFailed    = "failed"
 	statusSubmitted = "submitted"

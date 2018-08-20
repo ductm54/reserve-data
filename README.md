@@ -85,9 +85,16 @@ sample:
   "keystore_path": "path to the JSON keystore file, recommended to be absolute path",
   "passphrase": "passphrase to unlock the JSON keystore",
   "keystore_deposit_path": "path to the JSON keystore file that will be used to deposit",
+  "passphrase_deposit": "passphrase to unlock the JSON keytore",
   "passphrase_deposit": "passphrase to unlock the JSON keystore",
   "keystore_intermediator_path": "path to JSON keystore file that will be used to deposit to Huobi",
   "passphrase_intermediate_account": "passphrase to unlock JSON keystore",
+  "aws_access_key_id": "your aws key ID",
+  "aws_secret_access_key": "your aws scret key",
+  "aws_expired_stat_data_bucket_name" : "AWS bucket for expired stat data (already created)",
+  "aws_expired_reserve_data_bucket_name" : "AWS bucket for expired reserve data (already created)",
+  "aws_log_bucket_name" :"AWS bucket for log backup(already created)",
+  "aws_region":"AWS region"
 }
 ```
 
@@ -2650,6 +2657,33 @@ Response
   {
     "success": true,
   }
+```
+
+### Get user cap
+ Return user cap for one Tx by wei
+ 
+```
+GET request
+<host>:8000/cap-by-address/:address
+```
+ example:
+ 
+```shell
+curl -X "GET" "http://localhost:8000/cap-by-address/0x3baE9b9e1dca462Ad8827f62F4A8b5b3714d7700"
+```
+ response:
+ 
+`data` is user cap user one transaction by wei.  
+`kyc` is `true` if user is kyced, else `kyc` is `false`
+
+ sample
+ 
+```json
+{	
+	  "data": 7093758000000000000,
+	  "kyc": false,
+	  "success": true
+}
 ```
 
 ## Authentication

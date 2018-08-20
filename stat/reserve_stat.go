@@ -4,13 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
+	"math/big"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/archive"
+	"github.com/KyberNetwork/reserve-data/common/blockchain"
 	"github.com/KyberNetwork/reserve-data/stat/statpruner"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
@@ -28,6 +29,7 @@ type ReserveStats struct {
 	feeSetRateStorage FeeSetRateStorage
 	fetcher           *Fetcher
 	storageController statpruner.StorageController
+	cmcEthUSDRate     *blockchain.CMCEthUSDRate
 	setting           Setting
 }
 
@@ -41,6 +43,7 @@ func NewReserveStats(
 	controllerRunner statpruner.ControllerRunner,
 	fetcher *Fetcher,
 	arch archive.Archive,
+	cmcEthUSDRate *blockchain.CMCEthUSDRate,
 	setting Setting) *ReserveStats {
 	storageController, err := statpruner.NewStorageController(controllerRunner, arch)
 	if err != nil {
@@ -55,6 +58,7 @@ func NewReserveStats(
 		feeSetRateStorage: feeSetRateStorage,
 		fetcher:           fetcher,
 		storageController: storageController,
+		cmcEthUSDRate:     cmcEthUSDRate,
 		setting:           setting,
 	}
 }
@@ -320,70 +324,6 @@ func (self ReserveStats) GetPendingAddresses() ([]string, error) {
 	return result, nil
 }
 
-func (self ReserveStats) ControllPriceAnalyticSize() error {
-	for {
-		log.Printf("StatPruner: waiting for signal from analytic storage control channel")
-		t := <-self.storageController.Runner.GetAnalyticStorageControlTicker()
-		timepoint := common.TimeToTimepoint(t)
-		log.Printf("StatPruner: got signal in analytic storage control channel with timestamp %d", timepoint)
-		fileName := fmt.Sprintf("./exported/ExpiredPriceAnalyticData_%s", time.Unix(int64(timepoint/1000), 0).UTC())
-		nRecord, err := self.analyticStorage.ExportExpiredPriceAnalyticData(common.GetTimepoint(), fileName)
-		if err != nil {
-			log.Printf("ERROR: StatPruner export Price Analytic operation failed: %s", err)
-		} else {
-			var integrity bool
-			if nRecord > 0 {
-				err = self.storageController.Arch.UploadFile(self.storageController.Arch.GetStatDataBucketName(), self.storageController.ExpiredPriceAnalyticPath, fileName)
-				if err != nil {
-					log.Printf("StatPruner: Upload file failed: %s", err)
-				} else {
-					integrity, err = self.storageController.Arch.CheckFileIntergrity(self.storageController.Arch.GetStatDataBucketName(), self.storageController.ExpiredPriceAnalyticPath, fileName)
-					if err != nil {
-						log.Printf("ERROR: StatPruner: error in file integrity check (%s):", err)
-					}
-					if !integrity {
-						log.Printf("ERROR: StatPruner: file upload corrupted")
-
-					}
-					if err != nil || !integrity {
-						//if the intergrity check failed, remove the remote file.
-						removalErr := self.storageController.Arch.RemoveFile(self.storageController.Arch.GetStatDataBucketName(), self.storageController.ExpiredPriceAnalyticPath, fileName)
-						if removalErr != nil {
-							log.Printf("ERROR: StatPruner: cannot remove remote file :(%s)", removalErr)
-						}
-					}
-				}
-			}
-			if integrity && err == nil {
-				nPrunedRecords, err := self.analyticStorage.PruneExpiredPriceAnalyticData(common.TimeToTimepoint(t))
-				if err != nil {
-					log.Printf("StatPruner: cannot prune Price Analytic Data (%s)", err)
-				} else if nPrunedRecords != nRecord {
-					log.Printf("StatPruner: Number of exported Data is %d, which is different from number of Pruned Data %d", nRecord, nPrunedRecords)
-				} else {
-					log.Printf("StatPruner: exported and pruned %d expired records from Price Analytic Data", nRecord)
-				}
-			}
-		}
-		if err := os.Remove(fileName); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
-func (self ReserveStats) RunStorageController() error {
-	err := self.storageController.Runner.Start()
-	if err != nil {
-		return err
-	}
-	go func() {
-		if cErr := self.ControllPriceAnalyticSize(); cErr != nil {
-			log.Printf("Control price analytic failed: %s", cErr.Error())
-		}
-	}()
-	return err
-}
-
 func (self ReserveStats) Run() error {
 	return self.fetcher.Run()
 }
@@ -399,9 +339,34 @@ func (self ReserveStats) GetCapByAddress(addr ethereum.Address) (*common.UserCap
 	}
 	if category == "0x4" {
 		return common.KycedCap(), nil
-	} else {
-		return common.NonKycedCap(), nil
 	}
+	return common.NonKycedCap(), nil
+}
+
+//GetTxCapByAddress return user Tx limit by wei
+//return true if address kyced, and return false if address is non-kyced
+func (rs ReserveStats) GetTxCapByAddress(addr ethereum.Address) (*big.Int, bool, error) {
+	email, err := rs.userStorage.GetKYCAddress(addr)
+	if err != nil {
+		return nil, false, err
+	}
+	var usdCap float64
+	kyced := false
+	if email != "" {
+		usdCap = common.KycedCap().DailyLimit
+		kyced = true
+	} else {
+		usdCap = common.NonKycedCap().TxLimit
+	}
+	timepoint := common.GetTimepoint()
+	rate := rs.cmcEthUSDRate.GetUSDRate(timepoint)
+	var txLimit *big.Int
+	if rate == 0 {
+		return txLimit, kyced, errors.New("cannot get eth usd rate from cmc")
+	}
+	ethLimit := usdCap / rate
+	txLimit = common.EthToWei(ethLimit)
+	return txLimit, kyced, nil
 }
 
 func (self ReserveStats) GetCapByUser(userID string) (*common.UserCap, error) {
@@ -412,9 +377,8 @@ func (self ReserveStats) GetCapByUser(userID string) (*common.UserCap, error) {
 	if len(addresses) == 0 {
 		log.Printf("Couldn't find any associated addresses. User %s is not kyced.", userID)
 		return common.NonKycedCap(), nil
-	} else {
-		return self.GetCapByAddress(addresses[0])
 	}
+	return self.GetCapByAddress(addresses[0])
 }
 
 func isDuplicate(currentRate, latestRate common.ReserveRates) bool {
