@@ -20,7 +20,7 @@ const (
 	idAddress        string = "id_addresses"
 	addressTime      string = "address_time"
 	pendingAddresses string = "pending_addresses"
-	kyced             string = "kyced"
+	kyced            string = "kyced"
 )
 
 type BoltUserStorage struct {

@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	maxGetRatesPeriod uint64 = 86400000 //1 days in milisec
-	rateExpired          uint64 = 30 * 86400000 //30 days in milisecond
+	maxGetRatesPeriod uint64 = 86400000      //1 days in milisec
+	rateExpired       uint64 = 30 * 86400000 //30 days in milisecond
 )
 
 type BoltRateStorage struct {
