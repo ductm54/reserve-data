@@ -971,3 +971,26 @@ func NewAllSettings(addrs *AddressesResponse, toks *TokenResponse, exs *Exchange
 		Exchanges: exs,
 	}
 }
+
+//QuantityStepFunction represent a quatity step function for a token
+type QuantityStepFunction struct {
+	XBuy  []*big.Int `json:"x_buy"`
+	YBuy  []*big.Int `json:"y_buy"`
+	XSell []*big.Int `json:"x_sell"`
+	YSell []*big.Int `json:"y_sell"`
+}
+
+//ImbalanceStepFunction represent an imbalance step function for a token
+type ImbalanceStepFunction struct {
+	XBuy  []*big.Int `json:"x_buy"`
+	YBuy  []*big.Int `json:"y_buy"`
+	XSell []*big.Int `json:"x_sell"`
+	YSell []*big.Int `json:"y_sell"`
+}
+
+//StepFunctionResponse api response about a token step function
+type StepFunctionResponse struct {
+	BlockNumber           uint64                `json:"block_number"`
+	QuantityStepResponse  QuantityStepFunction  `json:"quantity_step_function"`
+	ImbalanceStepResponse ImbalanceStepFunction `json:"imbalance_step_function"`
+}

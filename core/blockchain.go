@@ -24,4 +24,6 @@ type Blockchain interface {
 		nonce *big.Int,
 		gasPrice *big.Int) (*types.Transaction, error)
 	SetRateMinedNonce() (uint64, error)
+
+	GetStepFunctionData(token ethereum.Address) (common.StepFunctionResponse, error)
 }

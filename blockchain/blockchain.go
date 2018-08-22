@@ -549,3 +549,74 @@ func (self *Blockchain) GetDepositOPAddress() ethereum.Address {
 func (self *Blockchain) GetIntermediatorOPAddress() ethereum.Address {
 	return self.MustGetOperator(huobiblockchain.HuobiOP).Address
 }
+
+func (bc *Blockchain) getDetailStepFunctionData(opts blockchain.CallOpts, token ethereum.Address, command *big.Int) ([]*big.Int, error) {
+	var result []*big.Int
+	paramLength, err := bc.GeneratedGetStepFunctionData(token, command, big.NewInt(0))
+	if err != nil {
+		return result, err
+	}
+	command.Add(command, big.NewInt(1))
+	for index := int64(0); index < paramLength.Int64(); index++ {
+		response, err := bc.GeneratedGetStepFunctionData(token, command, big.NewInt(index))
+		if err != nil {
+			return result, err
+		}
+		result = append(result, response)
+	}
+	return result, nil
+}
+
+//GetStepFunctionData return step function for a token from blockchain
+func (bc *Blockchain) GetStepFunctionData(token ethereum.Address) (common.StepFunctionResponse, error) {
+	var result common.StepFunctionResponse
+	var err error
+	opts := bc.GetCallOpts(0)
+	// Get quantity step function
+	/// Get xBuy quantity step function data
+	result.BlockNumber, err = bc.CurrentBlock()
+	if err != nil {
+		return result, err
+	}
+	result.QuantityStepResponse.XBuy, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(0))
+	if err != nil {
+		return result, err
+	}
+
+	///
+	result.QuantityStepResponse.YBuy, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(2))
+	if err != nil {
+		return result, err
+	}
+	///
+	result.QuantityStepResponse.XSell, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(4))
+	if err != nil {
+		return result, err
+	}
+	///
+	result.QuantityStepResponse.YSell, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(6))
+	if err != nil {
+		return result, err
+	}
+	///
+	result.ImbalanceStepResponse.XBuy, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(8))
+	if err != nil {
+		return result, err
+	}
+	///
+	result.ImbalanceStepResponse.YBuy, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(10))
+	if err != nil {
+		return result, err
+	}
+	///
+	result.ImbalanceStepResponse.XSell, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(12))
+	if err != nil {
+		return result, err
+	}
+	///
+	result.ImbalanceStepResponse.YSell, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(14))
+	if err != nil {
+		return result, err
+	}
+	return result, nil
+}

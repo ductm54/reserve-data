@@ -105,4 +105,6 @@ type ReserveCore interface {
 
 	// blockchain related action
 	SetRates(tokens []common.Token, buys, sells []*big.Int, block *big.Int, afpMid []*big.Int, msgs []string) (common.ActivityID, error)
+
+	GetStepFunctionData(token ethereum.Address) (common.StepFunctionResponse, error)
 }

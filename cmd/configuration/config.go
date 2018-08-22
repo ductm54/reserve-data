@@ -273,6 +273,7 @@ var ConfigPaths = map[string]SettingPaths{
 		"config.json",
 		infuraMainnetEndpoint,
 		[]string{
+			semidNodeKyberEndpoint,
 			myEtherAPIMainnetEndpoint,
 		},
 	),

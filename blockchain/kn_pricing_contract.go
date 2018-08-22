@@ -2,10 +2,12 @@ package blockchain
 
 import (
 	"context"
+	"log"
 	"math/big"
 	"time"
 
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -39,4 +41,22 @@ func (self *Blockchain) GeneratedGetRate(opts blockchain.CallOpts, token ethereu
 	out := big.NewInt(0)
 	err := self.Call(timeOut, opts, self.pricing, out, "getRate", token, currentBlockNumber, buy, qty)
 	return out, err
+}
+
+//GeneratedGetStepFunctionData get step function data for an option
+func (bc *Blockchain) GeneratedGetStepFunctionData(token ethereum.Address, command *big.Int, param *big.Int) (*big.Int, error) {
+	contractCaller := bc.BaseBlockchain.GetContractCaller()
+	pricingCaller, err := NewPricingCaller(bc.pricing.Address, contractCaller.GetSingleContractCaller())
+	if err != nil {
+		return nil, err
+	}
+
+	opts := new(bind.CallOpts)
+	log.Printf("Command: %d", command.Int64())
+
+	result, err := pricingCaller.GetStepFunctionData(opts, token, command, param)
+	if err != nil {
+		log.Printf("command: %d, param: %d", command.Int64(), param.Int64())
+	}
+	return result, err
 }

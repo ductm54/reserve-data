@@ -42,3 +42,7 @@ func (self ContractCaller) CallContract(msg ether.CallMsg, blockNo *big.Int, tim
 	}
 	return nil, errors.New("failed to call contract, all clients failed")
 }
+
+func (self ContractCaller) GetSingleContractCaller() *ethclient.Client {
+	return self.clients[0]
+}
