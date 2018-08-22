@@ -105,6 +105,10 @@ func (self testBlockchain) SetRateMinedNonce() (uint64, error) {
 	return 0, nil
 }
 
+func (self testBlockchain) GetStepFunctionData(token ethereum.Address) (common.StepFunctionResponse, error) {
+	return common.StepFunctionResponse{}, nil
+}
+
 type testActivityStorage struct {
 	PendingDeposit bool
 }
