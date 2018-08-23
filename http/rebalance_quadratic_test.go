@@ -116,7 +116,7 @@ func TestHTTPServerRebalanceQuadratic(t *testing.T) {
 	}
 
 	s := HTTPServer{
-		app:         data.NewReserveData(rqStorage, nil, nil, nil, nil, nil, setting),
+		app:         data.NewReserveData(rqStorage, nil, nil, nil, nil, nil, nil, setting),
 		core:        core.NewReserveCore(nil, rqStorage, setting),
 		metric:      rqStorage,
 		authEnabled: false,

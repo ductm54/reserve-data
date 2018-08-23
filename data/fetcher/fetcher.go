@@ -769,7 +769,10 @@ func (fc *Fetcher) RunStepFunctionDataStorage() {
 
 			// save data to storage
 			log.Printf("Result length: %d", len(result))
-			fc.stepFunctionDataStorage.StoreStepFunctionData(result)
+			err := fc.stepFunctionDataStorage.StoreStepFunctionData(result)
+			if err != nil {
+				log.Printf("Store step function data error: %s", err.Error())
+			}
 		}
 		<-tick.C
 	}
@@ -796,14 +799,19 @@ func (fc *Fetcher) fetchStepFunctionData(data *sync.Map) error {
 			continue
 		}
 		wait.Add(1)
-		// go func(errCh chan error) {
-		// 	defer wait.Done()
+		go func(errCh chan error, token common.Token) {
+			// defer wait.Done()
+			err := fc.fetchTokenStepFunctionData(&wait, block, token, data)
+			if err != nil {
+				errCh <- err
+			}
+		}(fetchStepFunctionDataErrCh, token)
+		// go func(token common.Token) {
 		// 	err := fc.fetchTokenStepFunctionData(&wait, block, token, data)
 		// 	if err != nil {
-		// 		errCh <- err
+		// 		log.Printf("fetch token step function data error: %s - %s", token.ID, err.Error())
 		// 	}
-		// }(fetchStepFunctionDataErrCh)
-		go fc.fetchTokenStepFunctionData(&wait, block, token, data)
+		// }(token)
 	}
 	// wait.Wait()
 	go func(errCh chan error) {

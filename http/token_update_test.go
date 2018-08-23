@@ -342,7 +342,7 @@ func TestHTTPServerUpdateToken(t *testing.T) {
 	}
 
 	testServer := HTTPServer{
-		app:         data.NewReserveData(nil, nil, nil, nil, nil, nil, setting),
+		app:         data.NewReserveData(nil, nil, nil, nil, nil, nil, nil, setting),
 		core:        core.NewReserveCore(nil, nil, setting),
 		metric:      testStorage,
 		authEnabled: false,
