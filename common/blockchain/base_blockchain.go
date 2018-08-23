@@ -122,10 +122,6 @@ func (self *BaseBlockchain) SignAndBroadcast(tx *types.Transaction, from string)
 	}
 }
 
-func (bb *BaseBlockchain) GetContractCaller() *ContractCaller {
-	return bb.contractCaller
-}
-
 func (self *BaseBlockchain) Call(timeOut time.Duration, opts CallOpts, contract *Contract, result interface{}, method string, params ...interface{}) error {
 	// Pack the input, call and unpack the results
 	input, err := contract.ABI.Pack(method, params...)
