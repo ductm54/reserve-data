@@ -753,25 +753,30 @@ func (fc *Fetcher) RunStepFunctionDataStorage() {
 	for {
 		data := sync.Map{}
 		// fetch all data from blcokchain
-		fc.fetchStepFunctionData(&data)
+		err := fc.fetchStepFunctionData(&data)
 
-		// convert data from sync map to go object
-		result := common.StepFunctionData{}
-		data.Range(func(k, v interface{}) bool {
-			token := k.(string)
-			stepData := v.(common.StepFunctionResponse)
-			result[token] = stepData
-			return true
-		})
+		if err != nil {
+			log.Printf("fetch step function data error: %s", err.Error())
+		} else {
+			// convert data from sync map to go object
+			result := common.StepFunctionData{}
+			data.Range(func(k, v interface{}) bool {
+				token := k.(string)
+				stepData := v.(common.StepFunctionResponse)
+				result[token] = stepData
+				return true
+			})
 
-		// save data to storage
-		fc.stepFunctionDataStorage.StoreStepFunctionData(result)
+			// save data to storage
+			log.Printf("Result length: %d", len(result))
+			fc.stepFunctionDataStorage.StoreStepFunctionData(result)
+		}
 		<-tick.C
 	}
 }
 
-func (fc *Fetcher) fetchStepFunctionData(data *sync.Map) {
-
+func (fc *Fetcher) fetchStepFunctionData(data *sync.Map) error {
+	var fetchStepFunctionDataErrCh = make(chan error)
 	// get current blockchain block
 	block, err := fc.blockchain.CurrentBlock()
 	if err != nil {
@@ -791,12 +796,28 @@ func (fc *Fetcher) fetchStepFunctionData(data *sync.Map) {
 			continue
 		}
 		wait.Add(1)
+		// go func(errCh chan error) {
+		// 	defer wait.Done()
+		// 	err := fc.fetchTokenStepFunctionData(&wait, block, token, data)
+		// 	if err != nil {
+		// 		errCh <- err
+		// 	}
+		// }(fetchStepFunctionDataErrCh)
 		go fc.fetchTokenStepFunctionData(&wait, block, token, data)
 	}
-	wait.Wait()
+	// wait.Wait()
+	go func(errCh chan error) {
+		wait.Wait()
+		// if err := <-fetchStepFunctionDataErrCh; err == nil {
+		// 	close(fetchStepFunctionDataErrCh)
+		// }
+		close(fetchStepFunctionDataErrCh)
+	}(fetchStepFunctionDataErrCh)
+
+	return <-fetchStepFunctionDataErrCh
 }
 
-func (fc *Fetcher) fetchTokenStepFunctionData(wait *sync.WaitGroup, block uint64, token common.Token, data *sync.Map) {
+func (fc *Fetcher) fetchTokenStepFunctionData(wait *sync.WaitGroup, block uint64, token common.Token, data *sync.Map) error {
 
 	defer wait.Done()
 
@@ -805,7 +826,9 @@ func (fc *Fetcher) fetchTokenStepFunctionData(wait *sync.WaitGroup, block uint64
 	result, err := fc.blockchain.GetStepFunctionData(block, tokenAddr)
 	if err != nil {
 		log.Printf("Cannot get step function data for token: %s, err: %s", token.ID, err.Error())
+		return err
 	}
 
 	data.Store(token.ID, result)
+	return nil
 }

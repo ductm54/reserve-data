@@ -573,47 +573,45 @@ func (bc *Blockchain) GetStepFunctionData(atBlock uint64, token ethereum.Address
 	var err error
 	opts := bc.GetCallOpts(atBlock)
 	// Get quantity step function
+	result.BlockNumber = atBlock
+
 	/// Get xBuy quantity step function data
-	result.BlockNumber, err = bc.CurrentBlock()
-	if err != nil {
-		return result, err
-	}
 	result.QuantityStepResponse.XBuy, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(0))
 	if err != nil {
 		return result, err
 	}
 
-	///
+	/// Get yBuy quatity step function data
 	result.QuantityStepResponse.YBuy, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(2))
 	if err != nil {
 		return result, err
 	}
-	///
+	/// get xSell quantity step function data
 	result.QuantityStepResponse.XSell, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(4))
 	if err != nil {
 		return result, err
 	}
-	///
+	/// get ySell quantity step function data
 	result.QuantityStepResponse.YSell, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(6))
 	if err != nil {
 		return result, err
 	}
-	///
+	/// get xBuy imbalance step function data
 	result.ImbalanceStepResponse.XBuy, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(8))
 	if err != nil {
 		return result, err
 	}
-	///
+	/// get yBuy imbalance step function data
 	result.ImbalanceStepResponse.YBuy, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(10))
 	if err != nil {
 		return result, err
 	}
-	///
+	/// get xSell imbalance step function data
 	result.ImbalanceStepResponse.XSell, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(12))
 	if err != nil {
 		return result, err
 	}
-	///
+	/// get ySell imbalance step function data
 	result.ImbalanceStepResponse.YSell, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(14))
 	if err != nil {
 		return result, err
