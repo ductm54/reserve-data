@@ -1,5 +1,6 @@
 package archive
 
+// Archive is used to store obsolete files.
 type Archive interface {
 	RemoveFile(bucketName string, destinationFolder string, filePath string) error
 

@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// StorageControllerRunner is the controller interface of data pruner jobs.
 type StorageControllerRunner interface {
 	GetAuthBucketTicker() <-chan time.Time
 	Start() error

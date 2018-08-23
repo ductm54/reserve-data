@@ -4,6 +4,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/common"
 )
 
+// LogStorage is the common interface of stat's logging database operations.
 type LogStorage interface {
 	StoreCatLog(l common.SetCatLog) error
 	GetCatLogs(fromTime uint64, toTime uint64) ([]common.SetCatLog, error)

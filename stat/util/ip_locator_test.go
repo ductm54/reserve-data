@@ -16,9 +16,12 @@ func TestIPToCountry(t *testing.T) {
 			ec: "VN",
 		},
 	}
-
+	il, err := NewIPLocator()
+	if err != nil {
+		t.Fatal(err)
+	}
 	for _, test := range tests {
-		if c, tErr := IPToCountry(test.ip); tErr != nil {
+		if c, tErr := il.IPToCountry(test.ip); tErr != nil {
 			t.Error(tErr)
 		} else {
 			if c != test.ec {

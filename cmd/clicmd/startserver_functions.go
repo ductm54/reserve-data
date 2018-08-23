@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"time"
 
 	"github.com/KyberNetwork/reserve-data/blockchain"
 	"github.com/KyberNetwork/reserve-data/cmd/configuration"
@@ -17,6 +18,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/core"
 	"github.com/KyberNetwork/reserve-data/data"
 	"github.com/KyberNetwork/reserve-data/data/fetcher"
+	"github.com/KyberNetwork/reserve-data/settings"
 	"github.com/KyberNetwork/reserve-data/stat"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/robfig/cron"
@@ -31,6 +33,15 @@ const (
 	// staging network contract is created.
 	startingBlockStaging = 5042909
 	logFileName          = "core.log"
+	// defaultTimeOut is the default time out for requesting to core for setting
+	defaultTimeOut = time.Duration(10 * time.Second)
+)
+
+var (
+	oldBurners        = [2]string{"0x4E89bc8484B2c454f2F7B25b612b648c45e14A8e", "0x07f6e905f2a1559cd9fd43cb92f8a1062a3ca706"}
+	oldNetwork        = [1]string{"0x964F35fAe36d75B1e72770e244F6595B68508CF5"}
+	stagingOldBurners = [1]string{"0xB2cB365D803Ad914e63EA49c95eC663715c2F673"}
+	stagingOldNetwork = [1]string{"0xD2D21FdeF0D054D2864ce328cc56D1238d6b239e"}
 )
 
 func backupLog(arch archive.Archive) {
@@ -103,8 +114,8 @@ func configLog(stdoutLog bool) {
 	c.Start()
 }
 
-func InitInterface(kyberENV string) {
-	if base_url != configuration.Baseurl {
+func InitInterface() {
+	if base_url != defaultBaseURL {
 		log.Printf("Overwriting base URL with %s \n", base_url)
 	}
 	configuration.SetInterface(base_url)
@@ -125,38 +136,50 @@ func GetConfigFromENV(kyberENV string) *configuration.Config {
 func CreateBlockchain(config *configuration.Config, kyberENV string) (bc *blockchain.Blockchain, err error) {
 	bc, err = blockchain.NewBlockchain(
 		config.Blockchain,
-		config.WrapperAddress,
-		config.PricingAddress,
-		config.FeeBurnerAddress,
-		config.NetworkAddress,
-		config.InternalNetwork,
-		config.ReserveAddress,
-		config.WhitelistAddress,
+		config.Setting,
 	)
+
 	if err != nil {
 		panic(err)
 	}
-	// old contract addresses are used for events fetcher
-	switch kyberENV {
-	case common.PRODUCTION_MODE, common.MAINNET_MODE:
-		bc.AddOldBurners(ethereum.HexToAddress("0x4E89bc8484B2c454f2F7B25b612b648c45e14A8e"))
-		// contract v1
-		bc.AddOldNetwork(ethereum.HexToAddress("0x964F35fAe36d75B1e72770e244F6595B68508CF5"))
-		bc.AddOldBurners(ethereum.HexToAddress("0x07f6e905f2a1559cd9fd43cb92f8a1062a3ca706"))
-	case common.STAGING_MODE:
-		// contract v1
-		bc.AddOldNetwork(ethereum.HexToAddress("0xD2D21FdeF0D054D2864ce328cc56D1238d6b239e"))
-		bc.AddOldBurners(ethereum.HexToAddress("0xB2cB365D803Ad914e63EA49c95eC663715c2F673"))
-	}
 
-	for _, token := range config.SupportedTokens {
-		bc.AddToken(token)
+	// old contract addresses are used for events fetcher
+
+	tokens, err := config.Setting.GetInternalTokens()
+	if err != nil {
+		log.Panicf("Can't get the list of Internal Tokens for indices: %s", err)
 	}
-	err = bc.LoadAndSetTokenIndices()
+	err = bc.LoadAndSetTokenIndices(common.GetTokenAddressesList(tokens))
 	if err != nil {
 		log.Panicf("Can't load and set token indices: %s", err)
 	}
 	return
+}
+
+func CreateStatBlockChain(base *baseblockchain.BaseBlockchain, addrSetting *settings.AddressSetting, kyberENV string) (*blockchain.StatBlockchain, error) {
+	stbc, err := blockchain.NewStatBlockchain(base, addrSetting)
+	if err != nil {
+		return nil, err
+	}
+	switch kyberENV {
+	case common.ProductionMode, common.MainnetMode, common.DevMode:
+		for _, addr := range oldBurners {
+			stbc.AddOldBurners(ethereum.HexToAddress(addr))
+		}
+		for _, addr := range oldNetwork {
+			stbc.AddOldNetwork(ethereum.HexToAddress(addr))
+		}
+
+	case common.StagingMode:
+		// contract v1
+		for _, addr := range stagingOldNetwork {
+			stbc.AddOldNetwork(ethereum.HexToAddress(addr))
+		}
+		for _, addr := range stagingOldBurners {
+			stbc.AddOldBurners(ethereum.HexToAddress(addr))
+		}
+	}
+	return stbc, nil
 }
 
 func CreateDataCore(config *configuration.Config, kyberENV string, bc *blockchain.Blockchain) (*data.ReserveData, *core.ReserveCore) {
@@ -166,8 +189,8 @@ func CreateDataCore(config *configuration.Config, kyberENV string, bc *blockchai
 		config.FetcherGlobalStorage,
 		config.World,
 		config.FetcherRunner,
-		config.ReserveAddress,
-		kyberENV == common.SIMULATION_MODE,
+		kyberENV == common.SimulationMode,
+		config.Setting,
 	)
 	for _, ex := range config.FetcherExchanges {
 		dataFetcher.AddExchange(ex)
@@ -184,21 +207,23 @@ func CreateDataCore(config *configuration.Config, kyberENV string, bc *blockchai
 		config.Archive,
 		config.DataGlobalStorage,
 		config.Exchanges,
+		config.Setting,
 	)
 
-	rCore := core.NewReserveCore(bc, config.ActivityStorage, config.ReserveAddress)
+	rCore := core.NewReserveCore(bc, config.ActivityStorage, config.Setting)
 	return rData, rCore
 }
 
-func CreateStat(config *configuration.Config, kyberENV string, bc *blockchain.Blockchain) *stat.ReserveStats {
+func CreateStat(config *configuration.Config, kyberENV string, bc *blockchain.StatBlockchain) *stat.ReserveStats {
 	var deployBlock uint64
+
 	switch kyberENV {
-	case common.MAINNET_MODE, common.PRODUCTION_MODE, common.DEV_MODE:
+	case common.MainnetMode, common.ProductionMode, common.DevMode:
 		deployBlock = startingBlockProduction
-	case common.STAGING_MODE:
+	case common.StagingMode:
 		deployBlock = startingBlockStaging
 	}
-
+	settingClient := settings.NewSettingClient(config.AuthEngine, defaultTimeOut, coreURL)
 	statFetcher := stat.NewFetcher(
 		config.StatStorage,
 		config.LogStorage,
@@ -207,11 +232,10 @@ func CreateStat(config *configuration.Config, kyberENV string, bc *blockchain.Bl
 		config.FeeSetRateStorage,
 		config.StatFetcherRunner,
 		deployBlock,
-		config.ReserveAddress,
-		config.PricingAddress,
 		deployBlock,
 		config.EtherscanApiKey,
-		config.ThirdPartyReserves,
+		settingClient,
+		config.IPlocator,
 	)
 	statFetcher.SetBlockchain(bc)
 	rStat := stat.NewReserveStats(
@@ -225,6 +249,7 @@ func CreateStat(config *configuration.Config, kyberENV string, bc *blockchain.Bl
 		statFetcher,
 		config.Archive,
 		baseblockchain.NewCMCEthUSDRate(),
+		settingClient,
 	)
 	return rStat
 }

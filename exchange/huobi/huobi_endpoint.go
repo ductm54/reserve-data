@@ -94,7 +94,17 @@ func (self *HuobiEndpoint) GetResponse(
 			log.Printf("Response body close error: %s", cErr.Error())
 		}
 	}()
-	respBody, err = ioutil.ReadAll(resp.Body)
+	switch resp.StatusCode {
+	case 429:
+		err = errors.New("breaking Huobi request rate limit")
+		break
+	case 500:
+		err = errors.New("500 from Huobi, its fault")
+		break
+	case 200:
+		respBody, err = ioutil.ReadAll(resp.Body)
+		break
+	}
 	return respBody, err
 }
 
@@ -170,9 +180,9 @@ func (self *HuobiEndpoint) Trade(tradeType string, base, quote common.Token, rat
 	return result, nil
 }
 
-func (self *HuobiEndpoint) WithdrawHistory() (exchange.HuobiWithdraws, error) {
+func (self *HuobiEndpoint) WithdrawHistory(tokens []common.Token) (exchange.HuobiWithdraws, error) {
 	result := exchange.HuobiWithdraws{}
-	size := len(common.InternalTokens()) * 2
+	size := len(tokens) * 2
 	respBody, err := self.GetResponse(
 		"GET",
 		self.interf.AuthenticatedEndpoint()+"/v1/query/finances",
@@ -194,9 +204,9 @@ func (self *HuobiEndpoint) WithdrawHistory() (exchange.HuobiWithdraws, error) {
 	return result, err
 }
 
-func (self *HuobiEndpoint) DepositHistory() (exchange.HuobiDeposits, error) {
+func (self *HuobiEndpoint) DepositHistory(tokens []common.Token) (exchange.HuobiDeposits, error) {
 	result := exchange.HuobiDeposits{}
-	size := len(common.InternalTokens()) * 2
+	size := len(tokens) * 2
 	respBody, err := self.GetResponse(
 		"GET",
 		self.interf.AuthenticatedEndpoint()+"/v1/query/finances",
@@ -269,7 +279,7 @@ func (self *HuobiEndpoint) Withdraw(token common.Token, amount *big.Int, address
 		self.interf.AuthenticatedEndpoint()+"/v1/dw/withdraw/api/create",
 		map[string]string{
 			"address":  address.Hex(),
-			"amount":   strconv.FormatFloat(common.BigToFloat(amount, token.Decimal), 'f', -1, 64),
+			"amount":   strconv.FormatFloat(common.BigToFloat(amount, token.Decimals), 'f', -1, 64),
 			"currency": strings.ToLower(token.ID),
 		},
 		true,

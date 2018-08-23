@@ -4,6 +4,8 @@ import (
 	"time"
 )
 
+// FetcherRunner contains the tickers that control the fetcher services.
+// Fetcher jobs will wait for control signal from tickers to start running its job.
 type FetcherRunner interface {
 	GetBlockTicker() <-chan time.Time
 	GetLogTicker() <-chan time.Time

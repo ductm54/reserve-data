@@ -1,10 +1,15 @@
 package core
 
 import (
+	"io/ioutil"
+	"log"
 	"math/big"
+	"path/filepath"
 	"testing"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/settings"
+	"github.com/KyberNetwork/reserve-data/settings/storage"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -15,6 +20,7 @@ type testExchange struct {
 func (self testExchange) ID() common.ExchangeID {
 	return "bittrex"
 }
+
 func (self testExchange) Address(token common.Token) (address ethereum.Address, supported bool) {
 	return ethereum.Address{}, true
 }
@@ -33,23 +39,28 @@ func (self testExchange) MarshalText() (text []byte, err error) {
 func (self testExchange) GetExchangeInfo(pair common.TokenPairID) (common.ExchangePrecisionLimit, error) {
 	return common.ExchangePrecisionLimit{}, nil
 }
-func (self testExchange) GetFee() common.ExchangeFees {
-	return common.ExchangeFees{}
+func (self testExchange) GetFee() (common.ExchangeFees, error) {
+	return common.ExchangeFees{}, nil
 }
-func (self testExchange) GetMinDeposit() common.ExchangesMinDeposit {
-	return common.ExchangesMinDeposit{}
+func (self testExchange) GetMinDeposit() (common.ExchangesMinDeposit, error) {
+	return common.ExchangesMinDeposit{}, nil
 }
-func (self testExchange) GetInfo() (*common.ExchangeInfo, error) {
-	return &common.ExchangeInfo{}, nil
+func (self testExchange) GetInfo() (common.ExchangeInfo, error) {
+	return common.ExchangeInfo{}, nil
 }
-func (self testExchange) TokenAddresses() map[string]ethereum.Address {
-	return map[string]ethereum.Address{}
+func (self testExchange) TokenAddresses() (map[string]ethereum.Address, error) {
+	return map[string]ethereum.Address{}, nil
 }
-func (self testExchange) UpdateDepositAddress(token common.Token, address string) {
+func (self testExchange) UpdateDepositAddress(token common.Token, address string) error {
+	return nil
 }
 
 func (self testExchange) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
 	return common.ExchangeTradeHistory{}, nil
+}
+
+func (self testExchange) GetLiveExchangeInfos(pairIDs []common.TokenPairID) (common.ExchangeInfo, error) {
+	return common.ExchangeInfo{}, nil
 }
 
 type testBlockchain struct {
@@ -90,20 +101,8 @@ func (self testBlockchain) StandardGasPrice() float64 {
 	return 0
 }
 
-func (self testBlockchain) FastGasPrice() float64 {
-	return 0
-}
-
-func (self testBlockchain) SafeLowGasPrice() float64 {
-	return 0
-}
-
 func (self testBlockchain) SetRateMinedNonce() (uint64, error) {
 	return 0, nil
-}
-
-func (self testBlockchain) GetAddresses() *common.Addresses {
-	return &common.Addresses{}
 }
 
 type testActivityStorage struct {
@@ -130,8 +129,7 @@ func (self testActivityStorage) PendingSetrate(minedNonce uint64) (*common.Activ
 	return nil, 0, nil
 }
 
-func (self testActivityStorage) HasPendingDeposit(
-	token common.Token, exchange common.Exchange) (bool, error) {
+func (self testActivityStorage) HasPendingDeposit(token common.Token, exchange common.Exchange) (bool, error) {
 	if token.ID == "OMG" && exchange.ID() == "bittrex" {
 		return self.PendingDeposit, nil
 	} else {
@@ -140,19 +138,40 @@ func (self testActivityStorage) HasPendingDeposit(
 }
 
 func getTestCore(hasPendingDeposit bool) *ReserveCore {
+	tmpDir, err := ioutil.TempDir("", "core_test")
+	if err != nil {
+		log.Fatal(err)
+	}
+	boltSettingStorage, err := storage.NewBoltSettingStorage(filepath.Join(tmpDir, "setting.db"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	tokenSetting, err := settings.NewTokenSetting(boltSettingStorage)
+	if err != nil {
+		log.Fatal(err)
+	}
+	addressSetting := &settings.AddressSetting{}
+	exchangeSetting, err := settings.NewExchangeSetting(boltSettingStorage)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	setting, err := settings.NewSetting(tokenSetting, addressSetting, exchangeSetting)
+	if err != nil {
+		log.Fatal(err)
+	}
 	return NewReserveCore(
 		testBlockchain{},
 		testActivityStorage{hasPendingDeposit},
-		ethereum.Address{},
+		setting,
 	)
 }
 
 func TestNotAllowDeposit(t *testing.T) {
-	alreadyHasDepositForOMGOnBittrex := true
-	core := getTestCore(alreadyHasDepositForOMGOnBittrex)
+	core := getTestCore(true)
 	_, err := core.Deposit(
 		testExchange{},
-		common.NewToken("OMG", "0x1111111111111111111111111111111111111111", 18),
+		common.NewToken("OMG", "omise-go", "0x1111111111111111111111111111111111111111", 18, true, true, 0),
 		big.NewInt(10),
 		common.GetTimepoint(),
 	)
@@ -161,7 +180,7 @@ func TestNotAllowDeposit(t *testing.T) {
 	}
 	_, err = core.Deposit(
 		testExchange{},
-		common.NewToken("KNC", "0x1111111111111111111111111111111111111111", 18),
+		common.NewToken("KNC", "Kyber-coin", "0x1111111111111111111111111111111111111111", 18, true, true, 0),
 		big.NewInt(10),
 		common.GetTimepoint(),
 	)

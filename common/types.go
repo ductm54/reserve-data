@@ -2,14 +2,11 @@ package common
 
 import (
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math/big"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	ether "github.com/ethereum/go-ethereum"
@@ -19,8 +16,9 @@ import (
 type Version uint64
 type Timestamp string
 
-func (self Timestamp) ToUint64() uint64 {
+func (self Timestamp) MustToUint64() uint64 {
 	res, err := strconv.ParseUint(string(self), 10, 64)
+	//  this should never happen. Timestamp is never manually entered.
 	if err != nil {
 		panic(err)
 	}
@@ -30,6 +28,11 @@ func (self Timestamp) ToUint64() uint64 {
 func GetTimestamp() Timestamp {
 	timestamp := time.Now().UnixNano() / int64(time.Millisecond)
 	return Timestamp(strconv.Itoa(int(timestamp)))
+}
+
+func GetTimepointInMicrosecond() uint64 {
+	timestamp := time.Now().UnixNano() / int64(time.Microsecond)
+	return uint64(timestamp)
 }
 
 func GetTimepoint() uint64 {
@@ -46,96 +49,76 @@ func TimepointToTime(t uint64) time.Time {
 	return time.Unix(0, int64(t)*int64(time.Millisecond))
 }
 
-type ExchangeAddresses struct {
-	mu   sync.RWMutex
-	data map[string]ethereum.Address
-}
+// ExchangeAddresses type store a map[tokenID]exchangeDepositAddress
+type ExchangeAddresses map[string]ethereum.Address
 
 func NewExchangeAddresses() *ExchangeAddresses {
-	return &ExchangeAddresses{
-		mu:   sync.RWMutex{},
-		data: map[string]ethereum.Address{},
-	}
+	exAddr := make(ExchangeAddresses)
+	return &exAddr
 }
 
-func (self *ExchangeAddresses) Update(tokenID string, address ethereum.Address) {
-	self.mu.Lock()
-	defer self.mu.Unlock()
-	self.data[tokenID] = address
+func (self ExchangeAddresses) Update(tokenID string, address ethereum.Address) {
+	self[tokenID] = address
 }
 
-func (self *ExchangeAddresses) Get(tokenID string) (ethereum.Address, bool) {
-	self.mu.RLock()
-	defer self.mu.RUnlock()
-	address, supported := self.data[tokenID]
+func (self ExchangeAddresses) Get(tokenID string) (ethereum.Address, bool) {
+	address, supported := self[tokenID]
 	return address, supported
 }
 
-func (self *ExchangeAddresses) GetData() map[string]ethereum.Address {
-	self.mu.RLock()
-	defer self.mu.RUnlock()
+func (self ExchangeAddresses) GetData() map[string]ethereum.Address {
 	dataCopy := map[string]ethereum.Address{}
-	for k, v := range self.data {
+	for k, v := range self {
 		dataCopy[k] = v
 	}
 	return dataCopy
 }
 
+// ExchangePrecisionLimit store the precision and limit of a certain token pair on an exchange
+// it is int the struct of [[int int], [float64 float64], [float64 float64], float64]
 type ExchangePrecisionLimit struct {
-	Precision   TokenPairPrecision
-	AmountLimit TokenPairAmountLimit
-	PriceLimit  TokenPairPriceLimit
-	MinNotional float64
+	Precision   TokenPairPrecision   `json:"precision"`
+	AmountLimit TokenPairAmountLimit `json:"amount_limit"`
+	PriceLimit  TokenPairPriceLimit  `json:"price_limit"`
+	MinNotional float64              `json:"min_notional"`
 }
 
 // ExchangeInfo is written and read concurrently
-type ExchangeInfo struct {
-	mu   sync.RWMutex
-	data map[TokenPairID]ExchangePrecisionLimit
+type ExchangeInfo map[TokenPairID]ExchangePrecisionLimit
+
+func NewExchangeInfo() ExchangeInfo {
+	return ExchangeInfo(make(map[TokenPairID]ExchangePrecisionLimit))
 }
 
-func NewExchangeInfo() *ExchangeInfo {
-	return &ExchangeInfo{
-		mu:   sync.RWMutex{},
-		data: map[TokenPairID]ExchangePrecisionLimit{},
-	}
-}
-
-func (self *ExchangeInfo) Update(pair TokenPairID, data ExchangePrecisionLimit) {
-	self.mu.Lock()
-	defer self.mu.Unlock()
-	self.data[pair] = data
-}
-
-func (self *ExchangeInfo) Get(pair TokenPairID) (ExchangePrecisionLimit, error) {
-	self.mu.RLock()
-	defer self.mu.RUnlock()
-	if info, exist := self.data[pair]; exist {
-		return info, nil
-	} else {
+func (self ExchangeInfo) Get(pair TokenPairID) (ExchangePrecisionLimit, error) {
+	info, exist := self[pair]
+	if !exist {
 		return info, fmt.Errorf("Token pair is not existed")
 	}
+	return info, nil
+
 }
 
-func (self *ExchangeInfo) GetData() map[TokenPairID]ExchangePrecisionLimit {
-	self.mu.RLock()
-	defer self.mu.RUnlock()
-	return self.data
+func (self ExchangeInfo) GetData() map[TokenPairID]ExchangePrecisionLimit {
+	data := map[TokenPairID]ExchangePrecisionLimit(self)
+	return data
 }
 
+//TokenPairPrecision represent precision when trading a token pair
 type TokenPairPrecision struct {
-	Amount int
-	Price  int
+	Amount int `json:"amount"`
+	Price  int `json:"price"`
 }
 
+//TokenPairAmountLimit represent amount min and max when trade a token pair
 type TokenPairAmountLimit struct {
-	Min float64
-	Max float64
+	Min float64 `json:"min"`
+	Max float64 `json:"max"`
 }
 
 type TokenPairPriceLimit struct {
-	Min float64
-	Max float64
+	Min float64 `json:"min"`
+	Max float64 `json:"max"`
 }
 
 type TradingFee map[string]float64
@@ -152,40 +135,11 @@ func (self FundingFee) GetTokenFee(token string) float64 {
 
 type ExchangesMinDeposit map[string]float64
 
-type ExchangesMinDepositConfig struct {
-	Exchanges map[string]ExchangesMinDeposit `json:"exchanges"`
-}
-
+//ExchangeFees contains the fee for an exchanges
+//It follow the struct of {trading: map[tokenID]float64, funding: {Withdraw: map[tokenID]float64, Deposit: map[tokenID]float64}}
 type ExchangeFees struct {
 	Trading TradingFee
 	Funding FundingFee
-}
-
-type ExchangeFeesConfig struct {
-	Exchanges map[string]ExchangeFees `json:"exchanges"`
-}
-
-func GetFeeFromFile(path string) (ExchangeFeesConfig, error) {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		return ExchangeFeesConfig{}, err
-	} else {
-		result := ExchangeFeesConfig{}
-		err := json.Unmarshal(data, &result)
-		return result, err
-	}
-}
-
-func GetMinDepositFromFile(path string) (ExchangesMinDepositConfig, error) {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		return ExchangesMinDepositConfig{}, err
-	} else {
-		result := ExchangesMinDepositConfig{}
-		err := json.Unmarshal(data, &result)
-		log.Printf("min deposit: %+v", result)
-		return result, err
-	}
 }
 
 func NewExchangeFee(tradingFee TradingFee, fundingFee FundingFee) ExchangeFees {
@@ -283,44 +237,72 @@ type ActivityRecord struct {
 	Timestamp      Timestamp
 }
 
+//New ActivityRecord return an activity record with params["token"] only as token.ID
+func NewActivityRecord(action string, id ActivityID, destination string, params, result map[string]interface{}, exStatus, miStatus string, timestamp Timestamp) ActivityRecord {
+	//if any params is a token, save it as tokenID
+	for k, v := range params {
+		if tok, ok := v.(Token); ok {
+			params[k] = tok.ID
+		}
+	}
+	tokens, ok := params["tokens"].([]Token)
+	if ok {
+		var tokenIDs []string
+		for _, t := range tokens {
+			tokenIDs = append(tokenIDs, t.ID)
+		}
+		params["tokens"] = tokenIDs
+	}
+	return ActivityRecord{
+		Action:         action,
+		ID:             id,
+		Destination:    destination,
+		Params:         params,
+		Result:         result,
+		ExchangeStatus: exStatus,
+		MiningStatus:   miStatus,
+		Timestamp:      timestamp,
+	}
+}
+
 func (self ActivityRecord) IsExchangePending() bool {
 	switch self.Action {
-	case "withdraw":
-		return (self.ExchangeStatus == "" || self.ExchangeStatus == "submitted") &&
-			self.MiningStatus != "failed"
-	case "deposit":
-		return (self.ExchangeStatus == "" || self.ExchangeStatus == "pending") &&
-			self.MiningStatus != "failed"
-	case "trade":
-		return self.ExchangeStatus == "" || self.ExchangeStatus == "submitted"
+	case ActionWithdraw:
+		return (self.ExchangeStatus == "" || self.ExchangeStatus == ExchangeStatusSubmitted) &&
+			self.MiningStatus != MiningStatusFailed
+	case ActionDeposit:
+		return (self.ExchangeStatus == "" || self.ExchangeStatus == ExchangeStatusPending) &&
+			self.MiningStatus != MiningStatusFailed
+	case ActionTrade:
+		return self.ExchangeStatus == "" || self.ExchangeStatus == ExchangeStatusSubmitted
 	}
 	return true
 }
 
 func (self ActivityRecord) IsBlockchainPending() bool {
 	switch self.Action {
-	case "withdraw", "deposit", "set_rates":
-		return (self.MiningStatus == "" || self.MiningStatus == "submitted") && self.ExchangeStatus != "failed"
+	case ActionWithdraw, ActionDeposit, ActionSetrate:
+		return (self.MiningStatus == "" || self.MiningStatus == MiningStatusSubmitted) && self.ExchangeStatus != ExchangeStatusFailed
 	}
 	return true
 }
 
 func (self ActivityRecord) IsPending() bool {
 	switch self.Action {
-	case "withdraw":
-		return (self.ExchangeStatus == "" || self.ExchangeStatus == "submitted" ||
-			self.MiningStatus == "" || self.MiningStatus == "submitted") &&
-			self.MiningStatus != "failed" && self.ExchangeStatus != "failed"
-	case "deposit":
-		return (self.ExchangeStatus == "" || self.ExchangeStatus == "pending" ||
-			self.MiningStatus == "" || self.MiningStatus == "submitted") &&
-			self.MiningStatus != "failed" && self.ExchangeStatus != "failed"
-	case "trade":
-		return (self.ExchangeStatus == "" || self.ExchangeStatus == "submitted") &&
-			self.ExchangeStatus != "failed"
-	case "set_rates":
-		return (self.MiningStatus == "" || self.MiningStatus == "submitted") &&
-			self.ExchangeStatus != "failed"
+	case ActionWithdraw:
+		return (self.ExchangeStatus == "" || self.ExchangeStatus == ExchangeStatusSubmitted ||
+			self.MiningStatus == "" || self.MiningStatus == MiningStatusSubmitted) &&
+			self.MiningStatus != MiningStatusFailed && self.ExchangeStatus != ExchangeStatusFailed
+	case ActionDeposit:
+		return (self.ExchangeStatus == "" || self.ExchangeStatus == ExchangeStatusPending ||
+			self.MiningStatus == "" || self.MiningStatus == MiningStatusSubmitted) &&
+			self.MiningStatus != MiningStatusFailed && self.ExchangeStatus != ExchangeStatusFailed
+	case ActionTrade:
+		return (self.ExchangeStatus == "" || self.ExchangeStatus == ExchangeStatusSubmitted) &&
+			self.ExchangeStatus != ExchangeStatusFailed
+	case ActionSetrate:
+		return (self.MiningStatus == "" || self.MiningStatus == MiningStatusSubmitted) &&
+			self.ExchangeStatus != ExchangeStatusFailed
 	}
 	return true
 }
@@ -606,6 +588,7 @@ type AllRateResponse struct {
 	ToBlockNumber uint64
 }
 
+// KNLog is the common interface of some important logging events.
 type KNLog interface {
 	TxHash() ethereum.Hash
 	BlockNo() uint64
@@ -939,6 +922,54 @@ type FeeSetRate struct {
 	TimeStamp     uint64     `json:"timeStamp"`
 	GasUsed       *big.Float `json:"gasUsed"`
 	TotalGasSpent *big.Float `json:"totalGasSpent"`
+}
+
+type AddressesResponse struct {
+	Addresses map[string]interface{} `json:"addresses"`
+}
+
+func NewAddressResponse(addrs map[string]interface{}) *AddressesResponse {
+	return &AddressesResponse{
+		Addresses: addrs,
+	}
+}
+
+type TokenResponse struct {
+	Tokens  []Token `json:"tokens"`
+	Version uint64  `json:"version"`
+}
+
+func NewTokenResponse(tokens []Token, version uint64) *TokenResponse {
+	return &TokenResponse{
+		Tokens:  tokens,
+		Version: version,
+	}
+}
+
+type ExchangeResponse struct {
+	Exchanges map[string]*ExchangeSetting `json:"exchanges"`
+	Version   uint64                      `json:"version"`
+}
+
+func NewExchangeResponse(exs map[string]*ExchangeSetting, version uint64) *ExchangeResponse {
+	return &ExchangeResponse{
+		Exchanges: exs,
+		Version:   version,
+	}
+}
+
+type AllSettings struct {
+	Addresses *AddressesResponse `json:"addresses"`
+	Tokens    *TokenResponse     `json:"tokens"`
+	Exchanges *ExchangeResponse  `json:"exchanges"`
+}
+
+func NewAllSettings(addrs *AddressesResponse, toks *TokenResponse, exs *ExchangeResponse) *AllSettings {
+	return &AllSettings{
+		Addresses: addrs,
+		Tokens:    toks,
+		Exchanges: exs,
+	}
 }
 
 type ExportedReserverRateRecord struct {

@@ -100,10 +100,14 @@ func (self *BinanceEndpoint) GetResponse(
 		respBody, err = ioutil.ReadAll(resp.Body)
 		break
 	default:
-		err = fmt.Errorf("Binance return with code: %d", resp.StatusCode)
+		var response exchange.Binaresp
+		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
+			break
+		}
+		err = fmt.Errorf("Binance return with code: %d - %s", resp.StatusCode, response.Msg)
 	}
 	if err != nil || len(respBody) == 0 || rand.Int()%10 == 0 {
-		log.Printf("request to %s, got response from binance (error or throttled to 10%%): %s, err: %v", req.URL, common.TruncStr(respBody), err)
+		log.Printf("request to %s, got response from binance (error or throttled to 10%%): %s, err: %s", req.URL, common.TruncStr(respBody), common.ErrorToString(err))
 	}
 	return respBody, err
 }
@@ -114,7 +118,7 @@ func (self *BinanceEndpoint) GetDepthOnePair(pair common.TokenPair) (exchange.Bi
 		"GET", self.interf.PublicEndpoint()+"/api/v1/depth",
 		map[string]string{
 			"symbol": fmt.Sprintf("%s%s", pair.Base.ID, pair.Quote.ID),
-			"limit":  "50",
+			"limit":  "100",
 		},
 		false,
 		common.GetTimepoint(),
@@ -319,7 +323,7 @@ func (self *BinanceEndpoint) Withdraw(token common.Token, amount *big.Int, addre
 			"asset":   token.ID,
 			"address": address.Hex(),
 			"name":    "reserve",
-			"amount":  strconv.FormatFloat(common.BigToFloat(amount, token.Decimal), 'f', -1, 64),
+			"amount":  strconv.FormatFloat(common.BigToFloat(amount, token.Decimals), 'f', -1, 64),
 		},
 		true,
 		common.GetTimepoint(),
@@ -333,7 +337,7 @@ func (self *BinanceEndpoint) Withdraw(token common.Token, amount *big.Int, addre
 		}
 		return result.ID, nil
 	}
-	return "", fmt.Errorf("withdraw rejected by Binnace: %v", err)
+	return "", fmt.Errorf("withdraw rejected by Binnace: %s", common.ErrorToString(err))
 }
 
 func (self *BinanceEndpoint) GetInfo() (exchange.Binainfo, error) {
@@ -414,7 +418,7 @@ func (self *BinanceEndpoint) GetExchangeInfo() (exchange.BinanceExchangeInfo, er
 	return result, err
 }
 
-func (self *BinanceEndpoint) GetServerTime() (uint64, error) {
+func (self *BinanceEndpoint) getServerTime() (uint64, error) {
 	result := exchange.BinaServerTime{}
 	respBody, err := self.GetResponse(
 		"GET",
@@ -431,7 +435,7 @@ func (self *BinanceEndpoint) GetServerTime() (uint64, error) {
 
 func (self *BinanceEndpoint) UpdateTimeDelta() error {
 	currentTime := common.GetTimepoint()
-	serverTime, err := self.GetServerTime()
+	serverTime, err := self.getServerTime()
 	responseTime := common.GetTimepoint()
 	if err != nil {
 		return err

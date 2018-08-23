@@ -2,6 +2,7 @@ package stat
 
 import "github.com/KyberNetwork/reserve-data/common"
 
+// AnalyticStorage is the interface that wraps database operations related to analytic service.
 type AnalyticStorage interface {
 	UpdatePriceAnalyticData(timestamp uint64, value []byte) error
 	GetPriceAnalyticData(fromTime uint64, toTime uint64) ([]common.AnalyticPriceResponse, error)

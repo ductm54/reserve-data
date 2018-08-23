@@ -4,34 +4,39 @@ import (
 	"fmt"
 )
 
+const (
+	apiVersion         = "v1.1"
+	bittrexAPIEndpoint = "https://bittrex.com/api/"
+)
+
 type Interface interface {
 	PublicEndpoint() string
 	MarketEndpoint() string
 	AccountEndpoint() string
 }
 
-type RealInterface struct{}
-
-const apiVersion string = "v1.1"
-
-func getOrSetDefaultURL(base_url string) string {
-	if len(base_url) > 1 {
-		return base_url + ":5300"
-	} else {
-		return "http://127.0.0.1:5300"
+// getSimulationURL returns url of the simulated Bittrex endpoint.
+// It returns the local default endpoint if given URL empty.
+func getSimulationURL(baseURL string) string {
+	const port = "5300"
+	if len(baseURL) == 0 {
+		baseURL = "http://127.0.0.1"
 	}
+	return fmt.Sprintf("%s:%s", baseURL, port)
 }
 
+type RealInterface struct{}
+
 func (self *RealInterface) PublicEndpoint() string {
-	return "https://bittrex.com/api/" + apiVersion + "/public"
+	return bittrexAPIEndpoint + apiVersion + "/public"
 }
 
 func (self *RealInterface) MarketEndpoint() string {
-	return "https://bittrex.com/api/" + apiVersion + "/market"
+	return bittrexAPIEndpoint + apiVersion + "/market"
 }
 
 func (self *RealInterface) AccountEndpoint() string {
-	return "https://bittrex.com/api/" + apiVersion + "/account"
+	return bittrexAPIEndpoint + apiVersion + "/account"
 }
 
 func NewRealInterface() *RealInterface {
@@ -39,41 +44,37 @@ func NewRealInterface() *RealInterface {
 }
 
 type SimulatedInterface struct {
-	base_url string
-}
-
-func (self *SimulatedInterface) baseurl() string {
-	return getOrSetDefaultURL(self.base_url)
+	baseURL string
 }
 
 func (self *SimulatedInterface) PublicEndpoint() string {
-	return fmt.Sprintf("%s/api/%s/public", self.baseurl(), apiVersion)
+	return fmt.Sprintf("%s/api/%s/public", getSimulationURL(self.baseURL), apiVersion)
 }
 
 func (self *SimulatedInterface) MarketEndpoint() string {
-	return fmt.Sprintf("%s/api/%s/market", self.baseurl(), apiVersion)
+	return fmt.Sprintf("%s/api/%s/market", getSimulationURL(self.baseURL), apiVersion)
 }
 
 func (self *SimulatedInterface) AccountEndpoint() string {
-	return fmt.Sprintf("%s/api/%s/account", self.baseurl(), apiVersion)
+	return fmt.Sprintf("%s/api/%s/account", getSimulationURL(self.baseURL), apiVersion)
 }
 
 func NewSimulatedInterface(flagVariable string) *SimulatedInterface {
-	return &SimulatedInterface{base_url: flagVariable}
+	return &SimulatedInterface{baseURL: flagVariable}
 }
 
 type DevInterface struct{}
 
 func (self *DevInterface) PublicEndpoint() string {
-	return "https://bittrex.com/api/" + apiVersion + "/public"
+	return bittrexAPIEndpoint + apiVersion + "/public"
 }
 
 func (self *DevInterface) MarketEndpoint() string {
-	return "https://bittrex.com/api/" + apiVersion + "/market"
+	return bittrexAPIEndpoint + apiVersion + "/market"
 }
 
 func (self *DevInterface) AccountEndpoint() string {
-	return "https://bittrex.com/api/" + apiVersion + "/account"
+	return bittrexAPIEndpoint + apiVersion + "/account"
 }
 
 func NewDevInterface() *DevInterface {
@@ -81,49 +82,41 @@ func NewDevInterface() *DevInterface {
 }
 
 type RopstenInterface struct {
-	base_url string
-}
-
-func (self *RopstenInterface) baseurl() string {
-	return getOrSetDefaultURL(self.base_url)
+	baseURL string
 }
 
 func (self *RopstenInterface) PublicEndpoint() string {
-	return "https://bittrex.com/api/" + apiVersion + "/public"
+	return bittrexAPIEndpoint + apiVersion + "/public"
 }
 
 func (self *RopstenInterface) MarketEndpoint() string {
-	return fmt.Sprintf("%s/api/%s/market", self.baseurl(), apiVersion)
+	return fmt.Sprintf("%s/api/%s/market", getSimulationURL(self.baseURL), apiVersion)
 }
 
 func (self *RopstenInterface) AccountEndpoint() string {
-	return fmt.Sprintf("%s/api/%s/account", self.baseurl(), apiVersion)
+	return fmt.Sprintf("%s/api/%s/account", getSimulationURL(self.baseURL), apiVersion)
 }
 
 func NewRopstenInterface(flagVariable string) *RopstenInterface {
-	return &RopstenInterface{base_url: flagVariable}
+	return &RopstenInterface{baseURL: flagVariable}
 }
 
 type KovanInterface struct {
-	base_url string
-}
-
-func (self *KovanInterface) baseurl() string {
-	return getOrSetDefaultURL(self.base_url)
+	baseURL string
 }
 
 func (self *KovanInterface) PublicEndpoint() string {
-	return "https://bittrex.com/api/" + apiVersion + "/public"
+	return bittrexAPIEndpoint + apiVersion + "/public"
 }
 
 func (self *KovanInterface) MarketEndpoint() string {
-	return fmt.Sprintf("%s/api/%s/market", self.baseurl(), apiVersion)
+	return fmt.Sprintf("%s/api/%s/market", getSimulationURL(self.baseURL), apiVersion)
 }
 
 func (self *KovanInterface) AccountEndpoint() string {
-	return fmt.Sprintf("%s/api/%s/account", self.baseurl(), apiVersion)
+	return fmt.Sprintf("%s/api/%s/account", getSimulationURL(self.baseURL), apiVersion)
 }
 
 func NewKovanInterface(flagVariable string) *KovanInterface {
-	return &KovanInterface{base_url: flagVariable}
+	return &KovanInterface{baseURL: flagVariable}
 }

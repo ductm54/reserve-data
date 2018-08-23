@@ -3,10 +3,15 @@ package exchange
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"math/big"
+	"path/filepath"
 	"testing"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/settings"
+	"github.com/KyberNetwork/reserve-data/settings/storage"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
@@ -41,7 +46,7 @@ func (self testBittrexInterface) CancelOrder(uuid string) (Bittcancelorder, erro
 func (self testBittrexInterface) DepositHistory(currency string) (Bittdeposithistory, error) {
 	res := Bittdeposithistory{}
 	err := json.Unmarshal([]byte(self.DepositHistoryMock), &res)
-	fmt.Printf("%v\n", err)
+	fmt.Printf("%s\n", common.ErrorToString(err))
 	fmt.Printf("%v\n", res)
 	return res, err
 }
@@ -80,20 +85,34 @@ func (self *testBittrexStorage) StoreTradeHistory(data common.ExchangeTradeHisto
 func (self *testBittrexStorage) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
 	return common.ExchangeTradeHistory{}, nil
 }
-func (self *testBittrexStorage) GetLastIDTradeHistory(exchange, pair string) (string, error) {
-	return "", nil
-}
 
 func getTestBittrex(depositHistory string, registered bool) *Bittrex {
+	tmpDir, err := ioutil.TempDir("", "bittrex_test")
+	if err != nil {
+		log.Fatal(err)
+	}
+	boltSettingStorage, err := storage.NewBoltSettingStorage(filepath.Join(tmpDir, "setting.db"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	tokenSetting, err := settings.NewTokenSetting(boltSettingStorage)
+	if err != nil {
+		log.Fatal(err)
+	}
+	addressSetting := &settings.AddressSetting{}
+	exchangeSetting, err := settings.NewExchangeSetting(boltSettingStorage)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	setting, err := settings.NewSetting(tokenSetting, addressSetting, exchangeSetting)
+	if err != nil {
+		log.Fatal(err)
+	}
 	return &Bittrex{
 		testBittrexInterface{depositHistory},
-		[]common.TokenPair{},
-		[]common.Token{},
-		common.NewExchangeAddresses(),
 		&testBittrexStorage{registered},
-		&common.ExchangeInfo{},
-		common.ExchangeFees{},
-		common.ExchangesMinDeposit{},
+		setting,
 	}
 }
 

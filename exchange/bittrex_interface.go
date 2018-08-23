@@ -7,6 +7,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
+// BittrexInterface contains the methods to interact with Bittrex centralized exchange.
 type BittrexInterface interface {
 	FetchOnePairData(pair common.TokenPair) (Bittresp, error)
 

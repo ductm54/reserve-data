@@ -18,6 +18,7 @@ type ReserveData struct {
 	storageController datapruner.StorageController
 	globalStorage     GlobalStorage
 	exchanges         []common.Exchange
+	setting           Setting
 }
 
 func (self ReserveData) CurrentGoldInfoVersion(timepoint uint64) (common.Version, error) {
@@ -96,16 +97,17 @@ func (self ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponse, 
 		result.Data.Block = data.Block
 		result.Data.ReserveBalances = map[string]common.BalanceResponse{}
 		for tokenID, balance := range data.ReserveBalances {
+			token, uErr := self.setting.GetInternalTokenByID(tokenID)
+			//If the token is invalid, this must Panic
+			if uErr != nil {
+				return result, fmt.Errorf("Can't get Internal token %s: (%s)", tokenID, uErr)
+			}
 			result.Data.ReserveBalances[tokenID] = balance.ToBalanceResponse(
-				common.MustGetInternalToken(tokenID).Decimal,
+				token.Decimals,
 			)
 		}
 		return result, err
 	}
-}
-
-func (self ReserveData) CurrentRateVersion(timepoint uint64) (common.Version, error) {
-	return self.storage.CurrentRateVersion(timepoint)
 }
 
 func isDuplicated(oldData, newData map[string]common.RateResponse) bool {
@@ -212,12 +214,11 @@ func (self ReserveData) GetRate(timepoint uint64) (common.AllRateResponse, error
 }
 
 func (self ReserveData) GetExchangeStatus() (common.ExchangesStatus, error) {
-	data, err := self.storage.GetExchangeStatus()
-	return data, err
+	return self.setting.GetExchangeStatus()
 }
 
 func (self ReserveData) UpdateExchangeStatus(exchange string, status bool, timestamp uint64) error {
-	currentExchangeStatus, err := self.storage.GetExchangeStatus()
+	currentExchangeStatus, err := self.setting.GetExchangeStatus()
 	if err != nil {
 		return err
 	}
@@ -225,13 +226,12 @@ func (self ReserveData) UpdateExchangeStatus(exchange string, status bool, times
 		Timestamp: timestamp,
 		Status:    status,
 	}
-	return self.storage.UpdateExchangeStatus(currentExchangeStatus)
+	return self.setting.UpdateExchangeStatus(currentExchangeStatus)
 }
 
 func (self ReserveData) UpdateExchangeNotification(
 	exchange, action, tokenPair string, fromTime, toTime uint64, isWarning bool, msg string) error {
-	err := self.storage.UpdateExchangeNotification(exchange, action, tokenPair, fromTime, toTime, isWarning, msg)
-	return err
+	return self.setting.UpdateExchangeNotification(exchange, action, tokenPair, fromTime, toTime, isWarning, msg)
 }
 
 func (self ReserveData) GetRecords(fromTime, toTime uint64) ([]common.ActivityRecord, error) {
@@ -243,7 +243,7 @@ func (self ReserveData) GetPendingActivities() ([]common.ActivityRecord, error) 
 }
 
 func (self ReserveData) GetNotifications() (common.ExchangeNotifications, error) {
-	return self.storage.GetExchangeNotifications()
+	return self.setting.GetExchangeNotifications()
 }
 
 //Run run fetcher
@@ -339,10 +339,10 @@ func (self ReserveData) RunStorageController() error {
 func NewReserveData(storage Storage,
 	fetcher Fetcher, storageControllerRunner datapruner.StorageControllerRunner,
 	arch archive.Archive, globalStorage GlobalStorage,
-	exchanges []common.Exchange) *ReserveData {
+	exchanges []common.Exchange, setting Setting) *ReserveData {
 	storageController, err := datapruner.NewStorageController(storageControllerRunner, arch)
 	if err != nil {
 		panic(err)
 	}
-	return &ReserveData{storage, fetcher, storageController, globalStorage, exchanges}
+	return &ReserveData{storage, fetcher, storageController, globalStorage, exchanges, setting}
 }

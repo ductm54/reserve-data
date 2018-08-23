@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	expiredAnalyticPath string = "expired-analytic-data"
+	expiredAnalyticPath string = "expired-analytic-data/"
 	expiredRatePath     string = "expired-rate"
 )
 

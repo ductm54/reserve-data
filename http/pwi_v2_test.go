@@ -2,6 +2,7 @@ package http
 
 import (
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -12,7 +13,8 @@ import (
 	"github.com/KyberNetwork/reserve-data/data"
 	"github.com/KyberNetwork/reserve-data/data/storage"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
-	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/KyberNetwork/reserve-data/settings"
+	settingsstorage "github.com/KyberNetwork/reserve-data/settings/storage"
 	"github.com/gin-gonic/gin"
 )
 
@@ -23,7 +25,6 @@ func TestHTTPServerPWIEquationV2(t *testing.T) {
 		confirmPWIEquationV2              = "/v2/confirm-pwis-equation"
 		rejectPWIEquationV2               = "/v2/reject-pwis-equation"
 		getPWIEquationV2                  = "/v2/pwis-equation"
-		testDataV1                        = `EOS_750_500_0.25|ETH_750_500_0.25`
 		testData                          = `{
   "EOS": {
     "bid": {
@@ -149,9 +150,6 @@ func TestHTTPServerPWIEquationV2(t *testing.T) {
 	`
 	)
 
-	common.RegisterInternalActiveToken(common.Token{ID: "EOS"})
-	common.RegisterInternalActiveToken(common.Token{ID: "ETH"})
-
 	tmpDir, err := ioutil.TempDir("", "test_pwi_equation_v2")
 	if err != nil {
 		t.Fatal(err)
@@ -167,13 +165,50 @@ func TestHTTPServerPWIEquationV2(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	boltSettingStorage, err := settingsstorage.NewBoltSettingStorage(filepath.Join(tmpDir, "setting.db"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	tokenSetting, err := settings.NewTokenSetting(boltSettingStorage)
+	if err != nil {
+		log.Fatal(err)
+	}
+	addressSetting := &settings.AddressSetting{}
 
+	exchangeSetting, err := settings.NewExchangeSetting(boltSettingStorage)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	setting, err := settings.NewSetting(tokenSetting, addressSetting, exchangeSetting)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = setting.UpdateToken(common.Token{
+		ID:       "EOS",
+		Address:  "xxx",
+		Internal: true,
+		Active:   true,
+	}, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = setting.UpdateToken(common.Token{
+		ID:       "ETH",
+		Address:  "xxx",
+		Internal: true,
+		Active:   true,
+	}, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
 	s := HTTPServer{
-		app:         data.NewReserveData(st, nil, nil, nil, nil, nil),
-		core:        core.NewReserveCore(nil, st, ethereum.Address{}),
+		app:         data.NewReserveData(st, nil, nil, nil, nil, nil, setting),
+		core:        core.NewReserveCore(nil, st, setting),
 		metric:      st,
 		authEnabled: false,
-		r:           gin.Default()}
+		r:           gin.Default(),
+		setting:     setting}
 	s.register()
 
 	var tests = []testCase{
@@ -197,30 +232,6 @@ func TestHTTPServerPWIEquationV2(t *testing.T) {
 			endpoint: getPWIEquationV2,
 			method:   http.MethodGet,
 			assert:   httputil.ExpectFailure,
-		},
-		{
-			msg:      "setting equation v1 pending",
-			endpoint: "/set-pwis-equation",
-			method:   http.MethodPost,
-			data: map[string]string{
-				"data": testDataV1,
-			},
-			assert: httputil.ExpectSuccess,
-		},
-		{
-			msg:      "confirm equation v1 pending",
-			endpoint: "/confirm-pwis-equation",
-			method:   http.MethodPost,
-			data: map[string]string{
-				"data": testDataV1,
-			},
-			assert: httputil.ExpectSuccess,
-		},
-		{
-			msg:      "getting fallback v1 equation",
-			endpoint: getPWIEquationV2,
-			method:   http.MethodGet,
-			assert:   newAssertGetEquation([]byte(testData)),
 		},
 		{
 			msg:      "unsupported token",

@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	MAX_GET_RATES_PERIOD uint64 = 86400000 //1 days in milisec
+	maxGetRatesPeriod uint64 = 86400000 //1 days in milisec
 )
 
 type ReserveStats struct {
@@ -30,6 +30,7 @@ type ReserveStats struct {
 	fetcher           *Fetcher
 	storageController statpruner.StorageController
 	cmcEthUSDRate     *blockchain.CMCEthUSDRate
+	setting           Setting
 }
 
 func NewReserveStats(
@@ -42,7 +43,8 @@ func NewReserveStats(
 	controllerRunner statpruner.ControllerRunner,
 	fetcher *Fetcher,
 	arch archive.Archive,
-	cmcEthUSDRate *blockchain.CMCEthUSDRate) *ReserveStats {
+	cmcEthUSDRate *blockchain.CMCEthUSDRate,
+	setting Setting) *ReserveStats {
 	storageController, err := statpruner.NewStorageController(controllerRunner, arch)
 	if err != nil {
 		panic(err)
@@ -57,6 +59,7 @@ func NewReserveStats(
 		fetcher:           fetcher,
 		storageController: storageController,
 		cmcEthUSDRate:     cmcEthUSDRate,
+		setting:           setting,
 	}
 }
 
@@ -90,7 +93,7 @@ func (self ReserveStats) GetAssetVolume(fromTime, toTime uint64, freq, asset str
 		return data, err
 	}
 
-	token, err := common.GetNetworkToken(asset)
+	token, err := self.setting.GetActiveTokenByID(asset)
 	if err != nil {
 		return data, fmt.Errorf("assets %s is not supported", asset)
 	}
@@ -183,8 +186,8 @@ func (self ReserveStats) GetTradeSummary(fromTime, toTime uint64, timezone int64
 func (self ReserveStats) GetTradeLogs(fromTime uint64, toTime uint64) ([]common.TradeLog, error) {
 	result := []common.TradeLog{}
 
-	if toTime-fromTime > MAX_GET_RATES_PERIOD {
-		return result, fmt.Errorf("Time range is too broad, it must be smaller or equal to %d miliseconds", MAX_GET_RATES_PERIOD)
+	if toTime-fromTime > maxGetRatesPeriod {
+		return result, fmt.Errorf("Time range is too broad, it must be smaller or equal to %d miliseconds", maxGetRatesPeriod)
 	}
 
 	result, err := self.logStorage.GetTradeLogs(fromTime*1000000, toTime*1000000)
@@ -222,7 +225,10 @@ func (self ReserveStats) GetHeatMap(fromTime, toTime uint64, tzparam int64) (com
 			return arrResult, err
 		}
 		for _, stat := range cStats {
-			s := stat.(common.MetricStats)
+			s, ok := stat.(common.MetricStats)
+			if !ok {
+				return arrResult, fmt.Errorf("cannot convert stat (%v) to MetricStat", s)
+			}
 			current := result[c]
 			result[c] = common.HeatmapType{
 				TotalETHValue:        current.TotalETHValue + s.ETHVolume,
@@ -262,7 +268,7 @@ func (self ReserveStats) GetTokenHeatmap(fromTime, toTime uint64, tokenStr, freq
 	if err != nil {
 		return arrResult, err
 	}
-	token, err := common.GetNetworkToken(tokenStr)
+	token, err := self.setting.GetActiveTokenByID(tokenStr)
 	if err != nil {
 		return arrResult, err
 	}
@@ -273,7 +279,10 @@ func (self ReserveStats) GetTokenHeatmap(fromTime, toTime uint64, tokenStr, freq
 			return arrResult, err
 		}
 		for _, stat := range stats {
-			s := stat.(common.VolumeStats)
+			s, ok := stat.(common.VolumeStats)
+			if !ok {
+				return arrResult, fmt.Errorf("cannot convert stat (%v) to VolumeStats", s)
+			}
 			current := result[country]
 			result[country] = common.VolumeStats{
 				Volume:    current.Volume + s.Volume,
@@ -394,8 +403,8 @@ func (self ReserveStats) GetWalletStats(fromTime uint64, toTime uint64, walletAd
 	return self.statStorage.GetWalletStats(fromTime, toTime, ethereum.HexToAddress(walletAddr), timezone)
 }
 
-func (self ReserveStats) GetWalletAddress() ([]string, error) {
-	return self.statStorage.GetWalletAddress()
+func (self ReserveStats) GetWalletAddresses() ([]string, error) {
+	return self.statStorage.GetWalletAddresses()
 }
 
 func (self ReserveStats) GetReserveRates(fromTime, toTime uint64, reserveAddr ethereum.Address) ([]common.ReserveRates, error) {
@@ -470,7 +479,11 @@ func (self ReserveStats) ExceedDailyLimit(address ethereum.Address) (bool, error
 				log.Printf("Got more than 1 day stats. This is a bug in GetUserVolume")
 			} else {
 				for _, volume := range volumeStats {
-					volumeValue := volume.(common.VolumeStats)
+					volumeValue, ok := volume.(common.VolumeStats)
+					if !ok {
+						log.Printf("cannot convert volume (%v) to VolumeStats", volume)
+						continue
+					}
 					totalVolume += volumeValue.USDAmount
 					break
 				}

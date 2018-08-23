@@ -5,6 +5,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
+// Blockchain contains all methods for fetcher to interact with blockchain.
 type Blockchain interface {
 	FetchBalanceData(addr ethereum.Address, atBlock uint64) (map[string]common.BalanceEntry, error)
 	// fetch current raw rates at specific block

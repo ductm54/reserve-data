@@ -75,10 +75,6 @@ func TestHttpRunner(t *testing.T) {
 			path: "btick",
 		},
 		{
-			ch:   runner.GetTradeHistoryTicker(),
-			path: "ttick",
-		},
-		{
 			ch:   runner.GetGlobalDataTicker(),
 			path: "gtick",
 		},

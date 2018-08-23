@@ -9,7 +9,6 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/data/testutil"
-	"github.com/KyberNetwork/reserve-data/metric"
 )
 
 func TestHasPendingDepositBoltStorage(t *testing.T) {
@@ -22,7 +21,7 @@ func TestHasPendingDepositBoltStorage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Couldn't init bolt storage %v", err)
 	}
-	token := common.NewToken("OMG", "0x1111111111111111111111111111111111111111", 18)
+	token := common.NewToken("OMG", "Omise-go", "0x1111111111111111111111111111111111111111", 18, true, true, 0)
 	exchange := common.TestExchange{}
 	timepoint := common.GetTimepoint()
 	out, err := storage.HasPendingDeposit(token, exchange)
@@ -83,7 +82,7 @@ func TestGlobalStorageBoltImplementation(t *testing.T) {
 
 func TestConvertTargetQtyV1toV2(t *testing.T) {
 	// Mock v1 data, just data, other fields does not affected
-	v1Data := metric.TokenTargetQty{
+	v1Data := common.TokenTargetQty{
 		Data: "KNC_0.12314_0.427482_0.42348_0.423489|EOS_0.124_0.42342_0.42342_0.4246",
 	}
 	v2Data := convertTargetQtyV1toV2(v1Data)
@@ -93,9 +92,9 @@ func TestConvertTargetQtyV1toV2(t *testing.T) {
 	for _, data := range v2Data {
 		bytes, err := json.Marshal(data)
 		if err != nil {
-			t.Fatalf("Expected data is a interface of metric TargetQtyStruct")
+			t.Fatalf("Expected data is a interface of metric TargetQtyV2")
 		}
-		v2Struct := metric.TargetQtyStruct{}
+		v2Struct := common.TargetQtyV2{}
 		if err := json.Unmarshal(bytes, &v2Struct); err != nil {
 			t.Fatalf("Expected data is a inteface of metric")
 		}

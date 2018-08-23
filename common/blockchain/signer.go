@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
+// Signer contains method to sign a Ethereum transaction.
 type Signer interface {
 	GetAddress() ethereum.Address
 	Sign(*types.Transaction) (*types.Transaction, error)

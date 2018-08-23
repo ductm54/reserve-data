@@ -6,7 +6,7 @@
 
 ### Bug fixes:
 
-### Improvements:
+### Improvements
 
 ### Compatibility
 
@@ -14,7 +14,44 @@
 
 ### Features:
 
+- dynamic core setting, allow setting to be update on the fly. (#332. #361)
+
+- persistent core setting, allow setting transition between different deployment/ retain setting in fail over. (#294, #267, #320)
+
 ### Bug fixes:
+
+### Improvements:
+
+- refactor bolt storage implementation for stat (#357)
+
+- build binary docker image (#339)
+
+- refactor SetRates function (#365)
+
+- action type, mining status and exchange status are now use predefined constant instead of hard-code (#372)
+
+- remove comparerates package (#374)
+
+- IPlocator is now init from start (#377)
+
+- refactor and fix skipping failed activity in Huobi Deposit (#373)
+
+- review and modify unnecessary panic (#376)
+
+### Compatibility:
+
+- KyberNetwork smart contracts (>= 0.3.0)
+- KyberNetwork analytic (0.10.0)
+
+## 0.10.0 (2018-07-03)
+
+### Features:
+
+- Add rebalance quadratic API set (#327)
+
+### Bug fixes:
+
+- Fix type/interface conversion error swallow. Now these errors will be reported (#325)
 
 ### Improvements:
 
@@ -61,12 +98,12 @@
 - Enable errcheck checker and fix all unhandled errors (#307)
 - Fix GetAccounts error is ignored for houbi exchange (#308)
 - Fix missing required fields in PWIs v2 APIs (#314)
+
 - Handle trade error in huobi (#317)
 - Fix Binance is using wrong storage implementation (#310)
 - Fix failed to store rate on a blank database (#287)
 - Fix resource leaks in CallContract (#291)
 - Fix inconsistent exchange status (#285)
-
 ### Improvements:
 
 - Enable vet shadow (#296)
@@ -76,9 +113,6 @@
 - Add document for tbindex (#284)
 
 ### Compatibility:
-
-- KyberNetwork smart contracts (>= 0.3.0)
-- KyberNetwork analytic (0.9.0)
 
 ## 0.8.0 (2018-06-03)
 

@@ -2,16 +2,19 @@ package http
 
 import (
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/core"
 	"github.com/KyberNetwork/reserve-data/data"
 	"github.com/KyberNetwork/reserve-data/data/storage"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
-	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/KyberNetwork/reserve-data/settings"
+	settingsstorage "github.com/KyberNetwork/reserve-data/settings/storage"
 	"github.com/gin-gonic/gin"
 )
 
@@ -24,18 +27,22 @@ func TestHTTPServerTargetQtyV2(t *testing.T) {
 		rejectTargetQtyV2       = "/v2/canceltargetqty"
 		getTargetQtyV2          = "/v2/targetqty"
 		testData                = `{
-  "EOS": {
-      "total_target": 750,
-      "reserve_target": 500,
-	  "rebalance_threshold": 0.25,
-	  "transfer_threshold": 0.343
+  "OMG": {
+	  "set_target": {
+	      "total_target": 750,
+	      "reserve_target": 500,
+		  "rebalance_threshold": 0.25,
+		  "transfer_threshold": 0.343
+	  }
   },
   "ETH": {
-      "total_target": 750,
-      "reserve_target": 500,
-	  "rebalance_target": 0.25,
-	  "transfer_threshold": 0.343,
-	  "minimum_amount" : {
+	  "set_target": {
+	      "total_target": 750,
+	      "reserve_target": 500,
+		  "rebalance_target": 0.25,
+		  "transfer_threshold": 0.343
+	  },
+	  "recommend_balance" : {
 		"huobi" : 10,
 		"binance" : 20
 	  }, "exchange_ratio":  {
@@ -45,19 +52,50 @@ func TestHTTPServerTargetQtyV2(t *testing.T) {
   }
 }
 `
+
+		testDataTokenNotSupported = `{
+  "SNT": {
+	  "set_target": {
+ 	     "total_target": 750,
+ 	     "reserve_target": 500,
+		  "rebalance_threshold": 0.25,
+		  "transfer_threshold": 0.343
+	  }
+  },
+  "ETH": {
+	  "set_target": {
+	      "total_target": 750,
+	      "reserve_target": 500,
+		  "rebalance_target": 0.25,
+		  "transfer_threshold": 0.343
+	  },
+	  "recommend_balance" : {
+		"huobi" : 10,
+		"binance" : 20
+	  }, "exchange_ratio":  {
+		"huobi": 3,
+		"bianace": 4
+	}
+  }
+		}`
+
 		testDataWrongConfirmation = `{
-  "EOS": {
-      "total_target": 751,
-      "reserve_target": 500,
-	  "rebalance_threshold": 0.25,
-	  "transfer_threshold": 0.343
+  "OMG": {
+	  "set_target": {
+	      "total_target": 751,
+	      "reserve_target": 500,
+		  "rebalance_threshold": 0.25,
+		  "transfer_threshold": 0.343
+	  }
     },
   "ETH": {
-      "total_target": 750,
-      "reserve_target": 500,
-	  "rebalance_target": 0.25,
-	  "transfer_threshold": 0.343,
-	  "minimum_amount" : {
+	  "set_target": {
+	      "total_target": 750,
+	      "reserve_target": 500,
+		  "rebalance_target": 0.25,
+		  "transfer_threshold": 0.343
+	  },
+	  "recommend_balance" : {
 		"huobi" : 10,
 		"binance" : 20
 	  },
@@ -69,6 +107,7 @@ func TestHTTPServerTargetQtyV2(t *testing.T) {
 }
 `
 	)
+
 	tmpDir, err := ioutil.TempDir("", "test_target_qty_v2")
 	if err != nil {
 		t.Fatal(err)
@@ -84,13 +123,50 @@ func TestHTTPServerTargetQtyV2(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	boltSettingStorage, err := settingsstorage.NewBoltSettingStorage(filepath.Join(tmpDir, "setting.db"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	tokenSetting, err := settings.NewTokenSetting(boltSettingStorage)
+	if err != nil {
+		log.Fatal(err)
+	}
+	addressSetting := &settings.AddressSetting{}
 
+	exchangeSetting, err := settings.NewExchangeSetting(boltSettingStorage)
+	if err != nil {
+		log.Fatal(err)
+	}
+	setting, err := settings.NewSetting(tokenSetting, addressSetting, exchangeSetting)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = setting.UpdateToken(common.Token{
+		ID:       "OMG",
+		Address:  "xxx",
+		Internal: true,
+		Active:   true,
+	}, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = setting.UpdateToken(common.Token{
+		ID:       "ETH",
+		Address:  "xxx",
+		Internal: true,
+		Active:   true,
+	}, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
 	s := HTTPServer{
-		app:         data.NewReserveData(st, nil, nil, nil, nil, nil),
-		core:        core.NewReserveCore(nil, st, ethereum.Address{}),
+		app:         data.NewReserveData(st, nil, nil, nil, nil, nil, setting),
+		core:        core.NewReserveCore(nil, st, setting),
 		metric:      st,
 		authEnabled: false,
-		r:           gin.Default()}
+		r:           gin.Default(),
+		setting:     setting,
+	}
 	s.register()
 
 	var tests = []testCase{
@@ -120,6 +196,15 @@ func TestHTTPServerTargetQtyV2(t *testing.T) {
 			endpoint: rejectTargetQtyV2,
 			method:   http.MethodPost,
 			assert:   httputil.ExpectFailure,
+		},
+		{
+			msg:      "token not supported",
+			endpoint: storePendingTargetQtyV2,
+			method:   http.MethodPost,
+			data: map[string]string{
+				"value": testDataTokenNotSupported,
+			},
+			assert: httputil.ExpectFailure,
 		},
 		{
 			msg:      "valid post form",
@@ -158,7 +243,7 @@ func TestHTTPServerTargetQtyV2(t *testing.T) {
 			assert: httputil.ExpectSuccess,
 		},
 		{
-			msg:      "valid post form",
+			msg:      "post a valid form to test reject",
 			endpoint: storePendingTargetQtyV2,
 			method:   http.MethodPost,
 			data: map[string]string{
@@ -167,7 +252,7 @@ func TestHTTPServerTargetQtyV2(t *testing.T) {
 			assert: httputil.ExpectSuccess,
 		},
 		{
-			msg:      "reject when there is pending equation",
+			msg:      "reject when there is pending target quantity",
 			endpoint: rejectTargetQtyV2,
 			method:   http.MethodPost,
 			data: map[string]string{

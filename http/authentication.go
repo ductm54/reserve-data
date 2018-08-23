@@ -10,11 +10,9 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
+// Authentication is the authentication layer of HTTP APIs.
 type Authentication interface {
 	KNSign(message string) string
-	KNReadonlySign(message string) string
-	KNConfigurationSign(message string) string
-	KNConfirmConfSign(message string) string
 	GetPermission(signed string, message string) []Permission
 }
 
@@ -45,7 +43,7 @@ func (self KNAuthentication) KNSign(msg string) string {
 	return ethereum.Bytes2Hex(mac.Sum(nil))
 }
 
-func (self KNAuthentication) KNReadonlySign(msg string) string {
+func (self KNAuthentication) knReadonlySign(msg string) string {
 	mac := hmac.New(sha512.New, []byte(self.KNReadOnly))
 	if _, err := mac.Write([]byte(msg)); err != nil {
 		log.Printf("Encode message error: %s", err.Error())
@@ -53,7 +51,7 @@ func (self KNAuthentication) KNReadonlySign(msg string) string {
 	return ethereum.Bytes2Hex(mac.Sum(nil))
 }
 
-func (self KNAuthentication) KNConfigurationSign(msg string) string {
+func (self KNAuthentication) knConfigurationSign(msg string) string {
 	mac := hmac.New(sha512.New, []byte(self.KNConfiguration))
 	if _, err := mac.Write([]byte(msg)); err != nil {
 		log.Printf("Encode message error: %s", err.Error())
@@ -61,7 +59,7 @@ func (self KNAuthentication) KNConfigurationSign(msg string) string {
 	return ethereum.Bytes2Hex(mac.Sum(nil))
 }
 
-func (self KNAuthentication) KNConfirmConfSign(msg string) string {
+func (self KNAuthentication) knConfirmConfSign(msg string) string {
 	mac := hmac.New(sha512.New, []byte(self.KNConfirmConf))
 	if _, err := mac.Write([]byte(msg)); err != nil {
 		log.Printf("Encode message error: %s", err.Error())
@@ -75,15 +73,15 @@ func (self KNAuthentication) GetPermission(signed string, message string) []Perm
 	if signed == rebalanceSigned {
 		result = append(result, RebalancePermission)
 	}
-	readonlySigned := self.KNReadonlySign(message)
+	readonlySigned := self.knReadonlySign(message)
 	if signed == readonlySigned {
 		result = append(result, ReadOnlyPermission)
 	}
-	configureSigned := self.KNConfigurationSign(message)
+	configureSigned := self.knConfigurationSign(message)
 	if signed == configureSigned {
 		result = append(result, ConfigurePermission)
 	}
-	confirmConfSigned := self.KNConfirmConfSign(message)
+	confirmConfSigned := self.knConfirmConfSign(message)
 	if signed == confirmConfSigned {
 		result = append(result, ConfirmConfPermission)
 	}

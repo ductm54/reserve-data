@@ -72,9 +72,14 @@ func (s *senderFromServer) Sender(tx *types.Transaction) (ethereum.Address, erro
 	return s.addr, nil
 }
 
+// Hash implementation is only for satisfy the interface definition. senderFromServer shouldn't be signing anything.
 func (s *senderFromServer) Hash(tx *types.Transaction) ethereum.Hash {
+	// This should never happen
 	panic("can't sign with senderFromServer")
 }
+
+// SignatureValues implementation is only for satisfy the interface definition. senderFromServer shouldn't be signing anything.
 func (s *senderFromServer) SignatureValues(tx *types.Transaction, sig []byte) (R, S, V *big.Int, err error) {
+	// This should never happen
 	panic("can't sign with senderFromServer")
 }

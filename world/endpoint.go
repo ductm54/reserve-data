@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 )
 
+// Endpoint returns all API endpoints to use in TheWorld struct.
 type Endpoint interface {
 	GoldDataEndpoint() string
 	OneForgeGoldETHDataEndpoint() string

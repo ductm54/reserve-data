@@ -1,29 +1,49 @@
 package common
 
-import (
-	"fmt"
-)
+import ethereum "github.com/ethereum/go-ethereum/common"
+
+// TokenExchangeSetting contains necessary information on exchange to List a token on the fly
+type TokenExchangeSetting struct {
+	DepositAddress string       `json:"deposit_address"`
+	Info           ExchangeInfo `json:"exchange_info"`
+	Fee            TokenFee     `json:"fee"`
+	MinDeposit     float64      `json:"min_deposit"`
+}
+
+type TokenUpdate struct {
+	Token       Token                           `json:"token"`
+	Exchanges   map[string]TokenExchangeSetting `json:"exchanges"`
+	PWIEq       PWIEquationTokenV2              `json:"pwis_equation"`
+	TargetQty   TargetQtyV2                     `json:"target_qty"`
+	QuadraticEq RebalanceQuadraticEquation      `json:"rebalance_quadratic"`
+}
+
+type TokenFee struct {
+	Withdraw float64 `json:"withdraw"`
+	Deposit  float64 `json:"deposit"`
+}
 
 type Token struct {
-	ID      string
-	Address string
-	Decimal int64
+	ID                   string `json:"id"`
+	Name                 string `json:"name"`
+	Address              string `json:"address"`
+	Decimals             int64  `json:"decimals"`
+	Active               bool   `json:"active"`
+	Internal             bool   `json:"internal"`
+	LastActivationChange uint64 `json:"last_activation_change"`
 }
 
 // NewToken creates a new Token.
-func NewToken(id, address string, decimal int64) Token {
+func NewToken(id, name, address string, decimal int64, active, internal bool, timepoint uint64) Token {
 	return Token{
-		ID:      id,
-		Address: address,
-		Decimal: decimal,
+		ID:                   id,
+		Name:                 name,
+		Address:              address,
+		Decimals:             decimal,
+		Active:               active,
+		Internal:             internal,
+		LastActivationChange: timepoint,
 	}
-}
-
-func (self Token) MarshalText() (text []byte, err error) {
-	// return []byte(fmt.Sprintf(
-	// 	"%s-%s", self.ID, self.Address,
-	// )), nil
-	return []byte(self.ID), nil
 }
 
 func (self Token) IsETH() bool {
@@ -35,25 +55,20 @@ type TokenPair struct {
 	Quote Token
 }
 
+func NewTokenPair(base, quote Token) TokenPair {
+	return TokenPair{base, quote}
+}
+
 func (self *TokenPair) PairID() TokenPairID {
 	return NewTokenPairID(self.Base.ID, self.Quote.ID)
 }
 
-func NewTokenPair(base, quote string) (TokenPair, error) {
-	bToken, err1 := GetInternalToken(base)
-	qToken, err2 := GetInternalToken(quote)
-	if err1 != nil || err2 != nil {
-		return TokenPair{}, fmt.Errorf("%s or %s is not supported", base, quote)
-	} else {
-		return TokenPair{bToken, qToken}, nil
+func GetTokenAddressesList(tokens []Token) []ethereum.Address {
+	tokenAddrs := []ethereum.Address{}
+	for _, tok := range tokens {
+		if tok.ID != "ETH" {
+			tokenAddrs = append(tokenAddrs, ethereum.HexToAddress(tok.Address))
+		}
 	}
-}
-
-func MustCreateTokenPair(base, quote string) TokenPair {
-	pair, err := NewTokenPair(base, quote)
-	if err != nil {
-		panic(err)
-	} else {
-		return pair
-	}
+	return tokenAddrs
 }

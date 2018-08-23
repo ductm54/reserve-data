@@ -4,6 +4,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/common"
 )
 
+// Storage is the interface that wraps all database operations of ReserveData.
 type Storage interface {
 	CurrentPriceVersion(timepoint uint64) (common.Version, error)
 	GetAllPrices(common.Version) (common.AllPriceEntry, error)
@@ -22,10 +23,4 @@ type Storage interface {
 
 	GetAllRecords(fromTime, toTime uint64) ([]common.ActivityRecord, error)
 	GetPendingActivities() ([]common.ActivityRecord, error)
-
-	GetExchangeStatus() (common.ExchangesStatus, error)
-	UpdateExchangeStatus(data common.ExchangesStatus) error
-
-	UpdateExchangeNotification(exchange, action, tokenPair string, fromTime, toTime uint64, isWarning bool, msg string) error
-	GetExchangeNotifications() (common.ExchangeNotifications, error)
 }

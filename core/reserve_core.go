@@ -9,14 +9,15 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/settings"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
 const (
-	// HIGH_BOUND_GAS_PRICE is the price we will try to use to get higher priority
+	// highBoundGasPrice is the price we will try to use to get higher priority
 	// than trade tx to avoid price front running from users.
-	HIGH_BOUND_GAS_PRICE float64 = 100.1
+	highBoundGasPrice float64 = 100.1
 
 	statusFailed    = "failed"
 	statusSubmitted = "submitted"
@@ -26,17 +27,17 @@ const (
 type ReserveCore struct {
 	blockchain      Blockchain
 	activityStorage ActivityStorage
-	rm              ethereum.Address
+	setting         Setting
 }
 
 func NewReserveCore(
 	blockchain Blockchain,
 	storage ActivityStorage,
-	rm ethereum.Address) *ReserveCore {
+	setting Setting) *ReserveCore {
 	return &ReserveCore{
 		blockchain,
 		storage,
-		rm,
+		setting,
 	}
 }
 
@@ -49,17 +50,19 @@ func (self ReserveCore) CancelOrder(id common.ActivityID, exchange common.Exchan
 	if err != nil {
 		return err
 	}
-	if activity.Action != "trade" {
+	if activity.Action != common.ActionTrade {
 		return errors.New("This is not an order activity so cannot cancel")
 	}
-	base := activity.Params["base"].(string)
-	quote := activity.Params["quote"].(string)
+	base, ok := activity.Params["base"].(string)
+	if !ok {
+		return fmt.Errorf("cannot convert params base (value: %v) to tokenID (type string)", activity.Params["base"])
+	}
+	quote, ok := activity.Params["quote"].(string)
+	if !ok {
+		return fmt.Errorf("cannot convert params quote (value: %v) to tokenID (type string)", activity.Params["quote"])
+	}
 	orderId := id.EID
 	return exchange.CancelOrder(orderId, base, quote)
-}
-
-func (self ReserveCore) GetAddresses() *common.Addresses {
-	return self.blockchain.GetAddresses()
 }
 
 func (self ReserveCore) Trade(
@@ -82,11 +85,11 @@ func (self ReserveCore) Trade(
 			uid,
 			strconv.FormatFloat(done, 'f', -1, 64),
 			strconv.FormatFloat(remaining, 'f', -1, 64),
-			finished, err,
+			finished, common.ErrorToString(err),
 		)
 
 		return self.activityStorage.Record(
-			"trade",
+			common.ActionTrade,
 			uid,
 			string(exchange.ID()),
 			map[string]interface{}{
@@ -147,7 +150,7 @@ func (self ReserveCore) Deposit(
 		err         error
 		ok          bool
 		tx          *types.Transaction
-		amountFloat = common.BigToFloat(amount, token.Decimal)
+		amountFloat = common.BigToFloat(amount, token.Decimals)
 	)
 
 	uidGenerator := func(txhex string) common.ActivityID {
@@ -157,10 +160,11 @@ func (self ReserveCore) Deposit(
 		uid := uidGenerator(txhex)
 		log.Printf(
 			"Core ----------> Deposit to %s: token: %s, amount: %s, timestamp: %d ==> Result: tx: %s, error: %s",
-			exchange.ID(), token.ID, amount.Text(10), timepoint, txhex, err,
+			exchange.ID(), token.ID, amount.Text(10), timepoint, txhex, common.ErrorToString(err),
 		)
+
 		return self.activityStorage.Record(
-			"deposit",
+			common.ActionDeposit,
 			uid,
 			string(exchange.ID()),
 			map[string]interface{}{
@@ -237,13 +241,13 @@ func (self ReserveCore) Withdraw(
 			exchange.ID(), token.ID, amount.Text(10), timepoint, id, err,
 		)
 		return self.activityStorage.Record(
-			"withdraw",
+			common.ActionWithdraw,
 			uid,
 			string(exchange.ID()),
 			map[string]interface{}{
 				"exchange":  exchange,
 				"token":     token,
-				"amount":    strconv.FormatFloat(common.BigToFloat(amount, token.Decimal), 'f', -1, 64),
+				"amount":    strconv.FormatFloat(common.BigToFloat(amount, token.Decimals), 'f', -1, 64),
 				"timepoint": timepoint,
 			}, map[string]interface{}{
 				"error": common.ErrorToString(err),
@@ -274,8 +278,8 @@ func (self ReserveCore) Withdraw(
 		}
 		return common.ActivityID{}, err
 	}
-
-	id, err := exchange.Withdraw(token, amount, self.rm, timepoint)
+	reserveAddr, err := self.setting.GetAddress(settings.Reserve)
+	id, err := exchange.Withdraw(token, amount, reserveAddr, timepoint)
 	if err != nil {
 		if sErr := activityRecord("", statusFailed, err); sErr != nil {
 			log.Printf("failed to store activiry record: %s", sErr.Error())
@@ -299,7 +303,7 @@ func calculateNewGasPrice(old *big.Int, count uint64) *big.Int {
 		// new = old + (50.1 - old) / (5 - count)
 		return old.Add(
 			old,
-			big.NewInt(0).Div(big.NewInt(0).Sub(common.GweiToWei(HIGH_BOUND_GAS_PRICE), old), big.NewInt(int64(5-count))),
+			big.NewInt(0).Div(big.NewInt(0).Sub(common.GweiToWei(highBoundGasPrice), old), big.NewInt(int64(5-count))),
 		)
 	}
 }
@@ -312,9 +316,90 @@ func (self ReserveCore) pendingSetrateInfo(minedNonce uint64) (*big.Int, *big.In
 	if act == nil {
 		return nil, nil, 0, nil
 	}
-	nonce, _ := strconv.ParseUint(act.Result["nonce"].(string), 10, 64)
-	gasPrice, _ := strconv.ParseUint(act.Result["gasPrice"].(string), 10, 64)
+	nonceStr, ok := act.Result["nonce"].(string)
+	if !ok {
+		nErr := fmt.Errorf("cannot convert result[nonce] (value %v) to string type", act.Result["nonce"])
+		return nil, nil, count, nErr
+	}
+	gasPriceStr, ok := act.Result["gasPrice"].(string)
+	if !ok {
+		nErr := fmt.Errorf("cannot convert result[gasPrice] (value %v) to string type", act.Result["gasPrice"])
+		return nil, nil, count, nErr
+	}
+	nonce, err := strconv.ParseUint(nonceStr, 10, 64)
+	if err != nil {
+		return nil, nil, count, err
+	}
+	gasPrice, err := strconv.ParseUint(gasPriceStr, 10, 64)
+	if err != nil {
+		return nil, nil, count, err
+	}
 	return big.NewInt(int64(nonce)), big.NewInt(int64(gasPrice)), count, nil
+}
+
+func (self ReserveCore) GetSetRateResult(tokens []common.Token,
+	buys, sells, afpMids []*big.Int,
+	block *big.Int) (*types.Transaction, error) {
+	var (
+		tx  *types.Transaction
+		err error
+	)
+	if len(tokens) != len(buys) {
+		return tx, fmt.Errorf("Number of buys (%d) is not equal to number of tokens (%d)", len(buys), len(tokens))
+	}
+	if len(tokens) != len(sells) {
+		return tx, fmt.Errorf("Number of sell (%d) is not equal to number of tokens (%d)", len(sells), len(tokens))
+
+	}
+	if len(tokens) != len(afpMids) {
+		return tx, fmt.Errorf("Number of afpMids (%d) is not equal to number of tokens (%d)", len(afpMids), len(tokens))
+	}
+	if err = sanityCheck(buys, afpMids, sells); err != nil {
+		return tx, err
+	}
+	var tokenAddrs []ethereum.Address
+	for _, token := range tokens {
+		tokenAddrs = append(tokenAddrs, ethereum.HexToAddress(token.Address))
+	}
+	// if there is a pending set rate tx, we replace it
+	var (
+		oldNonce   *big.Int
+		oldPrice   *big.Int
+		minedNonce uint64
+		count      uint64
+	)
+	minedNonce, err = self.blockchain.SetRateMinedNonce()
+	if err != nil {
+		return tx, fmt.Errorf("Couldn't get mined nonce of set rate operator (%s)", err.Error())
+	}
+	oldNonce, oldPrice, count, err = self.pendingSetrateInfo(minedNonce)
+	log.Printf("old nonce: %v, old price: %v, count: %d, err: %s", oldNonce, oldPrice, count, common.ErrorToString(err))
+	if err != nil {
+		return tx, fmt.Errorf("Couldn't check pending set rate tx pool (%s). Please try later", err.Error())
+	}
+	if oldNonce != nil {
+		newPrice := calculateNewGasPrice(oldPrice, count)
+		log.Printf("Trying to replace old tx with new price: %s", newPrice.Text(10))
+		tx, err = self.blockchain.SetRates(
+			tokenAddrs, buys, sells, block,
+			oldNonce,
+			newPrice,
+		)
+	} else {
+		recommendedPrice := self.blockchain.StandardGasPrice()
+		var initPrice *big.Int
+		if recommendedPrice == 0 || recommendedPrice > highBoundGasPrice {
+			initPrice = common.GweiToWei(10)
+		} else {
+			initPrice = common.GweiToWei(recommendedPrice)
+		}
+		tx, err = self.blockchain.SetRates(
+			tokenAddrs, buys, sells, block,
+			big.NewInt(int64(minedNonce)),
+			initPrice,
+		)
+	}
+	return tx, err
 }
 
 func (self ReserveCore) SetRates(
@@ -325,78 +410,27 @@ func (self ReserveCore) SetRates(
 	afpMids []*big.Int,
 	additionalMsgs []string) (common.ActivityID, error) {
 
-	lentokens := len(tokens)
-	lenbuys := len(buys)
-	lensells := len(sells)
-	lenafps := len(afpMids)
+	var (
+		tx           *types.Transaction
+		txhex        string = ethereum.Hash{}.Hex()
+		txnonce      string = "0"
+		txprice      string = "0"
+		err          error
+		miningStatus string
+	)
 
-	var tx *types.Transaction
-	var txhex string = ethereum.Hash{}.Hex()
-	var txnonce string = "0"
-	var txprice string = "0"
-	var err error
-	var status string
-
-	if lentokens != lenbuys || lentokens != lensells || lentokens != lenafps {
-		err = errors.New("Tokens, buys sells and afpMids must have the same length")
-	} else {
-		err = sanityCheck(buys, afpMids, sells)
-		if err == nil {
-			tokenAddrs := []ethereum.Address{}
-			for _, token := range tokens {
-				tokenAddrs = append(tokenAddrs, ethereum.HexToAddress(token.Address))
-			}
-			// if there is a pending set rate tx, we replace it
-			var oldNonce *big.Int
-			var oldPrice *big.Int
-			var minedNonce uint64
-			var count uint64
-			minedNonce, err = self.blockchain.SetRateMinedNonce()
-			if err != nil {
-				err = errors.New("Couldn't get mined nonce of set rate operator")
-			} else {
-				oldNonce, oldPrice, count, err = self.pendingSetrateInfo(minedNonce)
-				log.Printf("old nonce: %v, old price: %v, count: %d, err: %v", oldNonce, oldPrice, count, err)
-				if err != nil {
-					err = errors.New("Couldn't check pending set rate tx pool. Please try later")
-				} else {
-					if oldNonce != nil {
-						newPrice := calculateNewGasPrice(oldPrice, count)
-						log.Printf("Trying to replace old tx with new price: %s", newPrice.Text(10))
-						tx, err = self.blockchain.SetRates(
-							tokenAddrs, buys, sells, block,
-							oldNonce,
-							newPrice,
-						)
-					} else {
-						recommendedPrice := self.blockchain.StandardGasPrice()
-						var initPrice *big.Int
-						if recommendedPrice == 0 || recommendedPrice > HIGH_BOUND_GAS_PRICE {
-							initPrice = common.GweiToWei(10)
-						} else {
-							initPrice = common.GweiToWei(recommendedPrice)
-						}
-						tx, err = self.blockchain.SetRates(
-							tokenAddrs, buys, sells, block,
-							big.NewInt(int64(minedNonce)),
-							initPrice,
-						)
-					}
-				}
-			}
-		}
-	}
+	tx, err = self.GetSetRateResult(tokens, buys, sells, afpMids, block)
 	if err != nil {
-		status = "failed"
+		miningStatus = common.MiningStatusFailed
 	} else {
-		status = "submitted"
+		miningStatus = common.MiningStatusSubmitted
 		txhex = tx.Hash().Hex()
 		txnonce = strconv.FormatUint(tx.Nonce(), 10)
 		txprice = tx.GasPrice().Text(10)
 	}
 	uid := timebasedID(txhex)
 	err = self.activityStorage.Record(
-		"set_rates",
+		common.ActionSetrate,
 		uid,
 		"blockchain",
 		map[string]interface{}{
@@ -413,12 +447,12 @@ func (self ReserveCore) SetRates(
 			"error":    common.ErrorToString(err),
 		},
 		"",
-		status,
+		miningStatus,
 		common.GetTimepoint(),
 	)
 	log.Printf(
 		"Core ----------> Set rates: ==> Result: tx: %s, nonce: %s, price: %s, error: %s",
-		txhex, txnonce, txprice, err,
+		txhex, txnonce, txprice, common.ErrorToString(err),
 	)
 	return uid, err
 }
@@ -448,8 +482,8 @@ func sanityCheck(buys, afpMid, sells []*big.Int) error {
 }
 
 func sanityCheckTrading(exchange common.Exchange, base, quote common.Token, rate, amount float64) error {
-	tokenPairID := makeTokenPair(base.ID, quote.ID)
-	exchangeInfo, err := exchange.GetExchangeInfo(tokenPairID)
+	tokenPair := makeTokenPair(base, quote)
+	exchangeInfo, err := exchange.GetExchangeInfo(tokenPair.PairID())
 	if err != nil {
 		return err
 	}
@@ -464,10 +498,13 @@ func sanityCheckTrading(exchange common.Exchange, base, quote common.Token, rate
 }
 
 func sanityCheckAmount(exchange common.Exchange, token common.Token, amount *big.Int) error {
-	exchangeFee := exchange.GetFee()
+	exchangeFee, err := exchange.GetFee()
+	if err != nil {
+		return err
+	}
 	amountFloat := big.NewFloat(0).SetInt(amount)
 	feeWithdrawing := exchangeFee.Funding.GetTokenFee(string(token.ID))
-	expDecimal := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(token.Decimal), nil)
+	expDecimal := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(token.Decimals), nil)
 	minAmountWithdraw := big.NewFloat(0)
 
 	minAmountWithdraw.Mul(big.NewFloat(feeWithdrawing), big.NewFloat(0).SetInt(expDecimal))
@@ -494,9 +531,9 @@ func checkZeroValue(buy, sell *big.Int) int {
 	return -1
 }
 
-func makeTokenPair(base, quote string) common.TokenPairID {
-	if base == "ETH" {
-		return common.NewTokenPairID(quote, base)
+func makeTokenPair(base, quote common.Token) common.TokenPair {
+	if base.ID == "ETH" {
+		return common.NewTokenPair(quote, base)
 	}
-	return common.NewTokenPairID(base, quote)
+	return common.NewTokenPair(base, quote)
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/common"
 )
 
+// ActivityStorage is the interface contains all database operations of core.
 type ActivityStorage interface {
 	Record(
 		action string,
@@ -19,6 +20,7 @@ type ActivityStorage interface {
 
 	GetActivity(id common.ActivityID) (common.ActivityRecord, error)
 
-	// PendingSetrate return the last pending set rate and number of pendint txs
+	// PendingSetrate return the last pending set rate and number of pending
+	// transactions.
 	PendingSetrate(minedNonce uint64) (*common.ActivityRecord, uint64, error)
 }

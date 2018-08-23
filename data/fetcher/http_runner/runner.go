@@ -17,7 +17,6 @@ type HttpRunner struct {
 	aticker          chan time.Time
 	rticker          chan time.Time
 	bticker          chan time.Time
-	tticker          chan time.Time
 	globalDataTicker chan time.Time
 
 	// unused tickers, keep for compatibility
@@ -67,11 +66,6 @@ func (self *HttpRunner) GetAuthDataTicker() <-chan time.Time {
 // GetRateTicker returns the rate ticker.
 func (self *HttpRunner) GetRateTicker() <-chan time.Time {
 	return self.rticker
-}
-
-// GetTradeHistoryTicker returns the trade history ticker.
-func (self *HttpRunner) GetTradeHistoryTicker() <-chan time.Time {
-	return self.tticker
 }
 
 // GetReserveRatesTicker returns the reserve rates ticker.
@@ -164,7 +158,6 @@ func NewHttpRunner(options ...HttpRunnerOption) (*HttpRunner, error) {
 	achan := make(chan time.Time)
 	rchan := make(chan time.Time)
 	bchan := make(chan time.Time)
-	tchan := make(chan time.Time)
 	rschan := make(chan time.Time)
 	lchan := make(chan time.Time)
 	tradeLogProcessorChan := make(chan time.Time)
@@ -176,7 +169,6 @@ func NewHttpRunner(options ...HttpRunnerOption) (*HttpRunner, error) {
 		aticker:                 achan,
 		rticker:                 rchan,
 		bticker:                 bchan,
-		tticker:                 tchan,
 		rsticker:                rschan,
 		lticker:                 lchan,
 		tradeLogProcessorTicker: tradeLogProcessorChan,

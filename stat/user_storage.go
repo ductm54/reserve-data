@@ -2,6 +2,11 @@ package stat
 
 import ethereum "github.com/ethereum/go-ethereum/common"
 
+// UserStorage is the interface of database contains information
+// of users that doing the currency exchanges.
+// Category is used for setting different limitations to address.
+// When a user is KYC'ed, the database stores a mapping of email
+// and Ethereum addresses for later retrieval purpose.
 type UserStorage interface {
 	UpdateAddressCategory(address ethereum.Address, cat string) error
 	UpdateUserAddresses(user string, addresses []ethereum.Address, timestamps []uint64) error

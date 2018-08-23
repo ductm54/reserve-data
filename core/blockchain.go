@@ -8,10 +8,10 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
+// Blockchain is the interface wraps around all core methods to interact
+// with Ethereum blockchain.
 type Blockchain interface {
 	StandardGasPrice() float64
-	SafeLowGasPrice() float64
-	FastGasPrice() float64
 	Send(
 		token common.Token,
 		amount *big.Int,
@@ -24,5 +24,4 @@ type Blockchain interface {
 		nonce *big.Int,
 		gasPrice *big.Int) (*types.Transaction, error)
 	SetRateMinedNonce() (uint64, error)
-	GetAddresses() *common.Addresses
 }

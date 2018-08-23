@@ -1,27 +1,37 @@
 package huobi
 
+import "fmt"
+
+const huobiAPIEndpoint = "https://api.huobi.pro"
+
+// Interface is Huobi exchange API endpoints interface.
 type Interface interface {
+	// PublicEndpoint returns the endpoint that does not requires authentication.
 	PublicEndpoint() string
+	// AuthenticatedEndpoint returns the endpoint that requires authentication.
+	// In simulation mode, authenticated endpoint is the Huobi mock server.
 	AuthenticatedEndpoint() string
 }
 
-func getOrSetDefaultURL(base_url string) string {
-	if len(base_url) > 1 {
-		return base_url + ":5200"
-	} else {
-		return "http://127.0.0.1:5200"
+// getSimulationURL returns url of the simulated Huobi endpoint.
+// It returns the local default endpoint if given URL empty.
+func getSimulationURL(baseURL string) string {
+	const port = "5200"
+	if len(baseURL) == 0 {
+		baseURL = "http://127.0.0.1"
 	}
 
+	return fmt.Sprintf("%s:%s", baseURL, port)
 }
 
 type RealInterface struct{}
 
 func (self *RealInterface) PublicEndpoint() string {
-	return "https://api.huobi.pro"
+	return huobiAPIEndpoint
 }
 
 func (self *RealInterface) AuthenticatedEndpoint() string {
-	return "https://api.huobi.pro"
+	return huobiAPIEndpoint
 }
 
 func NewRealInterface() *RealInterface {
@@ -29,77 +39,61 @@ func NewRealInterface() *RealInterface {
 }
 
 type SimulatedInterface struct {
-	base_url string
-}
-
-func (self *SimulatedInterface) baseurl() string {
-	return getOrSetDefaultURL(self.base_url)
+	baseURL string
 }
 
 func (self *SimulatedInterface) PublicEndpoint() string {
-	return self.baseurl()
+	return getSimulationURL(self.baseURL)
 }
 
 func (self *SimulatedInterface) AuthenticatedEndpoint() string {
-	return self.baseurl()
+	return getSimulationURL(self.baseURL)
 }
 
 func NewSimulatedInterface(flagVariable string) *SimulatedInterface {
-	return &SimulatedInterface{base_url: flagVariable}
+	return &SimulatedInterface{baseURL: flagVariable}
 }
 
 type RopstenInterface struct {
-	base_url string
-}
-
-func (self *RopstenInterface) baseurl() string {
-	return getOrSetDefaultURL(self.base_url)
+	baseURL string
 }
 
 func (self *RopstenInterface) PublicEndpoint() string {
-	return "https://api.huobi.pro"
+	return huobiAPIEndpoint
 }
 
 func (self *RopstenInterface) AuthenticatedEndpoint() string {
-	return self.baseurl()
+	return getSimulationURL(self.baseURL)
 }
 
 func NewRopstenInterface(flagVariable string) *RopstenInterface {
-	return &RopstenInterface{base_url: flagVariable}
+	return &RopstenInterface{baseURL: flagVariable}
 }
 
 type KovanInterface struct {
-	base_url string
-}
-
-func (self *KovanInterface) baseurl() string {
-	return getOrSetDefaultURL(self.base_url)
+	baseURL string
 }
 
 func (self *KovanInterface) PublicEndpoint() string {
-	return "https://api.huobi.pro"
+	return huobiAPIEndpoint
 }
 
 func (self *KovanInterface) AuthenticatedEndpoint() string {
-	return self.baseurl()
+	return getSimulationURL(self.baseURL)
 }
 
 func NewKovanInterface(flagVariable string) *KovanInterface {
-	return &KovanInterface{base_url: flagVariable}
+	return &KovanInterface{baseURL: flagVariable}
 }
 
 type DevInterface struct{}
 
 func (self *DevInterface) PublicEndpoint() string {
-	return "https://api.huobi.pro"
-	// return "http://192.168.24.247:5200"
-	// return "http://192.168.25.16:5100"
+	return huobiAPIEndpoint
 }
 
 func (self *DevInterface) AuthenticatedEndpoint() string {
-	return "https://api.huobi.pro"
-	// return "http://192.168.24.247:5200"
-	// return "http://192.168.25.16:5100"
+	return huobiAPIEndpoint
 }
 
 func NewDevInterface() *DevInterface {

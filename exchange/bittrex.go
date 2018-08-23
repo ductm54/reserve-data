@@ -11,104 +11,179 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/settings"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
-const BITTREX_EPSILON float64 = 0.000001
+const bittrexEpsilon float64 = 0.000001
 
 type Bittrex struct {
-	interf       BittrexInterface
-	pairs        []common.TokenPair
-	tokens       []common.Token
-	addresses    *common.ExchangeAddresses
-	storage      BittrexStorage
-	exchangeInfo *common.ExchangeInfo
-	fees         common.ExchangeFees
-	minDeposit   common.ExchangesMinDeposit
+	interf  BittrexInterface
+	storage BittrexStorage
+	setting Setting
 }
 
-func (self *Bittrex) TokenAddresses() map[string]ethereum.Address {
-	return self.addresses.GetData()
+func (self *Bittrex) TokenAddresses() (map[string]ethereum.Address, error) {
+	addrs, err := self.setting.GetDepositAddresses(settings.Bittrex)
+	if err != nil {
+		return nil, err
+	}
+	return addrs.GetData(), nil
 }
 
 func (self *Bittrex) MarshalText() (text []byte, err error) {
 	return []byte(self.ID()), nil
 }
 
+// Address return the deposit address of a token and return true if token is supported in the exchange.
+// Otherwise return false. This function will prioritize live address from exchange above the current stored address.
 func (self *Bittrex) Address(token common.Token) (ethereum.Address, bool) {
-	addr, supported := self.addresses.Get(token.ID)
-	return addr, supported
-}
-
-func (self *Bittrex) GetFee() common.ExchangeFees {
-	return self.fees
-}
-
-func (self *Bittrex) GetMinDeposit() common.ExchangesMinDeposit {
-	return self.minDeposit
-}
-
-func (self *Bittrex) UpdateAllDepositAddresses(address string) {
-	data := self.addresses.GetData()
-	for k := range data {
-		self.addresses.Update(k, ethereum.HexToAddress(address))
+	liveAddress, err := self.interf.GetDepositAddress(token.ID)
+	if err != nil || liveAddress.Result.Address == "" {
+		log.Printf("WARNING: Get Bittrex live deposit address for token %s failed: err: (%v) or the address repplied is empty . Use the currently available address instead", token.ID, err)
+		addrs, uErr := self.setting.GetDepositAddresses(settings.Bittrex)
+		if uErr != nil {
+			log.Printf("WARNING: get address of token %s in Bittrex exchange failed:(%s), it will be considered as not supported", token.ID, err.Error())
+			return ethereum.Address{}, false
+		}
+		return addrs.Get(token.ID)
 	}
-}
-
-func (self *Bittrex) UpdateDepositAddress(token common.Token, address string) {
-	liveAddress, _ := self.interf.GetDepositAddress(token.ID)
-	if liveAddress.Result.Address != "" {
-		self.addresses.Update(token.ID, ethereum.HexToAddress(liveAddress.Result.Address))
-	} else {
-		self.addresses.Update(token.ID, ethereum.HexToAddress(address))
+	log.Printf("Got Bittrex live deposit address for token %s, attempt to update it to current setting", token.ID)
+	addrs := common.NewExchangeAddresses()
+	addrs.Update(token.ID, ethereum.HexToAddress(liveAddress.Result.Address))
+	if err = self.setting.UpdateDepositAddress(settings.Bittrex, *addrs, common.GetTimepoint()); err != nil {
+		log.Printf("WARNING: can not update deposit address for token %s on Bittrex: (%s)", token.ID, err.Error())
 	}
+	return ethereum.HexToAddress(liveAddress.Result.Address), true
 }
 
-func (self *Bittrex) UpdatePrecisionLimit(pair common.TokenPair, symbols []BittPairInfo) {
-	pairName := strings.ToUpper(pair.Base.ID) + strings.ToUpper(pair.Quote.ID)
+func (self *Bittrex) GetFee() (common.ExchangeFees, error) {
+	return self.setting.GetFee(settings.Bittrex)
+}
+
+func (self *Bittrex) GetMinDeposit() (common.ExchangesMinDeposit, error) {
+	return self.setting.GetMinDeposit(settings.Bittrex)
+}
+
+func (self *Bittrex) UpdateDepositAddress(token common.Token, address string) error {
+	liveAddress, err := self.interf.GetDepositAddress(token.ID)
+	if err != nil || liveAddress.Result.Address == "" {
+		log.Printf("WARNING: Get Bittrex live deposit address for token %s failed: err: (%v) or the address repplied is empty . Use the currently available address instead", token.ID, err)
+		addrs := common.NewExchangeAddresses()
+		addrs.Update(token.ID, ethereum.HexToAddress(address))
+		return self.setting.UpdateDepositAddress(settings.Bittrex, *addrs, common.GetTimepoint())
+	}
+	log.Printf("Got Bittrex live deposit address for token %s, attempt to update it to current setting", token.ID)
+	addrs := common.NewExchangeAddresses()
+	addrs.Update(token.ID, ethereum.HexToAddress(liveAddress.Result.Address))
+	return self.setting.UpdateDepositAddress(settings.Bittrex, *addrs, common.GetTimepoint())
+}
+
+// GetLiveExchangeInfos querry the Exchange Endpoint for exchange precision and limit of a list of tokenPairIDs
+// It return error if occurs.
+func (self *Bittrex) GetLiveExchangeInfos(tokenPairIDs []common.TokenPairID) (common.ExchangeInfo, error) {
+	result := make(common.ExchangeInfo)
+	exchangeInfo, err := self.interf.GetExchangeInfo()
+	if err != nil {
+		return result, err
+	}
+	symbols := exchangeInfo.Pairs
+	for _, pairID := range tokenPairIDs {
+		exchangePrecisionLimit, ok := self.getPrecisionLimitFromSymbols(pairID, symbols)
+		if !ok {
+			return result, fmt.Errorf("Bittrex Exchange Info reply doesn't contain token pair %s", string(pairID))
+		}
+		result[pairID] = exchangePrecisionLimit
+	}
+	return result, nil
+}
+
+// getPrecisionLimitFromSymbols find the pairID amongs symbols from exchanges,
+// return ExchangePrecisionLimit of that pair and true if the pairID exist amongs symbols, false if otherwise
+func (self *Bittrex) getPrecisionLimitFromSymbols(pair common.TokenPairID, symbols []BittPairInfo) (common.ExchangePrecisionLimit, bool) {
+	var result common.ExchangePrecisionLimit
+	pairName := strings.ToUpper(strings.Replace(string(pair), "-", "", 1))
 	for _, symbol := range symbols {
-		symbolName := strings.ToUpper(symbol.Base) + strings.ToUpper(symbol.Quote)
+		symbolName := strings.ToUpper(symbol.Base + symbol.Quote)
 		if symbolName == pairName {
-			exchangePrecisionLimit := common.ExchangePrecisionLimit{}
 			//update precision
-			exchangePrecisionLimit.Precision.Amount = 8
-			exchangePrecisionLimit.Precision.Price = 8
+			result.Precision.Amount = 8
+			result.Precision.Price = 8
 			// update limit
-			exchangePrecisionLimit.AmountLimit.Min = symbol.MinAmount
-			exchangePrecisionLimit.MinNotional = 0.02
-			self.exchangeInfo.Update(pair.PairID(), exchangePrecisionLimit)
-			break
+			result.AmountLimit.Min = symbol.MinAmount
+			result.MinNotional = 0.02
+			return result, true
 		}
 	}
+	return result, false
+}
+
+func (self *Bittrex) UpdatePairsPrecision() error {
+	exchangeInfo, err := self.interf.GetExchangeInfo()
+	if err != nil {
+		return err
+	}
+	symbols := exchangeInfo.Pairs
+	exInfo, err := self.GetInfo()
+	if err != nil {
+		return fmt.Errorf("Can't get Exchange Info for Bittrex from persistent storage. (%s)", err)
+	}
+	if exInfo == nil {
+		return errors.New("Exchange info of Bittrex is nil")
+	}
+	for pair := range exInfo.GetData() {
+		exchangePrecisionLimit, exist := self.getPrecisionLimitFromSymbols(pair, symbols)
+		if !exist {
+			return fmt.Errorf("Bittrex Exchange Info reply doesn't contain token pair %s", pair)
+		}
+		exInfo[pair] = exchangePrecisionLimit
+	}
+	return self.setting.UpdateExchangeInfo(settings.Bittrex, exInfo, common.GetTimepoint())
 }
 
 func (self *Bittrex) GetExchangeInfo(pair common.TokenPairID) (common.ExchangePrecisionLimit, error) {
-	pairInfo, err := self.exchangeInfo.Get(pair)
-	return pairInfo, err
-}
-
-func (self *Bittrex) GetInfo() (*common.ExchangeInfo, error) {
-	return self.exchangeInfo, nil
-}
-
-func (self *Bittrex) UpdatePairsPrecision() {
-	exchangeInfo, err := self.interf.GetExchangeInfo()
-	if err == nil {
-		symbols := exchangeInfo.Pairs
-		for _, pair := range self.pairs {
-			self.UpdatePrecisionLimit(pair, symbols)
-		}
-	} else {
-		log.Printf("Get exchange info failed: %s\n", err)
+	exInfo, err := self.setting.GetExchangeInfo(settings.Bittrex)
+	if err != nil {
+		return common.ExchangePrecisionLimit{}, err
 	}
+	return exInfo.Get(pair)
 }
 
+func (self *Bittrex) GetInfo() (common.ExchangeInfo, error) {
+	return self.setting.GetExchangeInfo(settings.Bittrex)
+}
+
+// ID must return the exact string or else simulation will fail
 func (self *Bittrex) ID() common.ExchangeID {
-	return common.ExchangeID("bittrex")
+	return common.ExchangeID(settings.Bittrex.String())
 }
 
-func (self *Bittrex) TokenPairs() []common.TokenPair {
-	return self.pairs
+func (self *Bittrex) TokenPairs() ([]common.TokenPair, error) {
+	result := []common.TokenPair{}
+	exInfo, err := self.setting.GetExchangeInfo(settings.Bittrex)
+	if err != nil {
+		return nil, err
+	}
+	for pair := range exInfo.GetData() {
+		pairIDs := strings.Split(string(pair), "-")
+		if len(pairIDs) != 2 {
+			return result, fmt.Errorf("Bittrex PairID %s is malformed", string(pair))
+		}
+		tok1, uErr := self.setting.GetTokenByID(pairIDs[0])
+		if uErr != nil {
+			return result, fmt.Errorf("Bittrex cant get Token %s, %s", pairIDs[0], uErr)
+		}
+		tok2, uErr := self.setting.GetTokenByID(pairIDs[1])
+		if uErr != nil {
+			return result, fmt.Errorf("Bittrex cant get Token %s, %s", pairIDs[1], uErr)
+		}
+		tokPair := common.TokenPair{
+			Base:  tok1,
+			Quote: tok2,
+		}
+		result = append(result, tokPair)
+	}
+	return result, nil
 }
 
 func (self *Bittrex) Name() string {
@@ -119,11 +194,10 @@ func (self *Bittrex) QueryOrder(uuid string, timepoint uint64) (float64, float64
 	result, err := self.interf.OrderStatus(uuid)
 	if err != nil {
 		return 0, 0, false, err
-	} else {
-		remaining := result.Result.QuantityRemaining
-		done := result.Result.Quantity - remaining
-		return done, remaining, remaining < BITTREX_EPSILON, nil
 	}
+	remaining := result.Result.QuantityRemaining
+	done := result.Result.Quantity - remaining
+	return done, remaining, remaining < bittrexEpsilon, nil
 }
 
 func (self *Bittrex) Trade(tradeType string, base common.Token, quote common.Token, rate float64, amount float64, timepoint uint64) (string, float64, float64, bool, error) {
@@ -131,32 +205,28 @@ func (self *Bittrex) Trade(tradeType string, base common.Token, quote common.Tok
 
 	if err != nil {
 		return "", 0, 0, false, errors.New("Trade rejected by Bittrex")
-	} else {
-		if result.Success {
-			uuid := result.Result["uuid"]
-			done, remaining, finished, err := self.QueryOrder(
-				uuid, timepoint+20)
-			return uuid, done, remaining, finished, err
-		} else {
-			return "", 0, 0, false, errors.New(result.Error)
-		}
 	}
+	if result.Success {
+		uuid := result.Result["uuid"]
+		done, remaining, finished, err := self.QueryOrder(
+			uuid, timepoint+20)
+		return uuid, done, remaining, finished, err
+	}
+	return "", 0, 0, false, errors.New(result.Error)
 }
 
 func (self *Bittrex) Withdraw(token common.Token, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
 	resp, err := self.interf.Withdraw(token, amount, address)
 	if err != nil {
 		return "", err
-	} else {
-		if resp.Success {
-			return resp.Result["uuid"], nil
-		} else {
-			return "", errors.New(resp.Error)
-		}
 	}
+	if resp.Success {
+		return resp.Result["uuid"], nil
+	}
+	return "", errors.New(resp.Error)
 }
 
-func bitttimestampToUint64(input string) uint64 {
+func bittrexTimestampToUint64(input string) (uint64, error) {
 	var t time.Time
 	var err error
 	len := len(input)
@@ -168,9 +238,9 @@ func bitttimestampToUint64(input string) uint64 {
 		t, err = time.Parse("2006-01-02T15:04:05.0", input)
 	}
 	if err != nil {
-		panic(err)
+		return 0, err
 	}
-	return uint64(t.UnixNano() / int64(time.Millisecond))
+	return uint64(t.UnixNano() / int64(time.Millisecond)), nil
 }
 
 func (self *Bittrex) DepositStatus(
@@ -185,83 +255,80 @@ func (self *Bittrex) DepositStatus(
 	}
 	amount, err := strconv.ParseFloat(idParts[2], 64)
 	if err != nil {
-		panic(err)
+		return "", fmt.Errorf("cannot parse amount to float64 (%s)", err)
 	}
 	histories, err := self.interf.DepositHistory(currency)
 	if err != nil {
 		return "", err
-	} else {
-		for _, deposit := range histories.Result {
-			log.Printf("Bittrex deposit history check: %v %v %v %v",
-				deposit.Currency == currency,
-				deposit.Amount-amount < BITTREX_EPSILON,
-				bitttimestampToUint64(deposit.LastUpdated) > timestamp/uint64(time.Millisecond),
-				self.storage.IsNewBittrexDeposit(deposit.Id, id),
-			)
-			log.Printf("deposit.Currency: %s", deposit.Currency)
-			log.Printf("currency: %s", currency)
-			log.Printf("deposit.Amount: %f", deposit.Amount)
-			log.Printf("amount: %f", amount)
-			log.Printf("deposit.LastUpdated: %d", bitttimestampToUint64(deposit.LastUpdated))
-			log.Printf("timestamp: %d", timestamp/uint64(time.Millisecond))
-			log.Printf("is new deposit: %t", self.storage.IsNewBittrexDeposit(deposit.Id, id))
-			if deposit.Currency == currency &&
-				deposit.Amount-amount < BITTREX_EPSILON &&
-				bitttimestampToUint64(deposit.LastUpdated) > timestamp/uint64(time.Millisecond) &&
-				self.storage.IsNewBittrexDeposit(deposit.Id, id) {
-				if err := self.storage.RegisterBittrexDeposit(deposit.Id, id); err != nil {
-					log.Printf("Register bittrex deposit error: %s", err.Error())
-				}
-				return "done", nil
-			}
-		}
-		return "", nil
 	}
+	for _, deposit := range histories.Result {
+		uint64Timestamp, err := bittrexTimestampToUint64(deposit.LastUpdated)
+		if err != nil {
+			return "", fmt.Errorf("cannot parse timestamp to uint64 (%s)", err)
+		}
+		log.Printf("Bittrex deposit history check: %v %v %v %v",
+			deposit.Currency == currency,
+			deposit.Amount-amount < bittrexEpsilon,
+			uint64Timestamp > timestamp/uint64(time.Millisecond),
+			self.storage.IsNewBittrexDeposit(deposit.Id, id),
+		)
+		log.Printf("deposit.Currency: %s", deposit.Currency)
+		log.Printf("currency: %s", currency)
+		log.Printf("deposit.Amount: %f", deposit.Amount)
+		log.Printf("amount: %f", amount)
+		log.Printf("deposit.LastUpdated: %d", uint64Timestamp)
+		log.Printf("timestamp: %d", timestamp/uint64(time.Millisecond))
+		log.Printf("is new deposit: %t", self.storage.IsNewBittrexDeposit(deposit.Id, id))
+		if deposit.Currency == currency &&
+			deposit.Amount-amount < bittrexEpsilon &&
+			uint64Timestamp > timestamp/uint64(time.Millisecond) &&
+			self.storage.IsNewBittrexDeposit(deposit.Id, id) {
+			if err := self.storage.RegisterBittrexDeposit(deposit.Id, id); err != nil {
+				log.Printf("Register bittrex deposit error: %s", err.Error())
+			}
+			return common.ExchangeStatusDone, nil
+		}
+	}
+	return "", nil
 }
 
 func (self *Bittrex) CancelOrder(id, base, quote string) error {
 	resp, err := self.interf.CancelOrder(id)
 	if err != nil {
 		return err
-	} else {
-		if resp.Success {
-			return nil
-		} else {
-			return errors.New(resp.Error)
-		}
 	}
+	if resp.Success {
+		return nil
+	}
+	return errors.New(resp.Error)
 }
 
 func (self *Bittrex) WithdrawStatus(id, currency string, amount float64, timepoint uint64) (string, string, error) {
 	histories, err := self.interf.WithdrawHistory(currency)
 	if err != nil {
 		return "", "", err
-	} else {
-		for _, withdraw := range histories.Result {
-			if withdraw.PaymentUuid == id {
-				if withdraw.PendingPayment {
-					return "", withdraw.TxId, nil
-				} else {
-					return "done", withdraw.TxId, nil
-				}
-			}
-		}
-		log.Printf("Withdraw with uuid " + id + " of currency " + currency + " is not found on bittrex")
-		return "", "", nil
 	}
+	for _, withdraw := range histories.Result {
+		if withdraw.PaymentUuid == id {
+			if withdraw.PendingPayment {
+				return "", withdraw.TxId, nil
+			}
+			return common.ExchangeStatusDone, withdraw.TxId, nil
+		}
+	}
+	log.Printf("Withdraw with uuid " + id + " of currency " + currency + " is not found on bittrex")
+	return "", "", nil
 }
 
 func (self *Bittrex) OrderStatus(uuid string, base, quote string) (string, error) {
 	resp_data, err := self.interf.OrderStatus(uuid)
 	if err != nil {
 		return "", err
-	} else {
-		if resp_data.Result.IsOpen {
-			return "", nil
-		} else {
-			return "done", nil
-		}
 	}
+	if resp_data.Result.IsOpen {
+		return "", nil
+	}
+	return common.ExchangeStatusDone, nil
 }
 
 func (self *Bittrex) FetchOnePairData(wq *sync.WaitGroup, pair common.TokenPair, data *sync.Map, timepoint uint64) {
@@ -306,7 +373,10 @@ func (self *Bittrex) FetchOnePairData(wq *sync.WaitGroup, pair common.TokenPair,
 func (self *Bittrex) FetchPriceData(timepoint uint64) (map[common.TokenPairID]common.ExchangePrice, error) {
 	wait := sync.WaitGroup{}
 	data := sync.Map{}
-	pairs := self.pairs
+	pairs, err := self.TokenPairs()
+	if err != nil {
+		return nil, err
+	}
 	for _, pair := range pairs {
 		wait.Add(1)
 		go self.FetchOnePairData(&wait, pair, &data, timepoint)
@@ -314,10 +384,20 @@ func (self *Bittrex) FetchPriceData(timepoint uint64) (map[common.TokenPairID]co
 	wait.Wait()
 	result := map[common.TokenPairID]common.ExchangePrice{}
 	data.Range(func(key, value interface{}) bool {
-		result[key.(common.TokenPairID)] = value.(common.ExchangePrice)
+		tokenPairID, ok := key.(common.TokenPairID)
+		if !ok {
+			err = fmt.Errorf("Key (%v) cannot be asserted to TokenPairID", key)
+			return false
+		}
+		exPrice, ok := value.(common.ExchangePrice)
+		if !ok {
+			err = fmt.Errorf("Value (%v) cannot be asserted to ExchangePrice", value)
+			return false
+		}
+		result[tokenPairID] = exPrice
 		return true
 	})
-	return result, nil
+	return result, err
 }
 
 func (self *Bittrex) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, error) {
@@ -338,7 +418,7 @@ func (self *Bittrex) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, 
 		if resp_data.Success {
 			for _, b := range resp_data.Result {
 				tokenID := b.Currency
-				_, err := common.GetInternalToken(tokenID)
+				_, err := self.setting.GetTokenByID(tokenID)
 				if err == nil {
 					result.AvailableBalance[tokenID] = b.Available
 					result.DepositBalance[tokenID] = b.Pending
@@ -348,7 +428,11 @@ func (self *Bittrex) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, 
 			// check if bittrex returned balance for all of the
 			// supported token.
 			// If it didn't, it is considered invalid
-			if len(result.AvailableBalance) != len(self.tokens) {
+			depositAddresses, err := self.setting.GetDepositAddresses(settings.Bittrex)
+			if err != nil {
+				return result, fmt.Errorf("Can't Get deposit addresses of Bittrex for validation (%s)", err)
+			}
+			if len(result.AvailableBalance) != len(depositAddresses) {
 				result.Valid = false
 				result.Error = "Bittrex didn't return balance for all supported tokens"
 			}
@@ -395,21 +479,43 @@ func (self *Bittrex) FetchOnePairTradeHistory(
 func (self *Bittrex) FetchTradeHistory() {
 	t := time.NewTicker(10 * time.Minute)
 	go func() {
-		pairs := common.TradeHistoryTokenPairs()
 		for {
 			result := map[common.TokenPairID][]common.TradeHistory{}
 			timepoint := common.GetTimepoint()
 			data := sync.Map{}
+			pairs, err := self.TokenPairs()
+			if err != nil {
+				log.Printf("Bittrex fetch trade history failed (%s). This might due to pairs setting hasn't been init yet", err.Error())
+				continue
+			}
 			wait := sync.WaitGroup{}
 			for _, pair := range pairs {
 				wait.Add(1)
 				go self.FetchOnePairTradeHistory(&wait, &data, pair, timepoint)
 			}
 			wait.Wait()
+			var integrity bool = true
 			data.Range(func(key, value interface{}) bool {
-				result[key.(common.TokenPairID)] = value.([]common.TradeHistory)
+				tokenPairID, ok := key.(common.TokenPairID)
+				//if there is conversion error, continue to next key,val
+				if !ok {
+					log.Printf("Key (%v) cannot be asserted to TokenPairID", key)
+					integrity = false
+					return false
+				}
+				tradeHistories, ok := value.([]common.TradeHistory)
+				if !ok {
+					log.Printf("Value (%v) cannot be asserted to []TradeHistory", value)
+					integrity = false
+					return false
+				}
+				result[tokenPairID] = tradeHistories
 				return true
 			})
+			if !integrity {
+				log.Print("Bittrex fetch trade history returns corrupted. Try again in 10 mins")
+				continue
+			}
 			if err := self.storage.StoreTradeHistory(result); err != nil {
 				log.Printf("Bittrex store trade history error: %s", err.Error())
 			}
@@ -422,22 +528,15 @@ func (self *Bittrex) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTr
 	return self.storage.GetTradeHistory(fromTime, toTime)
 }
 
-func NewBittrex(addressConfig map[string]string,
-	feeConfig common.ExchangeFees,
+func NewBittrex(
 	interf BittrexInterface,
 	storage BittrexStorage,
-	minDepositConfig common.ExchangesMinDeposit) *Bittrex {
-	tokens, pairs, fees, minDeposit := getExchangePairsAndFeesFromConfig(addressConfig, feeConfig, minDepositConfig, "bittrex")
+	setting Setting) (*Bittrex, error) {
 	bittrex := &Bittrex{
 		interf,
-		pairs,
-		tokens,
-		common.NewExchangeAddresses(),
 		storage,
-		common.NewExchangeInfo(),
-		fees,
-		minDeposit,
+		setting,
 	}
 	bittrex.FetchTradeHistory()
-	return bittrex
+	return bittrex, nil
 }

@@ -8,12 +8,17 @@ import (
 	"runtime"
 
 	"github.com/KyberNetwork/reserve-data"
+	"github.com/KyberNetwork/reserve-data/blockchain"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http"
 	"github.com/spf13/cobra"
 )
 
-const remoteLogPath string = "core-log"
+const (
+	remoteLogPath  string = "core-log"
+	defaultBaseURL        = "http://127.0.0.1"
+	coreDefaultURL string = "http://127.0.0.1:8000"
+)
 
 // logDir is located at base of this repository.
 var logDir = filepath.Join(filepath.Dir(filepath.Dir(common.CurrentDir())), "log")
@@ -25,6 +30,7 @@ var enableStat bool
 var noCore bool
 var stdoutLog bool
 var dryrun bool
+var coreURL string
 
 func serverStart(_ *cobra.Command, _ []string) {
 	numCPU := runtime.NumCPU()
@@ -37,45 +43,50 @@ func serverStart(_ *cobra.Command, _ []string) {
 	}
 	//get configuration from ENV variable
 	kyberENV := common.RunningMode()
-	InitInterface(kyberENV)
+	InitInterface()
 	config := GetConfigFromENV(kyberENV)
 	backupLog(config.Archive)
 
-	var rData reserve.ReserveData
-	var rCore reserve.ReserveCore
-	var rStat reserve.ReserveStats
-
-	//set static field supportExchange from common...
-	for _, ex := range config.Exchanges {
-		common.SupportedExchanges[ex.ID()] = ex
-	}
-
-	//Create blockchain object
-	bc, err := CreateBlockchain(config, kyberENV)
-	if err != nil {
-		log.Panicf("Can not create blockchain: (%s)", err)
-	}
-
+	var (
+		rData reserve.ReserveData
+		rCore reserve.ReserveCore
+		rStat reserve.ReserveStats
+		bc    *blockchain.Blockchain
+	)
 	//Create Data and Core, run if not in dry mode
 	if !noCore {
+		var iErr error
+		//create blockchain only if there is core
+		bc, iErr = CreateBlockchain(config, kyberENV)
+		if iErr != nil {
+			log.Panicf("Can not create blockchain: (%s)", iErr)
+		}
 		rData, rCore = CreateDataCore(config, kyberENV, bc)
 		if !dryrun {
-			if kyberENV != common.SIMULATION_MODE {
-				if err := rData.RunStorageController(); err != nil {
+			if kyberENV != common.SimulationMode {
+				if iErr = rData.RunStorageController(); iErr != nil {
 					log.Panic(err)
 				}
 			}
-			if err := rData.Run(); err != nil {
-				log.Panic(err)
+			if iErr = rData.Run(); iErr != nil {
+				log.Panic(iErr)
 			}
+		}
+		//set static field supportExchange from common...
+		for _, ex := range config.Exchanges {
+			common.SupportedExchanges[ex.ID()] = ex
 		}
 	}
 
 	//Create Stat, run if not in dry mode
 	if enableStat {
-		rStat = CreateStat(config, kyberENV, bc)
+		stbc, err := CreateStatBlockChain(config.Blockchain, config.AddressSetting, kyberENV)
+		if err != nil {
+			log.Panic(err)
+		}
+		rStat = CreateStat(config, kyberENV, stbc)
 		if !dryrun {
-			if kyberENV != common.SIMULATION_MODE {
+			if kyberENV != common.SimulationMode {
 				if err := rStat.RunStorageController(); err != nil {
 					log.Panic(err)
 				}
@@ -95,6 +106,7 @@ func serverStart(_ *cobra.Command, _ []string) {
 		config.EnableAuthentication,
 		config.AuthEngine,
 		kyberENV,
+		bc, config.Setting,
 	)
 
 	if !dryrun {
@@ -118,11 +130,11 @@ func init() {
 	startServer.Flags().BoolVarP(&noAuthEnable, "noauth", "", false, "disable authentication")
 	startServer.Flags().IntVarP(&servPort, "port", "p", 8000, "server port")
 	startServer.Flags().StringVar(&endpointOW, "endpoint", "", "endpoint, default to configuration file")
-	startServer.PersistentFlags().StringVar(&base_url, "base_url", "http://127.0.0.1", "base_url for authenticated enpoint")
+	startServer.PersistentFlags().StringVar(&base_url, "base_url", defaultBaseURL, "base_url for authenticated enpoint")
 	startServer.Flags().BoolVarP(&enableStat, "enable-stat", "", false, "enable stat related fetcher and api, event logs will not be fetched")
 	startServer.Flags().BoolVarP(&noCore, "no-core", "", false, "disable core related fetcher and api, this should be used only when we want to run an independent stat server")
 	startServer.Flags().BoolVarP(&stdoutLog, "log-to-stdout", "", false, "send log to both log file and stdout terminal")
 	startServer.Flags().BoolVarP(&dryrun, "dryrun", "", false, "only test if all the configs are set correctly, will not actually run core")
-
+	startServer.Flags().StringVar(&coreURL, "core-url", coreDefaultURL, "core url from which stat can call for setting APis")
 	RootCmd.AddCommand(startServer)
 }

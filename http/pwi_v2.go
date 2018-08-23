@@ -2,9 +2,10 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 
+	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
-	"github.com/KyberNetwork/reserve-data/metric"
 	"github.com/gin-gonic/gin"
 )
 
@@ -32,19 +33,20 @@ func (self *HTTPServer) SetPWIEquationV2(c *gin.Context) {
 	}
 
 	data := []byte(postForm.Get(dataPostFormKey))
-	if len(data) > MAX_DATA_SIZE {
+	if len(data) > maxDataSize {
 		httputil.ResponseFailure(c, httputil.WithError(errDataSizeExceed))
 		return
 	}
 
-	var input metric.PWIEquationRequestV2
+	var input common.PWIEquationRequestV2
 	if err := json.Unmarshal(data, &input); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	if !input.IsValid() {
-		httputil.ResponseFailure(c, httputil.WithReason("invalid input"))
-		return
+	for tokenID := range input {
+		if _, err := self.setting.GetInternalTokenByID(tokenID); err != nil {
+			httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Token %s is unsupported", tokenID)))
+		}
 	}
 
 	if err := self.metric.StorePendingPWIEquationV2(data); err != nil {

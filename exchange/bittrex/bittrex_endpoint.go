@@ -29,8 +29,9 @@ func nonce() string {
 	return strconv.Itoa(int(timestamp))
 }
 
-func addPath(original string, path string) string {
+func mustAddPath(original string, path string) string {
 	url, err := url.Parse(original)
+	// If parsing raises error, this mean configuration is wrong.
 	if err != nil {
 		panic(err)
 	}
@@ -87,7 +88,7 @@ func (self *BittrexEndpoint) GetResponse(
 func (self *BittrexEndpoint) GetExchangeInfo() (exchange.BittExchangeInfo, error) {
 	result := exchange.BittExchangeInfo{}
 	respBody, err := self.GetResponse(
-		addPath(self.interf.PublicEndpoint(), "getmarkets"),
+		mustAddPath(self.interf.PublicEndpoint(), "getmarkets"),
 		map[string]string{},
 		false,
 	)
@@ -100,7 +101,7 @@ func (self *BittrexEndpoint) GetExchangeInfo() (exchange.BittExchangeInfo, error
 func (self *BittrexEndpoint) FetchOnePairData(pair common.TokenPair) (exchange.Bittresp, error) {
 	data := exchange.Bittresp{}
 	respBody, err := self.GetResponse(
-		addPath(self.interf.PublicEndpoint(), "getorderbook"),
+		mustAddPath(self.interf.PublicEndpoint(), "getorderbook"),
 		map[string]string{
 			"market": fmt.Sprintf("%s-%s", pair.Quote.ID, pair.Base.ID),
 			"type":   "both",
@@ -123,9 +124,9 @@ func (self *BittrexEndpoint) Trade(
 	result := exchange.Bitttrade{}
 	var url string
 	if tradeType == "sell" {
-		url = addPath(self.interf.MarketEndpoint(), "selllimit")
+		url = mustAddPath(self.interf.MarketEndpoint(), "selllimit")
 	} else {
-		url = addPath(self.interf.MarketEndpoint(), "buylimit")
+		url = mustAddPath(self.interf.MarketEndpoint(), "buylimit")
 	}
 	params := map[string]string{
 		"market":   fmt.Sprintf("%s-%s", strings.ToUpper(quote.ID), strings.ToUpper(base.ID)),
@@ -145,7 +146,7 @@ func (self *BittrexEndpoint) Trade(
 func (self *BittrexEndpoint) OrderStatus(uuid string) (exchange.Bitttraderesult, error) {
 	result := exchange.Bitttraderesult{}
 	respBody, err := self.GetResponse(
-		addPath(self.interf.AccountEndpoint(), "getorder"),
+		mustAddPath(self.interf.AccountEndpoint(), "getorder"),
 		map[string]string{
 			"uuid": uuid,
 		},
@@ -161,7 +162,7 @@ func (self *BittrexEndpoint) OrderStatus(uuid string) (exchange.Bitttraderesult,
 func (self *BittrexEndpoint) GetDepositAddress(currency string) (exchange.BittrexDepositAddress, error) {
 	result := exchange.BittrexDepositAddress{}
 	respBody, err := self.GetResponse(
-		addPath(self.interf.AccountEndpoint(), "getdepositaddress"),
+		mustAddPath(self.interf.AccountEndpoint(), "getdepositaddress"),
 		map[string]string{
 			"currency": currency,
 		},
@@ -176,7 +177,7 @@ func (self *BittrexEndpoint) GetDepositAddress(currency string) (exchange.Bittre
 func (self *BittrexEndpoint) WithdrawHistory(currency string) (exchange.Bittwithdrawhistory, error) {
 	result := exchange.Bittwithdrawhistory{}
 	respBody, err := self.GetResponse(
-		addPath(self.interf.AccountEndpoint(), "getwithdrawalhistory"),
+		mustAddPath(self.interf.AccountEndpoint(), "getwithdrawalhistory"),
 		map[string]string{
 			"currency": currency,
 		},
@@ -192,7 +193,7 @@ func (self *BittrexEndpoint) WithdrawHistory(currency string) (exchange.Bittwith
 func (self *BittrexEndpoint) DepositHistory(currency string) (exchange.Bittdeposithistory, error) {
 	result := exchange.Bittdeposithistory{}
 	respBody, err := self.GetResponse(
-		addPath(self.interf.AccountEndpoint(), "getdeposithistory"),
+		mustAddPath(self.interf.AccountEndpoint(), "getdeposithistory"),
 		map[string]string{
 			"currency": currency,
 		},
@@ -208,10 +209,10 @@ func (self *BittrexEndpoint) DepositHistory(currency string) (exchange.Bittdepos
 func (self *BittrexEndpoint) Withdraw(token common.Token, amount *big.Int, address ethereum.Address) (exchange.Bittwithdraw, error) {
 	result := exchange.Bittwithdraw{}
 	respBody, err := self.GetResponse(
-		addPath(self.interf.AccountEndpoint(), "withdraw"),
+		mustAddPath(self.interf.AccountEndpoint(), "withdraw"),
 		map[string]string{
 			"currency": strings.ToUpper(token.ID),
-			"quantity": strconv.FormatFloat(common.BigToFloat(amount, token.Decimal), 'f', -1, 64),
+			"quantity": strconv.FormatFloat(common.BigToFloat(amount, token.Decimals), 'f', -1, 64),
 			"address":  address.Hex(),
 		},
 		true,
@@ -226,7 +227,7 @@ func (self *BittrexEndpoint) Withdraw(token common.Token, amount *big.Int, addre
 func (self *BittrexEndpoint) GetInfo() (exchange.Bittinfo, error) {
 	result := exchange.Bittinfo{}
 	respBody, err := self.GetResponse(
-		addPath(self.interf.AccountEndpoint(), "getbalances"),
+		mustAddPath(self.interf.AccountEndpoint(), "getbalances"),
 		map[string]string{},
 		true,
 	)
@@ -240,7 +241,7 @@ func (self *BittrexEndpoint) GetInfo() (exchange.Bittinfo, error) {
 func (self *BittrexEndpoint) CancelOrder(uuid string) (exchange.Bittcancelorder, error) {
 	result := exchange.Bittcancelorder{}
 	respBody, err := self.GetResponse(
-		addPath(self.interf.MarketEndpoint(), "cancel"),
+		mustAddPath(self.interf.MarketEndpoint(), "cancel"),
 		map[string]string{
 			"uuid": uuid,
 		},
@@ -261,7 +262,7 @@ func (self *BittrexEndpoint) GetAccountTradeHistory(base, quote common.Token) (e
 		params["market"] = symbol
 	}
 	respBody, err := self.GetResponse(
-		addPath(self.interf.AccountEndpoint(), "getorderhistory"),
+		mustAddPath(self.interf.AccountEndpoint(), "getorderhistory"),
 		params,
 		true,
 	)

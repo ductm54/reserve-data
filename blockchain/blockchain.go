@@ -5,10 +5,13 @@ import (
 	"log"
 	"math/big"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
+	huobiblockchain "github.com/KyberNetwork/reserve-data/exchange/huobi/blockchain"
+	"github.com/KyberNetwork/reserve-data/settings"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -16,8 +19,8 @@ import (
 )
 
 const (
-	PRICING_OP string = "pricingOP"
-	DEPOSIT_OP string = "depositOP"
+	pricingOP = "pricingOP"
+	depositOP = "depositOP"
 
 	// feeToWalletEvent is the topic of event AssignFeeToWallet(address reserve, address wallet, uint walletFee).
 	feeToWalletEvent = "0x366bc34352215bf0bd3b527cfd6718605e1f5938777e42bcd8ed92f578368f52"
@@ -57,25 +60,15 @@ func newTBIndex(bulkIndex, indexInBulk uint64) tbindex {
 
 type Blockchain struct {
 	*blockchain.BaseBlockchain
-	wrapper       *blockchain.Contract
-	pricing       *blockchain.Contract
-	reserve       *blockchain.Contract
-	rm            ethereum.Address
-	wrapperAddr   ethereum.Address
-	pricingAddr   ethereum.Address
-	burnerAddr    ethereum.Address
-	networkAddr   ethereum.Address
-	internalAddr  ethereum.Address
-	whitelistAddr ethereum.Address
-	oldNetworks   []ethereum.Address
-	oldBurners    []ethereum.Address
-	tokens        []common.Token
-	tokenIndices  map[string]tbindex
+	wrapper      *blockchain.Contract
+	pricing      *blockchain.Contract
+	reserve      *blockchain.Contract
+	tokenIndices map[string]tbindex
+	mu           sync.RWMutex
 
 	localSetRateNonce     uint64
 	setRateNonceTimestamp uint64
-
-	gasOracle *GasOracle
+	setting               Setting
 }
 
 func (self *Blockchain) StandardGasPrice() float64 {
@@ -88,86 +81,45 @@ func (self *Blockchain) StandardGasPrice() float64 {
 	return common.BigToFloat(price, 9)
 }
 
-func (self *Blockchain) FastGasPrice() float64 {
-	if self.gasOracle == nil {
-		return 0
-	}
-	return self.gasOracle.Fast
-}
-
-func (self *Blockchain) SafeLowGasPrice() float64 {
-	if self.gasOracle == nil {
-		return 0
-	}
-	return self.gasOracle.SafeLow
-}
-
-func (self *Blockchain) AddGasOracle(gasOracle *GasOracle) {
-	self.gasOracle = gasOracle
-}
-
-func (self *Blockchain) AddOldNetwork(addr ethereum.Address) {
-	self.oldNetworks = append(self.oldNetworks, addr)
-}
-
-func (self *Blockchain) AddOldBurners(addr ethereum.Address) {
-	self.oldBurners = append(self.oldBurners, addr)
-}
-
-func (self *Blockchain) AddToken(t common.Token) {
-	self.tokens = append(self.tokens, t)
-}
-
-func (self *Blockchain) GetAddresses() *common.Addresses {
-	exs := map[common.ExchangeID]common.TokenAddresses{}
-	for _, ex := range common.SupportedExchanges {
-		exs[ex.ID()] = ex.TokenAddresses()
-	}
-	tokens := map[string]common.TokenInfo{}
-	for _, t := range self.tokens {
-		tokens[t.ID] = common.TokenInfo{
-			Address:  ethereum.HexToAddress(t.Address),
-			Decimals: t.Decimal,
-		}
-	}
-	opAddrs := self.OperatorAddresses()
-	return &common.Addresses{
-		Tokens:           tokens,
-		Exchanges:        exs,
-		WrapperAddress:   self.wrapperAddr,
-		PricingAddress:   self.pricingAddr,
-		ReserveAddress:   self.rm,
-		FeeBurnerAddress: self.burnerAddr,
-		NetworkAddress:   self.networkAddr,
-		PricingOperator:  opAddrs[PRICING_OP],
-		DepositOperator:  opAddrs[DEPOSIT_OP],
-	}
-}
-
-func (self *Blockchain) LoadAndSetTokenIndices() error {
-	tokens := []ethereum.Address{}
-	self.tokenIndices = map[string]tbindex{}
-
-	log.Printf("tokens: %v", self.tokens)
-	for _, tok := range self.tokens {
-		if tok.ID != "ETH" {
-			tokens = append(tokens, ethereum.HexToAddress(tok.Address))
-		} else {
-			// this is not really needed. Just a safe guard. Use a very big indices so it is does not exist.
-			self.tokenIndices[ethereum.HexToAddress(tok.Address).Hex()] = newTBIndex(1000000, 1000000)
-		}
-	}
+func (self *Blockchain) CheckTokenIndices(tokenAddr ethereum.Address) error {
 	opts := self.GetCallOpts(0)
-	log.Printf("tokens: %v", tokens)
-	bulkIndices, indicesInBulk, err := self.GeneratedGetTokenIndicies(
+	pricingAddr, err := self.setting.GetAddress(settings.Pricing)
+	if err != nil {
+		return err
+	}
+	tokenAddrs := []ethereum.Address{}
+	tokenAddrs = append(tokenAddrs, tokenAddr)
+	_, _, err = self.GeneratedGetTokenIndicies(
 		opts,
-		self.pricingAddr,
-		tokens,
+		pricingAddr,
+		tokenAddrs,
 	)
 	if err != nil {
 		return err
 	}
-	for i, tok := range tokens {
+	return nil
+}
+
+func (self *Blockchain) LoadAndSetTokenIndices(tokenAddrs []ethereum.Address) error {
+	self.mu.Lock()
+	defer self.mu.Unlock()
+	self.tokenIndices = map[string]tbindex{}
+	// this is not really needed. Just a safe guard. Use a very big indices so it would not exist.
+	self.tokenIndices[ethereum.HexToAddress(self.setting.ETHToken().Address).Hex()] = tbindex{1000000, 1000000}
+	opts := self.GetCallOpts(0)
+	pricingAddr, err := self.setting.GetAddress(settings.Pricing)
+	if err != nil {
+		return err
+	}
+	bulkIndices, indicesInBulk, err := self.GeneratedGetTokenIndicies(
+		opts,
+		pricingAddr,
+		tokenAddrs,
+	)
+	if err != nil {
+		return err
+	}
+	for i, tok := range tokenAddrs {
 		self.tokenIndices[tok.Hex()] = newTBIndex(
 			bulkIndices[i].Uint64(),
 			indicesInBulk[i].Uint64(),
@@ -179,12 +131,12 @@ func (self *Blockchain) LoadAndSetTokenIndices() error {
 
 func (self *Blockchain) RegisterPricingOperator(signer blockchain.Signer, nonceCorpus blockchain.NonceCorpus) {
 	log.Printf("reserve pricing address: %s", signer.GetAddress().Hex())
-	self.RegisterOperator(PRICING_OP, blockchain.NewOperator(signer, nonceCorpus))
+	self.MustRegisterOperator(pricingOP, blockchain.NewOperator(signer, nonceCorpus))
 }
 
 func (self *Blockchain) RegisterDepositOperator(signer blockchain.Signer, nonceCorpus blockchain.NonceCorpus) {
 	log.Printf("reserve depositor address: %s", signer.GetAddress().Hex())
-	self.RegisterOperator(DEPOSIT_OP, blockchain.NewOperator(signer, nonceCorpus))
+	self.MustRegisterOperator(depositOP, blockchain.NewOperator(signer, nonceCorpus))
 }
 
 func readablePrint(data map[ethereum.Address]byte) string {
@@ -208,11 +160,14 @@ func (self *Blockchain) SetRates(
 	block *big.Int,
 	nonce *big.Int,
 	gasPrice *big.Int) (*types.Transaction, error) {
-
+	pricingAddr, err := self.setting.GetAddress(settings.Pricing)
+	if err != nil {
+		return nil, err
+	}
 	block.Add(block, big.NewInt(1))
 	copts := self.GetCallOpts(0)
 	baseBuys, baseSells, _, _, _, err := self.GeneratedGetTokenRates(
-		copts, self.pricingAddr, tokens,
+		copts, pricingAddr, tokens,
 	)
 	if err != nil {
 		return nil, err
@@ -250,7 +205,7 @@ func (self *Blockchain) SetRates(
 		newCSells,
 		self.tokenIndices,
 	)
-	opts, err := self.GetTxOpts(PRICING_OP, nonce, gasPrice, nil)
+	opts, err := self.GetTxOpts(pricingOP, nonce, gasPrice, nil)
 	if err != nil {
 		log.Printf("Getting transaction opts failed, err: %s", err)
 		return nil, err
@@ -292,9 +247,8 @@ func (self *Blockchain) SetRates(
 		}
 		if err != nil {
 			return nil, err
-		} else {
-			return self.SignAndBroadcast(tx, PRICING_OP)
 		}
+		return self.SignAndBroadcast(tx, pricingOP)
 	}
 }
 
@@ -303,64 +257,64 @@ func (self *Blockchain) Send(
 	amount *big.Int,
 	dest ethereum.Address) (*types.Transaction, error) {
 
-	opts, err := self.GetTxOpts(DEPOSIT_OP, nil, nil, nil)
+	opts, err := self.GetTxOpts(depositOP, nil, nil, nil)
 	if err != nil {
 		return nil, err
-	} else {
-		tx, err := self.GeneratedWithdraw(
-			opts,
-			ethereum.HexToAddress(token.Address),
-			amount, dest)
-		if err != nil {
-			return nil, err
-		} else {
-			return self.SignAndBroadcast(tx, DEPOSIT_OP)
-		}
 	}
+	tx, err := self.GeneratedWithdraw(
+		opts,
+		ethereum.HexToAddress(token.Address),
+		amount, dest)
+	if err != nil {
+		return nil, err
+	}
+	return self.SignAndBroadcast(tx, depositOP)
 }
 
 func (self *Blockchain) SetImbalanceStepFunction(token ethereum.Address, xBuy []*big.Int, yBuy []*big.Int, xSell []*big.Int, ySell []*big.Int) (*types.Transaction, error) {
-	opts, err := self.GetTxOpts(PRICING_OP, nil, nil, nil)
+	opts, err := self.GetTxOpts(pricingOP, nil, nil, nil)
 	if err != nil {
 		log.Printf("Getting transaction opts failed, err: %s", err)
 		return nil, err
-	} else {
-		tx, err := self.GeneratedSetImbalanceStepFunction(opts, token, xBuy, yBuy, xSell, ySell)
-		if err != nil {
-			return nil, err
-		}
-		return self.SignAndBroadcast(tx, PRICING_OP)
 	}
+	tx, err := self.GeneratedSetImbalanceStepFunction(opts, token, xBuy, yBuy, xSell, ySell)
+	if err != nil {
+		return nil, err
+	}
+	return self.SignAndBroadcast(tx, pricingOP)
 }
 
 func (self *Blockchain) SetQtyStepFunction(token ethereum.Address, xBuy []*big.Int, yBuy []*big.Int, xSell []*big.Int, ySell []*big.Int) (*types.Transaction, error) {
-	opts, err := self.GetTxOpts(PRICING_OP, nil, nil, nil)
+	opts, err := self.GetTxOpts(pricingOP, nil, nil, nil)
 	if err != nil {
 		log.Printf("Getting transaction opts failed, err: %s", err)
 		return nil, err
-	} else {
-		tx, err := self.GeneratedSetQtyStepFunction(opts, token, xBuy, yBuy, xSell, ySell)
-		if err != nil {
-			return nil, err
-		}
-		return self.SignAndBroadcast(tx, PRICING_OP)
 	}
+	tx, err := self.GeneratedSetQtyStepFunction(opts, token, xBuy, yBuy, xSell, ySell)
+	if err != nil {
+		return nil, err
+	}
+	return self.SignAndBroadcast(tx, pricingOP)
 }
 
 //====================== Readonly calls ============================
 func (self *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint64) (map[string]common.BalanceEntry, error) {
 	result := map[string]common.BalanceEntry{}
 	tokens := []ethereum.Address{}
-	for _, tok := range self.tokens {
+	tokensSetting, err := self.setting.GetInternalTokens()
+	if err != nil {
+		return result, err
+	}
+	for _, tok := range tokensSetting {
 		tokens = append(tokens, ethereum.HexToAddress(tok.Address))
 	}
 	timestamp := common.GetTimestamp()
 	opts := self.GetCallOpts(atBlock)
 	balances, err := self.GeneratedGetBalances(opts, reserve, tokens)
 	returnTime := common.GetTimestamp()
-	log.Printf("Fetcher ------> balances: %v, err: %s", balances, err)
+	log.Printf("Fetcher ------> balances: %v, err: %s", balances, common.ErrorToString(err))
 	if err != nil {
-		for _, token := range common.InternalTokens() {
+		for _, token := range tokensSetting {
 			result[token.ID] = common.BalanceEntry{
 				Valid:      false,
 				Error:      err.Error(),
@@ -369,7 +323,7 @@ func (self *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint6
 			}
 		}
 	} else {
-		for i, tok := range self.tokens {
+		for i, tok := range tokensSetting {
 			if balances[i].Cmp(Big0) == 0 || balances[i].Cmp(BigMax) > 0 {
 				log.Printf("Fetcher ------> balances of token %s is invalid", tok.ID)
 				result[tok.ID] = common.BalanceEntry{
@@ -396,7 +350,11 @@ func (self *Blockchain) FetchRates(atBlock uint64, currentBlock uint64) (common.
 	result := common.AllRateEntry{}
 	tokenAddrs := []ethereum.Address{}
 	validTokens := []common.Token{}
-	for _, s := range self.tokens {
+	tokenSettings, err := self.setting.GetInternalTokens()
+	if err != nil {
+		return result, err
+	}
+	for _, s := range tokenSettings {
 		if s.ID != "ETH" {
 			tokenAddrs = append(tokenAddrs, ethereum.HexToAddress(s.Address))
 			validTokens = append(validTokens, s)
@@ -404,8 +362,12 @@ func (self *Blockchain) FetchRates(atBlock uint64, currentBlock uint64) (common.
 	}
 	timestamp := common.GetTimestamp()
 	opts := self.GetCallOpts(atBlock)
+	pricingAddr, err := self.setting.GetAddress(settings.Pricing)
+	if err != nil {
+		return result, err
+	}
 	baseBuys, baseSells, compactBuys, compactSells, blocks, err := self.GeneratedGetTokenRates(
-		opts, self.pricingAddr, tokenAddrs,
+		opts, pricingAddr, tokenAddrs,
 	)
 	if err != nil {
 		return result, err
@@ -426,7 +388,6 @@ func (self *Blockchain) FetchRates(atBlock uint64, currentBlock uint64) (common.
 		)
 	}
 	return result, nil
-
 }
 
 func (self *Blockchain) GetReserveRates(
@@ -436,7 +397,7 @@ func (self *Blockchain) GetReserveRates(
 	rates := common.ReserveRates{}
 	rates.Timestamp = common.GetTimepoint()
 
-	ETH := common.ETHToken()
+	ETH := self.setting.ETHToken()
 	srcAddresses := []ethereum.Address{}
 	destAddresses := []ethereum.Address{}
 	for _, token := range tokens {
@@ -470,110 +431,8 @@ func (self *Blockchain) GetPrice(token ethereum.Address, block *big.Int, priceTy
 	opts := self.GetCallOpts(atBlock)
 	if priceType == "buy" {
 		return self.GeneratedGetRate(opts, token, block, true, qty)
-	} else {
-		return self.GeneratedGetRate(opts, token, block, false, qty)
 	}
-}
-
-func (self *Blockchain) GetRawLogs(fromBlock uint64, toBlock uint64) ([]types.Log, error) {
-	var (
-		from      = big.NewInt(int64(fromBlock))
-		to        = big.NewInt(int64(toBlock))
-		addresses []ethereum.Address
-	)
-
-	addresses = append(addresses, self.networkAddr, self.internalAddr, self.burnerAddr, self.whitelistAddr)
-	addresses = append(addresses, self.oldNetworks...)
-	addresses = append(addresses, self.oldBurners...)
-
-	param := common.NewFilterQuery(
-		from,
-		to,
-		addresses,
-		[][]ethereum.Hash{
-			{
-				ethereum.HexToHash(tradeEvent),
-				ethereum.HexToHash(burnFeeEvent),
-				ethereum.HexToHash(feeToWalletEvent),
-				ethereum.HexToHash(userCatEvent),
-				ethereum.HexToHash(etherReceivalEvent),
-			},
-		},
-	)
-
-	log.Printf("LogFetcher - fetching logs data from block %d, to block %d", fromBlock, to.Uint64())
-	return self.BaseBlockchain.GetLogs(param)
-}
-
-// GetLogs gets raw logs from blockchain and process it before returning.
-func (self *Blockchain) GetLogs(fromBlock uint64, toBlock uint64) ([]common.KNLog, error) {
-	var (
-		err      error
-		result   []common.KNLog
-		noCatLog = 0
-	)
-
-	// get all logs from fromBlock to best block
-	logs, err := self.GetRawLogs(fromBlock, toBlock)
-	if err != nil {
-		return result, err
-	}
-
-	for _, logItem := range logs {
-		if logItem.Removed {
-			log.Printf("LogFetcher - Log is ignored because it is removed due to chain reorg")
-			continue
-		}
-
-		if len(logItem.Topics) == 0 {
-			log.Printf("Getting empty zero topic list. This shouldn't happen and is Ethereum responsibility.")
-			continue
-		}
-
-		ts, err := self.InterpretTimestamp(
-			logItem.BlockNumber,
-			logItem.Index,
-		)
-		if err != nil {
-			return result, err
-		}
-
-		topic := logItem.Topics[0]
-		switch topic.Hex() {
-		case userCatEvent:
-			addr, cat := logDataToCatLog(logItem.Data)
-			result = append(result, common.SetCatLog{
-				Timestamp:       ts,
-				BlockNumber:     logItem.BlockNumber,
-				TransactionHash: logItem.TxHash,
-				Index:           logItem.Index,
-				Address:         addr,
-				Category:        cat,
-			})
-			noCatLog++
-		case feeToWalletEvent, burnFeeEvent, etherReceivalEvent, tradeEvent:
-			if result, err = updateTradeLogs(result, logItem, ts); err != nil {
-				return result, err
-			}
-		default:
-			log.Printf("Unknown topic: %s", topic.Hex())
-		}
-	}
-
-	for i, logItem := range result {
-		tradeLog, ok := logItem.(common.TradeLog)
-		if !ok {
-			continue
-		}
-
-		ethRate := self.GetEthRate(tradeLog.Timestamp / 1000000)
-		if ethRate != 0 {
-			result[i] = calculateFiatAmount(tradeLog, ethRate)
-		}
-	}
-
-	log.Printf("LogFetcher - Fetched %d trade logs, %d cat logs", len(result)-noCatLog, noCatLog)
-	return result, nil
+	return self.GeneratedGetRate(opts, token, block, false, qty)
 }
 
 // SetRateMinedNonce returns nonce of the pricing operator in confirmed
@@ -589,7 +448,7 @@ func (self *Blockchain) GetLogs(fromBlock uint64, toBlock uint64) ([]common.KNLo
 // because the chain might be reorganized so we will invalidate it
 // and assign it to the nonce from node.
 func (self *Blockchain) SetRateMinedNonce() (uint64, error) {
-	nonceFromNode, err := self.GetMinedNonce(PRICING_OP)
+	nonceFromNode, err := self.GetMinedNonce(pricingOP)
 	if err != nil {
 		return nonceFromNode, err
 	}
@@ -622,28 +481,48 @@ func (self *Blockchain) GetPricingMethod(inputData string) (*abi.Method, error) 
 	return method, nil
 }
 
-func NewBlockchain(
-	base *blockchain.BaseBlockchain,
-	wrapperAddr, pricingAddr, burnerAddr,
-	networkAddr, internalAddr, reserveAddr, whitelistAddr ethereum.Address) (*Blockchain, error) {
+func NewBlockchain(base *blockchain.BaseBlockchain, setting Setting) (*Blockchain, error) {
+	wrapperAddr, err := setting.GetAddress(settings.Wrapper)
+	if err != nil {
+		return nil, err
+	}
 	log.Printf("wrapper address: %s", wrapperAddr.Hex())
 	wrapper := blockchain.NewContract(
 		wrapperAddr,
 		filepath.Join(common.CurrentDir(), "wrapper.abi"),
 	)
+	reserveAddr, err := setting.GetAddress(settings.Reserve)
+	if err != nil {
+		return nil, err
+	}
 	log.Printf("reserve address: %s", reserveAddr.Hex())
 	reserve := blockchain.NewContract(
 		reserveAddr,
 		filepath.Join(common.CurrentDir(), "reserve.abi"),
 	)
+	pricingAddr, err := setting.GetAddress(settings.Pricing)
+	if err != nil {
+		return nil, err
+	}
 	log.Printf("pricing address: %s", pricingAddr.Hex())
 	pricing := blockchain.NewContract(
 		pricingAddr,
 		filepath.Join(common.CurrentDir(), "pricing.abi"),
 	)
-
+	burnerAddr, err := setting.GetAddress(settings.Burner)
+	if err != nil {
+		return nil, err
+	}
 	log.Printf("burner address: %s", burnerAddr.Hex())
+	networkAddr, err := setting.GetAddress(settings.Network)
+	if err != nil {
+		return nil, err
+	}
 	log.Printf("network address: %s", networkAddr.Hex())
+	whitelistAddr, err := setting.GetAddress(settings.Whitelist)
+	if err != nil {
+		return nil, err
+	}
 	log.Printf("whitelist address: %s", whitelistAddr.Hex())
 
 	return &Blockchain{
@@ -652,18 +531,21 @@ func NewBlockchain(
 		// 	client, etherCli, operators, blockchain.NewBroadcaster(clients),
 		// 	ethUSDRate, chainType,
 		// ),
-		wrapper:       wrapper,
-		pricing:       pricing,
-		reserve:       reserve,
-		rm:            reserveAddr,
-		wrapperAddr:   wrapperAddr,
-		pricingAddr:   pricingAddr,
-		burnerAddr:    burnerAddr,
-		networkAddr:   networkAddr,
-		internalAddr:  internalAddr,
-		whitelistAddr: whitelistAddr,
-		oldNetworks:   []ethereum.Address{},
-		oldBurners:    []ethereum.Address{},
-		tokens:        []common.Token{},
+		wrapper: wrapper,
+		pricing: pricing,
+		reserve: reserve,
+		setting: setting,
 	}, nil
+}
+
+func (self *Blockchain) GetPricingOPAddress() ethereum.Address {
+	return self.MustGetOperator(pricingOP).Address
+}
+
+func (self *Blockchain) GetDepositOPAddress() ethereum.Address {
+	return self.MustGetOperator(depositOP).Address
+}
+
+func (self *Blockchain) GetIntermediatorOPAddress() ethereum.Address {
+	return self.MustGetOperator(huobiblockchain.HuobiOP).Address
 }
