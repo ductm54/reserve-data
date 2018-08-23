@@ -537,8 +537,3 @@ func makeTokenPair(base, quote common.Token) common.TokenPair {
 	}
 	return common.NewTokenPair(base, quote)
 }
-
-//GetStepFunctionData return step function data and error if happen
-func (rc ReserveCore) GetStepFunctionData(token ethereum.Address) (common.StepFunctionResponse, error) {
-	return rc.blockchain.GetStepFunctionData(token)
-}

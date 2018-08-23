@@ -10,4 +10,5 @@ type Setting interface {
 	GetAddress(settings.AddressName) (ethereum.Address, error)
 	GetExchangeStatus() (common.ExchangesStatus, error)
 	UpdateExchangeStatus(common.ExchangesStatus) error
+	GetInternalTokens() ([]common.Token, error)
 }

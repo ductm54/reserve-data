@@ -994,3 +994,6 @@ type StepFunctionResponse struct {
 	QuantityStepResponse  QuantityStepFunction  `json:"quantity_step_function"`
 	ImbalanceStepResponse ImbalanceStepFunction `json:"imbalance_step_function"`
 }
+
+//StepFunctionData save data for each token map[tokenID]StepFunctionResponse
+type StepFunctionData map[string]StepFunctionResponse

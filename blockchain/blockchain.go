@@ -552,13 +552,13 @@ func (self *Blockchain) GetIntermediatorOPAddress() ethereum.Address {
 
 func (bc *Blockchain) getDetailStepFunctionData(opts blockchain.CallOpts, token ethereum.Address, command *big.Int) ([]*big.Int, error) {
 	var result []*big.Int
-	paramLength, err := bc.GeneratedGetStepFunctionData(token, command, big.NewInt(0))
+	paramLength, err := bc.GeneratedGetStepFunctionData(opts, token, command, big.NewInt(0))
 	if err != nil {
 		return result, err
 	}
 	command.Add(command, big.NewInt(1))
 	for index := int64(0); index < paramLength.Int64(); index++ {
-		response, err := bc.GeneratedGetStepFunctionData(token, command, big.NewInt(index))
+		response, err := bc.GeneratedGetStepFunctionData(opts, token, command, big.NewInt(index))
 		if err != nil {
 			return result, err
 		}
@@ -568,10 +568,10 @@ func (bc *Blockchain) getDetailStepFunctionData(opts blockchain.CallOpts, token 
 }
 
 //GetStepFunctionData return step function for a token from blockchain
-func (bc *Blockchain) GetStepFunctionData(token ethereum.Address) (common.StepFunctionResponse, error) {
+func (bc *Blockchain) GetStepFunctionData(atBlock uint64, token ethereum.Address) (common.StepFunctionResponse, error) {
 	var result common.StepFunctionResponse
 	var err error
-	opts := bc.GetCallOpts(0)
+	opts := bc.GetCallOpts(atBlock)
 	// Get quantity step function
 	/// Get xBuy quantity step function data
 	result.BlockNumber, err = bc.CurrentBlock()

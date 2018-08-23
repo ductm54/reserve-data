@@ -186,6 +186,7 @@ func CreateDataCore(config *configuration.Config, kyberENV string, bc *blockchai
 	//get fetcher based on config and ENV == simulation.
 	dataFetcher := fetcher.NewFetcher(
 		config.FetcherStorage,
+		config.StepFunctionDataStorage,
 		config.FetcherGlobalStorage,
 		config.World,
 		config.FetcherRunner,
@@ -202,6 +203,7 @@ func CreateDataCore(config *configuration.Config, kyberENV string, bc *blockchai
 	dataFetcher.SetBlockchain(bc)
 	rData := data.NewReserveData(
 		config.DataStorage,
+		config.StepFunctionDataStorage,
 		dataFetcher,
 		config.DataControllerRunner,
 		config.Archive,

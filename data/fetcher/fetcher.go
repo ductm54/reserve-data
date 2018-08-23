@@ -17,33 +17,36 @@ import (
 const maxActivityLifeTime uint64 = 6 // activity max life time in hour
 
 type Fetcher struct {
-	storage                Storage
-	globalStorage          GlobalStorage
-	exchanges              []Exchange
-	blockchain             Blockchain
-	theworld               TheWorld
-	runner                 FetcherRunner
-	currentBlock           uint64
-	currentBlockUpdateTime uint64
-	simulationMode         bool
-	setting                Setting
+	storage                 Storage
+	stepFunctionDataStorage StepFunctionDataStorage
+	globalStorage           GlobalStorage
+	exchanges               []Exchange
+	blockchain              Blockchain
+	theworld                TheWorld
+	runner                  FetcherRunner
+	currentBlock            uint64
+	currentBlockUpdateTime  uint64
+	simulationMode          bool
+	setting                 Setting
 }
 
 func NewFetcher(
 	storage Storage,
+	stepFunctionDataStorage StepFunctionDataStorage,
 	globalStorage GlobalStorage,
 	theworld TheWorld,
 	runner FetcherRunner,
 	simulationMode bool, setting Setting) *Fetcher {
 	return &Fetcher{
-		storage:        storage,
-		globalStorage:  globalStorage,
-		exchanges:      []Exchange{},
-		blockchain:     nil,
-		theworld:       theworld,
-		runner:         runner,
-		simulationMode: simulationMode,
-		setting:        setting,
+		storage:                 storage,
+		stepFunctionDataStorage: stepFunctionDataStorage,
+		globalStorage:           globalStorage,
+		exchanges:               []Exchange{},
+		blockchain:              nil,
+		theworld:                theworld,
+		runner:                  runner,
+		simulationMode:          simulationMode,
+		setting:                 setting,
 	}
 }
 
@@ -86,6 +89,7 @@ func (self *Fetcher) Run() error {
 	go self.RunRateFetcher()
 	go self.RunBlockFetcher()
 	go self.RunGlobalDataFetcher()
+	go self.RunStepFunctionDataStorage()
 	log.Printf("Fetcher runner is running...")
 	return nil
 }
@@ -742,4 +746,66 @@ func (self *Fetcher) fetchPriceFromExchange(wg *sync.WaitGroup, exchange Exchang
 	for pair, exchangeData := range exdata {
 		data.SetOnePrice(exchange.ID(), pair, exchangeData)
 	}
+}
+
+func (fc *Fetcher) RunStepFunctionDataStorage() {
+	tick := time.NewTicker(1 * time.Minute)
+	for {
+		data := sync.Map{}
+		// fetch all data from blcokchain
+		fc.fetchStepFunctionData(&data)
+
+		// convert data from sync map to go object
+		result := common.StepFunctionData{}
+		data.Range(func(k, v interface{}) bool {
+			token := k.(string)
+			stepData := v.(common.StepFunctionResponse)
+			result[token] = stepData
+			return true
+		})
+
+		// save data to storage
+		fc.stepFunctionDataStorage.StoreStepFunctionData(result)
+		<-tick.C
+	}
+}
+
+func (fc *Fetcher) fetchStepFunctionData(data *sync.Map) {
+
+	// get current blockchain block
+	block, err := fc.blockchain.CurrentBlock()
+	if err != nil {
+		log.Printf("Cannot get current block: %s", err.Error())
+	}
+
+	// get internal token list
+	tokens, err := fc.setting.GetInternalTokens()
+	if err != nil {
+		log.Printf("Cannot get internal tokens: %s", err.Error())
+	}
+
+	// fetch each token step function data
+	wait := sync.WaitGroup{}
+	for _, token := range tokens {
+		if token.IsETH() {
+			continue
+		}
+		wait.Add(1)
+		go fc.fetchTokenStepFunctionData(&wait, block, token, data)
+	}
+	wait.Wait()
+}
+
+func (fc *Fetcher) fetchTokenStepFunctionData(wait *sync.WaitGroup, block uint64, token common.Token, data *sync.Map) {
+
+	defer wait.Done()
+
+	tokenAddr := ethereum.HexToAddress(token.Address)
+
+	result, err := fc.blockchain.GetStepFunctionData(block, tokenAddr)
+	if err != nil {
+		log.Printf("Cannot get step function data for token: %s, err: %s", token.ID, err.Error())
+	}
+
+	data.Store(token.ID, result)
 }
