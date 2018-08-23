@@ -800,25 +800,15 @@ func (fc *Fetcher) fetchStepFunctionData(data *sync.Map) error {
 		}
 		wait.Add(1)
 		go func(errCh chan error, token common.Token) {
-			// defer wait.Done()
+			defer wait.Done()
 			err := fc.fetchTokenStepFunctionData(&wait, block, token, data)
 			if err != nil {
 				errCh <- err
 			}
 		}(fetchStepFunctionDataErrCh, token)
-		// go func(token common.Token) {
-		// 	err := fc.fetchTokenStepFunctionData(&wait, block, token, data)
-		// 	if err != nil {
-		// 		log.Printf("fetch token step function data error: %s - %s", token.ID, err.Error())
-		// 	}
-		// }(token)
 	}
-	// wait.Wait()
 	go func(errCh chan error) {
 		wait.Wait()
-		// if err := <-fetchStepFunctionDataErrCh; err == nil {
-		// 	close(fetchStepFunctionDataErrCh)
-		// }
 		close(fetchStepFunctionDataErrCh)
 	}(fetchStepFunctionDataErrCh)
 
@@ -826,8 +816,6 @@ func (fc *Fetcher) fetchStepFunctionData(data *sync.Map) error {
 }
 
 func (fc *Fetcher) fetchTokenStepFunctionData(wait *sync.WaitGroup, block uint64, token common.Token, data *sync.Map) error {
-
-	defer wait.Done()
 
 	tokenAddr := ethereum.HexToAddress(token.Address)
 
