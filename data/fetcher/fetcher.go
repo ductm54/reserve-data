@@ -794,11 +794,11 @@ func (fc *Fetcher) fetchStepFunctionData(data *sync.Map) error {
 
 	// fetch each token step function data
 	wait := sync.WaitGroup{}
+	wait.Add(len(tokens) - 1)
 	for _, token := range tokens {
 		if token.IsETH() {
 			continue
 		}
-		wait.Add(1)
 		go func(errCh chan error, token common.Token) {
 			defer wait.Done()
 			err := fc.fetchTokenStepFunctionData(&wait, block, token, data)
