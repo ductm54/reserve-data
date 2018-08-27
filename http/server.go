@@ -1244,17 +1244,13 @@ func (self *HTTPServer) GetReserveVolume(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithReason("reserve address is required"))
 		return
 	}
-	tokenName := c.Query("token")
-	if tokenName == "" {
+	tokenID := c.Query("token")
+	if tokenID == "" {
 		httputil.ResponseFailure(c, httputil.WithReason("token is required"))
 		return
 	}
-	token, err := self.setting.GetActiveTokenByID(tokenName)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	data, err := self.stat.GetReserveVolume(fromTime, toTime, freq, reserveAddr, token.Address)
+
+	data, err := self.stat.GetReserveVolume(fromTime, toTime, freq, reserveAddr, tokenID)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return

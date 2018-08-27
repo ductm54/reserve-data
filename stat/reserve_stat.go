@@ -157,16 +157,19 @@ func (self ReserveStats) GetUsersVolume(fromTime, toTime uint64, freq string, us
 	return result, err
 }
 
-func (self ReserveStats) GetReserveVolume(fromTime, toTime uint64, freq, reserveAddr, tokenAddr string) (common.StatTicks, error) {
+func (self ReserveStats) GetReserveVolume(fromTime, toTime uint64, freq, reserveAddr, tokenID string) (common.StatTicks, error) {
 	data := common.StatTicks{}
-
-	fromTime, toTime, err := validateTimeWindow(fromTime, toTime, freq)
+	token, err := self.setting.GetActiveTokenByID(tokenID)
+	if err != nil {
+		return data, err
+	}
+	fromTime, toTime, err = validateTimeWindow(fromTime, toTime, freq)
 	if err != nil {
 		return data, err
 	}
 
 	reserveAddr = strings.ToLower(reserveAddr)
-	tokenAddr = strings.ToLower(tokenAddr)
+	tokenAddr := strings.ToLower(token.Address)
 	data, err = self.statStorage.GetReserveVolume(fromTime, toTime, freq, ethereum.HexToAddress(reserveAddr), ethereum.HexToAddress(tokenAddr))
 	return data, err
 }
