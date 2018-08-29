@@ -1,6 +1,7 @@
 package blockchain_test
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/KyberNetwork/reserve-data/blockchain"
@@ -76,9 +77,13 @@ func TestGetStepDetailStepFunctionData(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rsp, err := bc.GetStepFunctionData(blockNum, ethereum.HexToAddress(token))
+	opts := bc.GetCallOpts(blockNum)
+	result, err := bc.GeneratedGetStepFunctionData(opts, ethereum.HexToAddress(token), big.NewInt(13), big.NewInt(1))
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Log(rsp)
+
+	if result.Cmp(big.NewInt(0)) >= 0 {
+		t.Errorf("expected result to be <0, got: %s", result.String())
+	}
 }
