@@ -78,6 +78,8 @@ func TestGetStepDetailStepFunctionData(t *testing.T) {
 	}
 
 	opts := bc.GetCallOpts(blockNum)
+	// https://etherscan.io/address/0x798AbDA6Cc246D0EDbA912092A2a3dBd3d11191B#readContract
+	// -361025371366737575936
 	result, err := bc.GeneratedGetStepFunctionData(opts, ethereum.HexToAddress(token), big.NewInt(13), big.NewInt(1))
 	if err != nil {
 		t.Fatal(err)
