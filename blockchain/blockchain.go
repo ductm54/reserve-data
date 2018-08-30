@@ -550,6 +550,20 @@ func (self *Blockchain) GetIntermediatorOPAddress() ethereum.Address {
 	return self.MustGetOperator(huobiblockchain.HuobiOP).Address
 }
 
+func processBigIntOutput(ret *big.Int) *big.Int {
+	var maxUint256 = big.NewInt(0).Exp(big.NewInt(2), big.NewInt(256), nil)
+	maxUint256 = big.NewInt(0).Add(maxUint256, big.NewInt(-1))
+
+	var maxInt256 = big.NewInt(0).Exp(big.NewInt(2), big.NewInt(255), nil)
+	maxInt256 = big.NewInt(0).Add(maxInt256, big.NewInt(-1))
+
+	if ret.Cmp(maxInt256) > 0 {
+		ret.Add(maxUint256, big.NewInt(0).Neg(ret)).Add(ret, big.NewInt(1))
+		ret.Neg(ret)
+	}
+	return ret
+}
+
 func (bc *Blockchain) getDetailStepFunctionData(opts blockchain.CallOpts, token ethereum.Address, command *big.Int) ([]*big.Int, error) {
 	var result []*big.Int
 	paramLength, err := bc.GeneratedGetStepFunctionData(opts, token, command, big.NewInt(0))
@@ -562,7 +576,8 @@ func (bc *Blockchain) getDetailStepFunctionData(opts blockchain.CallOpts, token 
 		if err != nil {
 			return result, err
 		}
-		result = append(result, response)
+		ret := processBigIntOutput(response)
+		result = append(result, ret)
 	}
 	return result, nil
 }
