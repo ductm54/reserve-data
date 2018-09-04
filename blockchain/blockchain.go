@@ -587,8 +587,6 @@ func (bc *Blockchain) GetStepFunctionData(atBlock uint64, token ethereum.Address
 	var result common.StepFunctionResponse
 	var err error
 	opts := bc.GetCallOpts(atBlock)
-	// Get quantity step function
-	result.BlockNumber = atBlock
 
 	/// Get xBuy quantity step function data
 	result.QuantityStepResponse.XBuy, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(0))

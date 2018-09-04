@@ -752,23 +752,31 @@ func (fc *Fetcher) RunStepFunctionDataStorage() {
 	tick := time.NewTicker(1 * time.Minute)
 	for {
 		data := sync.Map{}
+		// get current blockchain block
+		block, err := fc.blockchain.CurrentBlock()
+		if err != nil {
+			log.Printf("Cannot get current block: %s", err.Error())
+		}
+
 		// fetch all data from blcokchain
-		err := fc.fetchStepFunctionData(&data)
+		err = fc.fetchStepFunctionData(&data, block)
 
 		if err != nil {
 			log.Printf("fetch step function data error: %s", err.Error())
 		} else {
 			// convert data from sync map to go object
 			result := common.StepFunctionData{}
+			result.BlockNumber = block
+			result.Tokens = map[string]common.StepFunctionResponse{}
+
 			data.Range(func(k, v interface{}) bool {
 				token := k.(string)
 				stepData := v.(common.StepFunctionResponse)
-				result[token] = stepData
+				result.Tokens[token] = stepData
 				return true
 			})
 
 			// save data to storage
-			log.Printf("Result length: %d", len(result))
 			err := fc.stepFunctionDataStorage.StoreStepFunctionData(result)
 			if err != nil {
 				log.Printf("Store step function data error: %s", err.Error())
@@ -778,13 +786,8 @@ func (fc *Fetcher) RunStepFunctionDataStorage() {
 	}
 }
 
-func (fc *Fetcher) fetchStepFunctionData(data *sync.Map) error {
+func (fc *Fetcher) fetchStepFunctionData(data *sync.Map, block uint64) error {
 	var fetchStepFunctionDataErrCh = make(chan error)
-	// get current blockchain block
-	block, err := fc.blockchain.CurrentBlock()
-	if err != nil {
-		log.Printf("Cannot get current block: %s", err.Error())
-	}
 
 	// get internal token list
 	tokens, err := fc.setting.GetInternalTokens()
