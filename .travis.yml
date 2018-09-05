@@ -11,7 +11,6 @@ install:
   - go get github.com/mattn/goveralls
 
 script:
-  - mv
   - gometalinter --config=gometalinter.json ./...
   - $GOPATH/bin/goveralls -v -race -service=travis-ci
 
