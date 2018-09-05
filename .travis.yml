@@ -1,7 +1,5 @@
 sudo: required
 
-go_import_path: github.com/KyberNetwork/reserve-data
-
 language: go
 
 services:
@@ -13,6 +11,7 @@ install:
   - go get github.com/mattn/goveralls
 
 script:
+  - mv
   - gometalinter --config=gometalinter.json ./...
   - $GOPATH/bin/goveralls -v -race -service=travis-ci
 
@@ -27,4 +26,8 @@ deploy:
     all_branches: true
 
 go:
+  - "1.10.x"
   - "1.11.x"
+
+env:
+  - GO111MODULE=on
