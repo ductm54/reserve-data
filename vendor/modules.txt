@@ -40,7 +40,9 @@ github.com/boltdb/bolt
 github.com/btcsuite/btcd/btcec
 # github.com/certifi/gocertifi v0.0.0-20170727155124-3fd9e1adb12b
 github.com/certifi/gocertifi
-# github.com/ethereum/go-ethereum v0.0.0-20171018091612-eea996e4e182
+# github.com/deckarep/golang-set v0.0.0-20180831180637-cbaa98ba5575
+github.com/deckarep/golang-set
+# github.com/ethereum/go-ethereum v1.8.15
 github.com/ethereum/go-ethereum/common
 github.com/ethereum/go-ethereum/accounts/abi
 github.com/ethereum/go-ethereum/accounts/abi/bind
@@ -53,15 +55,17 @@ github.com/ethereum/go-ethereum/crypto/sha3
 github.com/ethereum/go-ethereum/common/math
 github.com/ethereum/go-ethereum/crypto
 github.com/ethereum/go-ethereum/accounts/keystore
+github.com/ethereum/go-ethereum/event
 github.com/ethereum/go-ethereum/log
 github.com/ethereum/go-ethereum/params
 github.com/ethereum/go-ethereum/rlp
 github.com/ethereum/go-ethereum/trie
+github.com/ethereum/go-ethereum/p2p/netutil
 github.com/ethereum/go-ethereum/crypto/secp256k1
 github.com/ethereum/go-ethereum/accounts
-github.com/ethereum/go-ethereum/crypto/randentropy
-github.com/ethereum/go-ethereum/event
 github.com/ethereum/go-ethereum/common/mclock
+github.com/ethereum/go-ethereum/ethdb
+github.com/ethereum/go-ethereum/metrics
 # github.com/getsentry/raven-go v0.0.0-20170918144728-1452f6376ddb
 github.com/getsentry/raven-go
 # github.com/gin-contrib/cors v0.0.0-20180828005559-6653abe07894
@@ -81,6 +85,8 @@ github.com/go-ini/ini
 github.com/go-stack/stack
 # github.com/golang/protobuf v0.0.0-20170920220647-130e6b02ab05
 github.com/golang/protobuf/proto
+# github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db
+github.com/golang/snappy
 # github.com/inconshreveable/mousetrap v1.0.0
 github.com/inconshreveable/mousetrap
 # github.com/jinzhu/now v0.0.0-20180511015916-ed742868f2ae
@@ -101,8 +107,6 @@ github.com/oschwald/geoip2-golang
 github.com/oschwald/maxminddb-golang
 # github.com/pborman/uuid v0.0.0-20170612153648-e790cca94e6c
 github.com/pborman/uuid
-# github.com/rcrowley/go-metrics v0.0.0-20180503174638-e2704e165165
-github.com/rcrowley/go-metrics
 # github.com/rjeczalik/notify v0.0.0-20171021140106-767eb674ef14
 github.com/rjeczalik/notify
 # github.com/robfig/cron v0.0.0-20180505203441-b41be1df6967
@@ -113,6 +117,19 @@ github.com/rs/cors
 github.com/spf13/cobra
 # github.com/spf13/pflag v1.0.2
 github.com/spf13/pflag
+# github.com/syndtr/goleveldb v0.0.0-20180815032940-ae2bd5eed72d
+github.com/syndtr/goleveldb/leveldb
+github.com/syndtr/goleveldb/leveldb/errors
+github.com/syndtr/goleveldb/leveldb/filter
+github.com/syndtr/goleveldb/leveldb/iterator
+github.com/syndtr/goleveldb/leveldb/opt
+github.com/syndtr/goleveldb/leveldb/util
+github.com/syndtr/goleveldb/leveldb/cache
+github.com/syndtr/goleveldb/leveldb/comparer
+github.com/syndtr/goleveldb/leveldb/journal
+github.com/syndtr/goleveldb/leveldb/memdb
+github.com/syndtr/goleveldb/leveldb/storage
+github.com/syndtr/goleveldb/leveldb/table
 # github.com/ugorji/go v0.0.0-20170918222552-54210f4e076c
 github.com/ugorji/go/codec
 # golang.org/x/crypto v0.0.0-20171023145632-2509b142fb2b
@@ -120,14 +137,12 @@ golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/scrypt
 # golang.org/x/net v0.0.0-20171024115130-4b14673ba32b
 golang.org/x/net/websocket
-# golang.org/x/sys v0.0.0-20171017063910-8dbc5d05d6ed
+# golang.org/x/sys v0.0.0-20180905064716-d9c697bf0b2a
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 # golang.org/x/tools v0.0.0-20171013181403-9bd2f442688b
 golang.org/x/tools/imports
 golang.org/x/tools/go/ast/astutil
-# gopkg.in/fatih/set.v0 v0.2.1
-gopkg.in/fatih/set.v0
 # gopkg.in/go-playground/validator.v8 v8.18.2
 gopkg.in/go-playground/validator.v8
 # gopkg.in/karalabe/cookiejar.v2 v2.0.0-20150724131613-8dcd6a7f4951
