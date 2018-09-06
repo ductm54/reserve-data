@@ -2652,6 +2652,200 @@ Response
   }
 ```
 
+### Get step function data
+GET request
+
+```shell
+<host>:8000/get-step-function-data
+```
+
+Example:
+
+```shell
+curl -X "GET" "http://localhost:8000/get-step-function-data"
+```
+
+Sample response:
+
+```json
+{
+    "data": {
+        "block_number": 6268056,
+        "tokens": {
+            "ABT": {
+                "quantity_step_function": {
+                    "x_buy": [
+                        0
+                    ],
+                    "y_buy": [
+                        0
+                    ],
+                    "x_sell": [
+                        0
+                    ],
+                    "y_sell": [
+                        0
+                    ]
+                },
+                "imbalance_step_function": {
+                    "x_buy": [
+                        1.412926597970062737408e+21,
+                        6.593657461903380709376e+21,
+                        1.1774388311707434876928e+22,
+                        1.412926597970062737408e+23
+                    ],
+                    "y_buy": [
+                        0,
+                        -64,
+                        -113,
+                        -134
+                    ],
+                    "x_sell": [
+                        -1.1774388311707434876928e+22,
+                        -6.593657461903380709376e+21,
+                        -1.412926597970062737408e+21,
+                        0
+                    ],
+                    "y_sell": [
+                        -153,
+                        -116,
+                        -56,
+                        0
+                    ]
+                }
+            },
+            "AE": {
+                "quantity_step_function": {
+                    "x_buy": [
+                        0
+                    ],
+                    "y_buy": [
+                        0
+                    ],
+                    "x_sell": [
+                        0
+                    ],
+                    "y_sell": [
+                        0
+                    ]
+                },
+                "imbalance_step_function": {
+                    "x_buy": [
+                        253691585433581977600,
+                        1.183894066202354384896e+21,
+                        2.114096544434211520512e+21,
+                        2.536915854335819776e+22
+                    ],
+                    "y_buy": [
+                        0,
+                        -28,
+                        -55,
+                        -74
+                    ],
+                    "x_sell": [
+                        -2.114096544434211520512e+21,
+                        -1.183894066202354384896e+21,
+                        -253691585433581977600,
+                        0
+                    ],
+                    "y_sell": [
+                        -79,
+                        -65,
+                        -37,
+                        0
+                    ]
+                }
+            },
+            "AION": {
+                "quantity_step_function": {
+                    "x_buy": [
+                        0
+                    ],
+                    "y_buy": [
+                        0
+                    ],
+                    "x_sell": [
+                        0
+                    ],
+                    "y_sell": [
+                        0
+                    ]
+                },
+                "imbalance_step_function": {
+                    "x_buy": [
+                        48677652746,
+                        227162379646,
+                        405647106058,
+                        4867765274600
+                    ],
+                    "y_buy": [
+                        0,
+                        -73,
+                        -134,
+                        -175
+                    ],
+                    "x_sell": [
+                        -405647106058,
+                        -227162379646,
+                        -48677652746,
+                        0
+                    ],
+                    "y_sell": [
+                        -54,
+                        -46,
+                        -29,
+                        0
+                    ]
+                }
+            },
+            "APPC": {
+                "quantity_step_function": {
+                    "x_buy": [
+                        0
+                    ],
+                    "y_buy": [
+                        0
+                    ],
+                    "x_sell": [
+                        0
+                    ],
+                    "y_sell": [
+                        0
+                    ]
+                },
+                "imbalance_step_function": {
+                    "x_buy": [
+                        2.906114516419146678272e+21,
+                        1.3561867752976399990784e+22,
+                        2.4217620960472509448192e+22,
+                        2.906114516419146678272e+23
+                    ],
+                    "y_buy": [
+                        0,
+                        -71,
+                        -153,
+                        -226
+                    ],
+                    "x_sell": [
+                        -2.4217620960472509448192e+22,
+                        -1.3561867752976399990784e+22,
+                        -2.906114516419146678272e+21,
+                        0
+                    ],
+                    "y_sell": [
+                        -92,
+                        -76,
+                        -45,
+                        0
+                    ]
+                }
+            }
+        }
+    },
+    "success": true
+}
+```
+
 ## Authentication
 All APIs that are marked with (signing required) must follow authentication mechanism below:
 

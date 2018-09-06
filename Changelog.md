@@ -4,6 +4,8 @@
 
 ### Features:
 
+- add /get-step-function-data API for fetching tokens step function configuration
+
 ### Bug fixes:
 
 ### Improvements
