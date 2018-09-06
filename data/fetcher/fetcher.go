@@ -758,10 +758,8 @@ func (fc *Fetcher) RunStepFunctionDataStorage() {
 			log.Printf("Cannot get current block: %s", err.Error())
 		}
 
-		// fetch all data from blcokchain
-		err = fc.fetchStepFunctionData(&data, block)
-
-		if err != nil {
+		// fetch all data from blockchain
+		if err = fc.fetchStepFunctionData(&data, block); err != nil {
 			log.Printf("fetch step function data error: %s", err.Error())
 		} else {
 			// convert data from sync map to go object
@@ -777,8 +775,7 @@ func (fc *Fetcher) RunStepFunctionDataStorage() {
 			})
 
 			// save data to storage
-			err := fc.stepFunctionDataStorage.StoreStepFunctionData(result)
-			if err != nil {
+			if err = fc.stepFunctionDataStorage.StoreStepFunctionData(result); err != nil {
 				log.Printf("Store step function data error: %s", err.Error())
 			}
 		}
@@ -793,6 +790,7 @@ func (fc *Fetcher) fetchStepFunctionData(data *sync.Map, block uint64) error {
 	tokens, err := fc.setting.GetInternalTokens()
 	if err != nil {
 		log.Printf("Cannot get internal tokens: %s", err.Error())
+		return err
 	}
 
 	// fetch each token step function data
@@ -819,7 +817,6 @@ func (fc *Fetcher) fetchStepFunctionData(data *sync.Map, block uint64) error {
 }
 
 func (fc *Fetcher) fetchTokenStepFunctionData(wait *sync.WaitGroup, block uint64, token common.Token, data *sync.Map) error {
-
 	tokenAddr := ethereum.HexToAddress(token.Address)
 
 	result, err := fc.blockchain.GetStepFunctionData(block, tokenAddr)

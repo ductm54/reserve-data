@@ -37,6 +37,7 @@ const (
 	pendingStatbleTokenParamsBucket string = "pending-stable-token-params"
 	goldBucket                      string = "gold_feeds"
 	stepFunctionBucket              string = "step_function"
+	stepFunctionLatestDataKey       string = "latest_data"
 
 	// pendingTargetQuantityV2 constant for bucket name for pending target quantity v2
 	pendingTargetQuantityV2 string = "pending_target_qty_v2"
@@ -1677,20 +1678,13 @@ func (self *BoltStorage) ConfirmTokenUpdateInfo(tarQty common.TokenTargetQtyV2, 
 
 //StoreStepFunctionData store data get from blockchain to db
 func (bs *BoltStorage) StoreStepFunctionData(data common.StepFunctionData) error {
-	key := []byte("latest_data")
+	key := []byte(stepFunctionLatestDataKey)
 	err := bs.db.Update(func(tx *bolt.Tx) error {
 		dataJSON, uErr := json.Marshal(data)
 		if uErr != nil {
 			return uErr
 		}
 		b := tx.Bucket([]byte(stepFunctionBucket))
-		v := b.Get(key)
-		if v != nil {
-			uErr := b.Delete(key)
-			if uErr != nil {
-				return uErr
-			}
-		}
 		return b.Put(key, dataJSON)
 	})
 	return err
@@ -1698,7 +1692,7 @@ func (bs *BoltStorage) StoreStepFunctionData(data common.StepFunctionData) error
 
 //GetStepFunctionData return current step function data
 func (bs *BoltStorage) GetStepFunctionData() (common.StepFunctionData, error) {
-	key := []byte("latest_data")
+	key := []byte(stepFunctionLatestDataKey)
 	var result common.StepFunctionData
 	err := bs.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(stepFunctionBucket))
