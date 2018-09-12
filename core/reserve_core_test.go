@@ -188,3 +188,15 @@ func TestNotAllowDeposit(t *testing.T) {
 		t.Fatalf("Expected to be able to deposit different token")
 	}
 }
+
+func TestCalculateNewGasPrice(t *testing.T) {
+	initPrice := common.GweiToWei(1)
+	newPrice := calculateNewGasPrice(initPrice, 0)
+	if newPrice.Cmp(newPrice) != 0 {
+		t.Fatalf("new price is not equal to initial price with count == 0")
+	}
+
+	for count := uint64(0); count < 10; count++ {
+		t.Log(calculateNewGasPrice(initPrice, count).String())
+	}
+}

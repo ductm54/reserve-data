@@ -18,6 +18,9 @@ const (
 	// highBoundGasPrice is the price we will try to use to get higher priority
 	// than trade tx to avoid price front running from users.
 	highBoundGasPrice float64 = 100.1
+	// highBoundGasPriceCount is the number when the incremental gas price reach
+	// the highBoundGasPrice.
+	highBoundGasPriceCount = 4
 
 	statusFailed    = "failed"
 	statusSubmitted = "submitted"
@@ -291,28 +294,25 @@ func (self ReserveCore) Withdraw(
 	return timebasedID(id), err
 }
 
-func calculateNewGasPrice(init *big.Int, count uint64) *big.Int {
-	// in this case after 5 tries the tx is still not mined.
-	// at this point, 100.1 gwei is not enough but it doesn't matter
-	// if the tx is mined or not because users' tx is not mined neither
-	// so we can just increase the gas price a tiny amount (1 gwei) to make
-	// the node accept tx with up to date price
-	if count > 4 {
+func calculateNewGasPrice(initPrice *big.Int, count uint64) *big.Int {
+	// when highBoundGasPriceCount is reached, the gas price is highBoundGasPrice.
+	// After this threshold, the gas price is only increased 1 gwei until it is mined.
+	if count > highBoundGasPriceCount {
 		return big.NewInt(0).Add(
 			common.GweiToWei(highBoundGasPrice),
-			common.GweiToWei(float64(count)-4.0))
-	} else {
-		// new = init * (high bound / init)^(step / 4)
-		base := big.NewInt(0).Div(common.GweiToWei(highBoundGasPrice), init)
-		// return init * base ^ (step / 4) =
-		// init * sqrt(sqrt(base ^ step))
-		return big.NewInt(0).Mul(
-			init,
-			big.NewInt(0).Sqrt(
-				big.NewInt(0).Sqrt(
-					big.NewInt(0).Exp(base, big.NewInt(int64(count)), nil))),
-		)
+			common.GweiToWei(float64(count-highBoundGasPriceCount)))
 	}
+
+	// new = initPrice * (high bound / initPrice) ^ (step / highBoundGasPriceCount)
+	base := big.NewInt(0).Div(common.GweiToWei(highBoundGasPrice), initPrice)
+	// return initPrice * base ^ (step / highBoundGasPriceCount) =
+	// initPrice * sqrt(sqrt(base ^ step))
+	return big.NewInt(0).Mul(
+		initPrice,
+		big.NewInt(0).Sqrt(
+			big.NewInt(0).Sqrt(
+				big.NewInt(0).Exp(base, big.NewInt(int64(count)), nil))),
+	)
 }
 
 // return: old nonce, old price, step, error
