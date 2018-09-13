@@ -291,7 +291,7 @@ func (self ReserveCore) Withdraw(
 	return timebasedID(id), err
 }
 
-func calculateNewGasPrice(init *big.Int, count uint64) *big.Int {
+func calculateNewGasPrice(initPrice *big.Int, count uint64) *big.Int {
 	// in this case after 5 tries the tx is still not mined.
 	// at this point, 100.1 gwei is not enough but it doesn't matter
 	// if the tx is mined or not because users' tx is not mined neither
@@ -302,12 +302,12 @@ func calculateNewGasPrice(init *big.Int, count uint64) *big.Int {
 			common.GweiToWei(highBoundGasPrice),
 			common.GweiToWei(float64(count)-4.0))
 	} else {
-		// new = init * (high bound / init)^(step / 4)
-		base := big.NewInt(0).Div(common.GweiToWei(highBoundGasPrice), init)
-		// return init * base ^ (step / 4) =
-		// init * sqrt(sqrt(base ^ step))
+		// new = initPrice * (high bound / initPrice)^(step / 4)
+		base := big.NewInt(0).Div(common.GweiToWei(highBoundGasPrice), initPrice)
+		// return initPrice * base ^ (step / 4) =
+		// initPrice * sqrt(sqrt(base ^ step))
 		return big.NewInt(0).Mul(
-			init,
+			initPrice,
 			big.NewInt(0).Sqrt(
 				big.NewInt(0).Sqrt(
 					big.NewInt(0).Exp(base, big.NewInt(int64(count)), nil))),
@@ -315,7 +315,6 @@ func calculateNewGasPrice(init *big.Int, count uint64) *big.Int {
 	}
 }
 
-// return: old nonce, old price, step, error
 // return: old nonce, init price, step, error
 func (self ReserveCore) pendingSetrateInfo(minedNonce uint64) (*big.Int, *big.Int, uint64, error) {
 	act, count, err := self.activityStorage.PendingSetrate(minedNonce)

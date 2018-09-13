@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"reflect"
 	"strconv"
@@ -664,8 +665,8 @@ func interfaceConverstionToUint64(intf interface{}) uint64 {
 }
 
 func getFirstAndCountPendingSetrate(pendings []common.ActivityRecord, minedNonce uint64) (*common.ActivityRecord, uint64, error) {
-	var minNonce uint64 = 1 << 63
-	var minPrice uint64 = 1 << 63
+	var minNonce uint64 = math.MaxUint64
+	var minPrice uint64 = math.MaxUint64
 	var result *common.ActivityRecord
 	var count uint64
 	for i, act := range pendings {
