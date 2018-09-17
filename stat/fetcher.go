@@ -692,16 +692,18 @@ func (self *Fetcher) GetReserveRates(
 	data.Store(reserveAddr, rates)
 }
 
-func (self *Fetcher) ReserveSupportedTokens(reserve ethereum.Address) ([]common.Token, error) {
+func (self *Fetcher) ReserveSupportedTokens(reserve ethereum.Address, wg *sync.WaitGroup) ([]common.Token, error) {
 	tokens := []common.Token{}
 	reserveAddr, err := self.blockchain.GetAddress(settings.Reserve)
 	if err != nil {
+		wg.Done()
 		return tokens, err
 	}
 	if reserve == reserveAddr {
 		internalTokens, err := self.setting.GetInternalTokens()
 		if err != nil {
 			log.Printf("ERROR: Can not get internal tokens: %s", err)
+			wg.Done()
 			return tokens, err
 		}
 		for _, token := range internalTokens {
@@ -713,6 +715,7 @@ func (self *Fetcher) ReserveSupportedTokens(reserve ethereum.Address) ([]common.
 		activeTokens, err := self.setting.GetActiveTokens()
 		if err != nil {
 			log.Printf("ERROR: Can not get internal tokens: %s", err)
+			wg.Done()
 			return tokens, err
 		}
 		for _, token := range activeTokens {
@@ -746,7 +749,7 @@ func (self *Fetcher) FetchReserveRates(timepoint uint64) {
 	block := self.currentBlock
 	for _, reserve := range supportedReserves {
 		wg.Add(1)
-		tokens, err := self.ReserveSupportedTokens(reserve)
+		tokens, err := self.ReserveSupportedTokens(reserve, &wg)
 		if err == nil {
 			go self.GetReserveRates(block, reserve, tokens, &data, &wg)
 		} else {
