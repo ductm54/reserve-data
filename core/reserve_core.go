@@ -387,17 +387,21 @@ func (self ReserveCore) GetSetRateResult(tokens []common.Token,
 	}
 	if oldNonce != nil {
 		newPrice := calculateNewGasPrice(initPrice, count)
-		log.Printf("Trying to replace old tx with new price: %s, tx: %s, init price: %s, count: %d",
-			newPrice.String(),
-			tx.Hash(),
-			initPrice.String(),
-			count,
-		)
 		tx, err = self.blockchain.SetRates(
 			tokenAddrs, buys, sells, block,
 			oldNonce,
 			newPrice,
 		)
+		if err != nil {
+			log.Printf("Trying to replace old tx failed, err: %s", err)
+		} else {
+			log.Printf("Trying to replace old tx with new price: %s, tx: %s, init price: %s, count: %d",
+				newPrice.String(),
+				tx.Hash(),
+				initPrice.String(),
+				count,
+			)
+		}
 	} else {
 		recommendedPrice := self.blockchain.StandardGasPrice()
 		var initPrice *big.Int
