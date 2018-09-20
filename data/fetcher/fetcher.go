@@ -352,6 +352,9 @@ func (self *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord)
 					)
 				}
 			case common.MiningStatusMined:
+				if activity.Action == common.ActionSetrate {
+					log.Printf("set rate transaction is mined, id: %s", activity.ID.EID)
+				}
 				result[activity.ID] = common.NewActivityStatus(
 					activity.ExchangeStatus,
 					txStr,

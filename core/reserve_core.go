@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"math/big"
 	"strconv"
 	"time"
@@ -291,23 +292,26 @@ func (self ReserveCore) Withdraw(
 	return timebasedID(id), err
 }
 
-func calculateNewGasPrice(old *big.Int, count uint64) *big.Int {
+func calculateNewGasPrice(initPrice *big.Int, count uint64) *big.Int {
 	// in this case after 5 tries the tx is still not mined.
-	// at this point, 50.1 gwei is not enough but it doesn't matter
+	// at this point, 100.1 gwei is not enough but it doesn't matter
 	// if the tx is mined or not because users' tx is not mined neither
 	// so we can just increase the gas price a tiny amount (1 gwei) to make
 	// the node accept tx with up to date price
 	if count > 4 {
-		return old.Add(old, common.GweiToWei(1))
+		return big.NewInt(0).Add(
+			common.GweiToWei(highBoundGasPrice),
+			common.GweiToWei(float64(count)-4.0))
 	} else {
-		// new = old + (50.1 - old) / (5 - count)
-		return old.Add(
-			old,
-			big.NewInt(0).Div(big.NewInt(0).Sub(common.GweiToWei(highBoundGasPrice), old), big.NewInt(int64(5-count))),
-		)
+		// new = initPrice * (high bound / initPrice)^(step / 4)
+		initPrice := common.BigToFloat(initPrice, 9) // convert Gwei int to float
+		base := highBoundGasPrice / initPrice
+		newPrice := initPrice * math.Pow(base, float64(count)/4.0)
+		return common.FloatToBigInt(newPrice, 9)
 	}
 }
 
+// return: old nonce, init price, step, error
 func (self ReserveCore) pendingSetrateInfo(minedNonce uint64) (*big.Int, *big.Int, uint64, error) {
 	act, count, err := self.activityStorage.PendingSetrate(minedNonce)
 	if err != nil {
@@ -364,7 +368,7 @@ func (self ReserveCore) GetSetRateResult(tokens []common.Token,
 	// if there is a pending set rate tx, we replace it
 	var (
 		oldNonce   *big.Int
-		oldPrice   *big.Int
+		initPrice  *big.Int
 		minedNonce uint64
 		count      uint64
 	)
@@ -372,19 +376,28 @@ func (self ReserveCore) GetSetRateResult(tokens []common.Token,
 	if err != nil {
 		return tx, fmt.Errorf("Couldn't get mined nonce of set rate operator (%s)", err.Error())
 	}
-	oldNonce, oldPrice, count, err = self.pendingSetrateInfo(minedNonce)
-	log.Printf("old nonce: %v, old price: %v, count: %d, err: %s", oldNonce, oldPrice, count, common.ErrorToString(err))
+	oldNonce, initPrice, count, err = self.pendingSetrateInfo(minedNonce)
+	log.Printf("old nonce: %v, init price: %v, count: %d, err: %s", oldNonce, initPrice, count, common.ErrorToString(err))
 	if err != nil {
 		return tx, fmt.Errorf("Couldn't check pending set rate tx pool (%s). Please try later", err.Error())
 	}
 	if oldNonce != nil {
-		newPrice := calculateNewGasPrice(oldPrice, count)
-		log.Printf("Trying to replace old tx with new price: %s", newPrice.Text(10))
+		newPrice := calculateNewGasPrice(initPrice, count)
 		tx, err = self.blockchain.SetRates(
 			tokenAddrs, buys, sells, block,
 			oldNonce,
 			newPrice,
 		)
+		if err != nil {
+			log.Printf("Trying to replace old tx failed, err: %s", err)
+		} else {
+			log.Printf("Trying to replace old tx with new price: %s, tx: %s, init price: %s, count: %d",
+				newPrice.String(),
+				tx.Hash().Hex(),
+				initPrice.String(),
+				count,
+			)
+		}
 	} else {
 		recommendedPrice := self.blockchain.StandardGasPrice()
 		var initPrice *big.Int
@@ -393,6 +406,7 @@ func (self ReserveCore) GetSetRateResult(tokens []common.Token,
 		} else {
 			initPrice = common.GweiToWei(recommendedPrice)
 		}
+		log.Printf("initial set rate tx, init price: %s", initPrice.String())
 		tx, err = self.blockchain.SetRates(
 			tokenAddrs, buys, sells, block,
 			big.NewInt(int64(minedNonce)),

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"reflect"
 	"strconv"
@@ -663,9 +664,9 @@ func interfaceConverstionToUint64(intf interface{}) uint64 {
 	return num
 }
 
-func getLastAndCountPendingSetrate(pendings []common.ActivityRecord, minedNonce uint64) (*common.ActivityRecord, uint64, error) {
-	var maxNonce uint64
-	var maxPrice uint64
+func getFirstAndCountPendingSetrate(pendings []common.ActivityRecord, minedNonce uint64) (*common.ActivityRecord, uint64, error) {
+	var minNonce uint64 = math.MaxUint64
+	var minPrice uint64 = math.MaxUint64
 	var result *common.ActivityRecord
 	var count uint64
 	for i, act := range pendings {
@@ -677,17 +678,17 @@ func getLastAndCountPendingSetrate(pendings []common.ActivityRecord, minedNonce 
 				continue
 			}
 			gasPrice := interfaceConverstionToUint64(act.Result["gasPrice"])
-			if nonce == maxNonce {
-				if gasPrice > maxPrice {
-					maxNonce = nonce
+			if nonce == minNonce {
+				if gasPrice < minPrice {
+					minNonce = nonce
 					result = &pendings[i]
-					maxPrice = gasPrice
+					minPrice = gasPrice
 				}
 				count++
-			} else if nonce > maxNonce {
-				maxNonce = nonce
+			} else if nonce < minNonce {
+				minNonce = nonce
 				result = &pendings[i]
-				maxPrice = gasPrice
+				minPrice = gasPrice
 				count = 1
 			}
 		}
@@ -713,7 +714,7 @@ func (self *BoltStorage) PendingSetrate(minedNonce uint64) (*common.ActivityReco
 	if err != nil {
 		return nil, 0, err
 	}
-	return getLastAndCountPendingSetrate(pendings, minedNonce)
+	return getFirstAndCountPendingSetrate(pendings, minedNonce)
 }
 
 //GetPendingActivities return pending activities
