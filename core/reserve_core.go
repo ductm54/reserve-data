@@ -393,7 +393,7 @@ func (self ReserveCore) GetSetRateResult(tokens []common.Token,
 		} else {
 			log.Printf("Trying to replace old tx with new price: %s, tx: %s, init price: %s, count: %d",
 				newPrice.String(),
-				tx.Hash(),
+				tx.Hash().Hex(),
 				initPrice.String(),
 				count,
 			)
