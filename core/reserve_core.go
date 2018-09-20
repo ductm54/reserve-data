@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"math/big"
 	"strconv"
 	"time"
@@ -303,15 +304,10 @@ func calculateNewGasPrice(initPrice *big.Int, count uint64) *big.Int {
 			common.GweiToWei(float64(count)-4.0))
 	} else {
 		// new = initPrice * (high bound / initPrice)^(step / 4)
-		base := big.NewInt(0).Div(common.GweiToWei(highBoundGasPrice), initPrice)
-		// return initPrice * base ^ (step / 4) =
-		// initPrice * sqrt(sqrt(base ^ step))
-		return big.NewInt(0).Mul(
-			initPrice,
-			big.NewInt(0).Sqrt(
-				big.NewInt(0).Sqrt(
-					big.NewInt(0).Exp(base, big.NewInt(int64(count)), nil))),
-		)
+		initPrice := common.BigToFloat(initPrice, 9) // convert Gwei int to float
+		base := highBoundGasPrice / initPrice
+		newPrice := initPrice * math.Pow(base, float64(count)/4.0)
+		return common.FloatToBigInt(newPrice, 9)
 	}
 }
 
