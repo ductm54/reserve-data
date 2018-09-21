@@ -41,7 +41,6 @@ const (
 
 	etherScanAPIEndpoint      = "http://api.etherscan.io/api"
 	broadcastKyberAPIEndpoint = "https://broadcast.kyber.network"
-	unknownCountry            = "unknown"
 )
 
 type Fetcher struct {
@@ -858,11 +857,11 @@ func GetTradeGeo(ipLocator *statutil.IPLocator, txHash string) (string, string, 
 		}
 		country, err = ipLocator.IPToCountry(response.Data.IP)
 		if err != nil {
-			return "", unknownCountry, err
+			return "", "", err
 		}
 		return response.Data.IP, country, err
 	}
-	return "", unknownCountry, err
+	return "", "", err
 }
 
 func enforceFromBlock(fromBlock uint64) uint64 {
@@ -1065,9 +1064,12 @@ func (self *Fetcher) aggregateCountryStats(trade common.TradeLog,
 	countryStats map[string]common.MetricStatsTimeZone, allFirstTradeEver map[ethereum.Address]uint64,
 	kycEdUsers map[string]uint64) error {
 	userAddr := common.AddrToString(trade.UserAddress)
+
+	// ensure backward compatible.
 	if trade.Country == "" {
-		trade.Country = unknownCountry
+		trade.Country = statutil.UnknownCountry
 	}
+
 	err := self.statStorage.SetCountry(trade.Country)
 	if err != nil {
 		log.Printf("Cannot store country: %s", err.Error())
