@@ -20,6 +20,7 @@ const (
 	idAddress        string = "id_addresses"
 	addressTime      string = "address_time"
 	pendingAddresses string = "pending_addresses"
+	kyced            string = "kyced"
 )
 
 type BoltUserStorage struct {
@@ -57,6 +58,10 @@ func NewBoltUserStorage(path string) (*BoltUserStorage, error) {
 			return err
 		}
 		_, err = tx.CreateBucketIfNotExists([]byte(catlogProcessorState))
+		if err != nil {
+			return err
+		}
+		_, err = tx.CreateBucketIfNotExists([]byte(kyced))
 		if err != nil {
 			return err
 		}
@@ -189,6 +194,7 @@ func (self *BoltUserStorage) UpdateUserAddresses(user string, addrs []ethereum.A
 				return uErr
 			}
 			cat := catBk.Get([]byte(address))
+			kycedBucket := tx.Bucket([]byte(kyced))
 			if string(cat) != kycCategory {
 				if uErr = pendingBk.Put([]byte(address), []byte{1}); uErr != nil {
 					return uErr
@@ -196,6 +202,11 @@ func (self *BoltUserStorage) UpdateUserAddresses(user string, addrs []ethereum.A
 			}
 			log.Printf("storing timestamp for %s - %d", address, timestamps[i])
 			if err = timeBucket.Put([]byte(address), boltutil.Uint64ToBytes(timestamps[i])); err != nil {
+				return err
+			}
+
+			// update address as kyced
+			if err = kycedBucket.Put([]byte(address), []byte(user)); err != nil {
 				return err
 			}
 		}
@@ -290,4 +301,21 @@ func (self *BoltUserStorage) GetPendingAddresses() ([]ethereum.Address, error) {
 		return err
 	})
 	return result, err
+}
+
+// GetKYCAddress return email of address if address is kyced
+// return empty string if not
+func (bus *BoltUserStorage) GetKYCAddress(address ethereum.Address) (string, error) {
+	var email string
+	err := bus.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(kyced))
+		addr := common.AddrToString(address)
+		v := b.Get([]byte(addr))
+		if v != nil {
+			email = string(v)
+			log.Printf("email: %s", email)
+		}
+		return nil
+	})
+	return email, err
 }

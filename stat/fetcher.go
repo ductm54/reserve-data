@@ -745,9 +745,9 @@ func (self *Fetcher) FetchReserveRates(timepoint uint64) {
 	// be synced with block no
 	block := self.currentBlock
 	for _, reserve := range supportedReserves {
-		wg.Add(1)
 		tokens, err := self.ReserveSupportedTokens(reserve)
 		if err == nil {
+			wg.Add(1)
 			go self.GetReserveRates(block, reserve, tokens, &data, &wg)
 		} else {
 			log.Printf("ERROR: Can not get reserve rates %s", err)

@@ -964,11 +964,16 @@ func (self *HTTPServer) GetCapByAddress(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithReason("address is not valid"))
 		return
 	}
-	data, err := self.stat.GetCapByAddress(address)
+	data, kyced, err := self.stat.GetTxCapByAddress(address)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	} else {
-		httputil.ResponseSuccess(c, httputil.WithData(data))
+		httputil.ResponseSuccess(c, httputil.WithMultipleFields(
+			gin.H{
+				"data": data,
+				"kyc":  kyced,
+			},
+		))
 	}
 }
 
@@ -988,46 +993,6 @@ func (self *HTTPServer) GetPendingAddresses(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	} else {
 		httputil.ResponseSuccess(c, httputil.WithData(data))
-	}
-}
-
-func (self *HTTPServer) UpdateUserAddresses(c *gin.Context) {
-	var err error
-	postForm, ok := self.Authenticated(c, []string{"user", "addresses", "timestamps"}, []Permission{ConfirmConfPermission})
-	if !ok {
-		return
-	}
-	user := postForm.Get("user")
-	addresses := postForm.Get("addresses")
-	times := postForm.Get("timestamps")
-	addrs := []ethereum.Address{}
-	timestamps := []uint64{}
-	addrsStr := strings.Split(addresses, "-")
-	timesStr := strings.Split(times, "-")
-	if len(addrsStr) != len(timesStr) {
-		httputil.ResponseFailure(c, httputil.WithReason("addresses and timestamps must have the same number of elements"))
-		return
-	}
-	for i, addr := range addrsStr {
-		var (
-			t uint64
-			a = ethereum.HexToAddress(addr)
-		)
-		t, err = strconv.ParseUint(timesStr[i], 10, 64)
-		if a.Big().Cmp(ethereum.Big0) != 0 && err == nil {
-			addrs = append(addrs, a)
-			timestamps = append(timestamps, t)
-		}
-	}
-	if len(addrs) == 0 {
-		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("user %s doesn't have any valid addresses in %s", user, addresses)))
-		return
-	}
-	err = self.stat.UpdateUserAddresses(user, addrs, timestamps)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-	} else {
-		httputil.ResponseSuccess(c)
 	}
 }
 
@@ -1279,17 +1244,13 @@ func (self *HTTPServer) GetReserveVolume(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithReason("reserve address is required"))
 		return
 	}
-	tokenName := c.Query("token")
-	if tokenName == "" {
+	tokenID := c.Query("token")
+	if tokenID == "" {
 		httputil.ResponseFailure(c, httputil.WithReason("token is required"))
 		return
 	}
-	token, err := self.setting.GetActiveTokenByID(tokenName)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	data, err := self.stat.GetReserveVolume(fromTime, toTime, freq, reserveAddr, token.Address)
+
+	data, err := self.stat.GetReserveVolume(fromTime, toTime, freq, reserveAddr, tokenID)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
