@@ -2,20 +2,28 @@ package stat
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/KyberNetwork/reserve-data/common"
 )
 
 func (self ReserveStats) ControllPriceAnalyticSize() error {
+	tmpDir, err := ioutil.TempDir("", "ExpiredPriceAnalyticData")
+	if err != nil {
+		panic(err)
+	}
+	defer os.RemoveAll(tmpDir)
 	for {
 		log.Printf("StatPruner: waiting for signal from analytic storage control channel")
 		t := <-self.storageController.Runner.GetAnalyticStorageControlTicker()
 		timepoint := common.TimeToTimepoint(t)
 		log.Printf("StatPruner: got signal in analytic storage control channel with timestamp %d", timepoint)
-		fileName := fmt.Sprintf("./exported/ExpiredPriceAnalyticData_%s", time.Unix(int64(timepoint/1000), 0).UTC())
+		fileName := filepath.Join(tmpDir, fmt.Sprintf("ExpiredPriceAnalyticData_at_%s", time.Unix(int64(timepoint/1000), 0).UTC()))
+		log.Printf("StatPruner: %s", fileName)
 		nRecord, err := self.analyticStorage.ExportExpiredPriceAnalyticData(common.GetTimepoint(), fileName)
 		if err != nil {
 			log.Printf("ERROR: StatPruner export Price Analytic operation failed: %s", err)
@@ -77,7 +85,7 @@ func (self ReserveStats) uploadAndVerify(fileName, remotePath string) (bool, err
 
 	//if the integrity check doesn't meet any error but the integrity is false, remove it from remote storage
 	if !integrity {
-		log.Printf("ERROR: StatPruner: file upload corrupted")
+		log.Printf("ERROR: c: file upload corrupted")
 		removalErr := self.storageController.Arch.RemoveFile(self.storageController.Arch.GetStatDataBucketName(), remotePath, fileName)
 		if removalErr != nil {
 			log.Printf("ERROR: StatPruner: cannot remove remote file :(%s)", removalErr)
@@ -91,12 +99,18 @@ func (self ReserveStats) uploadAndVerify(fileName, remotePath string) (bool, err
 // It will export these record to mutiple gz file, each contain all the expired record in a certain date
 // in format ExpiredRateData_<firstTimestamp>_<lastTimestmap>.gz, in which time stamp is second
 func (self ReserveStats) ControlRateSize() error {
+	tmpDir, err := ioutil.TempDir("", "ExpiredRateData")
+	if err != nil {
+		panic(err)
+	}
+	defer os.RemoveAll(tmpDir)
 	for {
 		//continuously pruning until there is no more expired data.
 		for {
-			tempfileName := fmt.Sprintf("./exported/TempExpireRateData.gz")
+			tempfileName := filepath.Join(tmpDir, "TempExpireRateData.gz")
 			fromTime, toTime, nRecord, err := self.rateStorage.ExportExpiredRateData(common.GetTimepoint(), tempfileName)
-			fileName := fmt.Sprintf("./exported/ExpiredRateData_%d_%d.gz", fromTime/1000, toTime/1000)
+			fileName := filepath.Join(tmpDir, fmt.Sprintf("ExpiredRateData_%d_%d.gz", fromTime/1000, toTime/1000))
+			log.Printf("StatPruner: %s", fileName)
 			if rErr := os.Rename(tempfileName, fileName); rErr != nil {
 				log.Printf("StatPruner: cannot rename file (%s)", rErr)
 				break

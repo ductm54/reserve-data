@@ -2,8 +2,10 @@ package data
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/KyberNetwork/reserve-data/common"
@@ -259,12 +261,17 @@ func (self ReserveData) Stop() error {
 
 //ControlAuthDataSize pack old data to file, push to S3 and prune outdated data
 func (self ReserveData) ControlAuthDataSize() error {
+	tmpDir, err := ioutil.TempDir("", "ExpiredAuthData")
+	if err != nil {
+		panic(err)
+	}
+	defer os.RemoveAll(tmpDir)
 	for {
 		log.Printf("DataPruner: waiting for signal from runner AuthData controller channel")
 		t := <-self.storageController.Runner.GetAuthBucketTicker()
 		timepoint := common.TimeToTimepoint(t)
 		log.Printf("DataPruner: got signal in AuthData controller channel with timestamp %d", common.TimeToTimepoint(t))
-		fileName := fmt.Sprintf("./exported/ExpiredAuthData_at_%s", time.Unix(int64(timepoint/1000), 0).UTC())
+		fileName := filepath.Join(tmpDir, fmt.Sprintf("ExpiredAuthData_at_%s", time.Unix(int64(timepoint/1000), 0).UTC()))
 		nRecord, err := self.storage.ExportExpiredAuthData(common.TimeToTimepoint(t), fileName)
 		if err != nil {
 			log.Printf("ERROR: DataPruner export AuthData operation failed: %s", err)

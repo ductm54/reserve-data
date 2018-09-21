@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"log"
-	"os"
 	"path/filepath"
 	"runtime"
 
@@ -36,11 +35,6 @@ func serverStart(_ *cobra.Command, _ []string) {
 	numCPU := runtime.NumCPU()
 	runtime.GOMAXPROCS(numCPU)
 	configLog(stdoutLog)
-	//create temp folder for exported file
-	err := os.MkdirAll("./exported", 0730)
-	if err != nil {
-		panic(err)
-	}
 	//get configuration from ENV variable
 	kyberENV := common.RunningMode()
 	InitInterface()
@@ -68,7 +62,7 @@ func serverStart(_ *cobra.Command, _ []string) {
 		if !dryrun {
 			if kyberENV != common.SimulationMode {
 				if iErr = rData.RunStorageController(); iErr != nil {
-					log.Panic(err)
+					log.Panic(iErr)
 				}
 			}
 			if iErr = rData.Run(); iErr != nil {
