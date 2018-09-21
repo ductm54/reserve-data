@@ -41,6 +41,7 @@ const (
 
 	etherScanAPIEndpoint      = "http://api.etherscan.io/api"
 	broadcastKyberAPIEndpoint = "https://broadcast.kyber.network"
+	unknownCountry            = "unknown"
 )
 
 type Fetcher struct {
@@ -857,11 +858,11 @@ func GetTradeGeo(ipLocator *statutil.IPLocator, txHash string) (string, string, 
 		}
 		country, err = ipLocator.IPToCountry(response.Data.IP)
 		if err != nil {
-			return "", "", err
+			return "", unknownCountry, err
 		}
 		return response.Data.IP, country, err
 	}
-	return "", "unknown", err
+	return "", unknownCountry, err
 }
 
 func enforceFromBlock(fromBlock uint64) uint64 {
@@ -1030,6 +1031,7 @@ func (self *Fetcher) getTradeInfo(trade common.TradeLog) (float64, float64, floa
 	srcAddr := common.AddrToString(trade.SrcAddress)
 	srcToken, err := self.getTokenFromAddress(ethereum.HexToAddress(srcAddr))
 	if err != nil {
+		log.Printf("get token from address: %s - %s", err.Error(), srcAddr)
 		return srcAmount, destAmount, ethAmount, burnFee, err
 	}
 	srcAmount = common.BigToFloat(trade.SrcAmount, srcToken.Decimals)
@@ -1040,6 +1042,7 @@ func (self *Fetcher) getTradeInfo(trade common.TradeLog) (float64, float64, floa
 	dstAddr := common.AddrToString(trade.DestAddress)
 	destToken, err := self.getTokenFromAddress(ethereum.HexToAddress(dstAddr))
 	if err != nil {
+		log.Printf("get dest token from address: %s - %s", err.Error(), dstAddr)
 		return srcAmount, destAmount, ethAmount, burnFee, err
 	}
 	destAmount = common.BigToFloat(trade.DestAmount, destToken.Decimals)
@@ -1062,6 +1065,9 @@ func (self *Fetcher) aggregateCountryStats(trade common.TradeLog,
 	countryStats map[string]common.MetricStatsTimeZone, allFirstTradeEver map[ethereum.Address]uint64,
 	kycEdUsers map[string]uint64) error {
 	userAddr := common.AddrToString(trade.UserAddress)
+	if trade.Country == "" {
+		trade.Country = unknownCountry
+	}
 	err := self.statStorage.SetCountry(trade.Country)
 	if err != nil {
 		log.Printf("Cannot store country: %s", err.Error())
@@ -1069,6 +1075,7 @@ func (self *Fetcher) aggregateCountryStats(trade common.TradeLog,
 	}
 	_, _, ethAmount, burnFee, err := self.getTradeInfo(trade)
 	if err != nil {
+		log.Printf("get trade info error: %s", err.Error())
 		return err
 	}
 	var kycEd bool
