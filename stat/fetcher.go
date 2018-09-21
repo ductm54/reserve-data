@@ -882,7 +882,7 @@ func SetcountryFields(ipLocator *statutil.IPLocator, l *common.TradeLog) {
 	txHash := l.TxHash()
 	ip, country, err := GetTradeGeo(ipLocator, txHash.Hex())
 	if err != nil {
-		log.Printf("LogFetcher - Getting country failed")
+		log.Printf("LogFetcher - Getting country failed: %s", err.Error())
 	}
 	l.IP = ip
 	l.Country = country
