@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	remoteLogPath  string = "core-log/"
+	remoteLogPath  string = "core-log"
 	defaultBaseURL        = "http://127.0.0.1"
 	coreDefaultURL string = "http://127.0.0.1:8000"
 )

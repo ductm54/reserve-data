@@ -999,3 +999,17 @@ type StepFunctionData struct {
 	BlockNumber uint64                          `json:"block_number"`
 	Tokens      map[string]StepFunctionResponse `json:"tokens"`
 }
+
+type ExportedReserverRateRecord struct {
+	ReserveAddress string
+	Rate           ReserveRates
+	Timestamp      uint64
+}
+
+func NewExportedReserverRateRecord(addr ethereum.Address, rate ReserveRates, timestamp uint64) ExportedReserverRateRecord {
+	return ExportedReserverRateRecord{
+		ReserveAddress: addr.Hex(),
+		Rate:           rate,
+		Timestamp:      timestamp,
+	}
+}

@@ -32,6 +32,7 @@ const (
 	// startingBlockStaging is the block the first version of
 	// staging network contract is created.
 	startingBlockStaging = 5042909
+	logFileName          = "core.log"
 	// defaultTimeOut is the default time out for requesting to core for setting
 	defaultTimeOut = time.Duration(10 * time.Second)
 )
@@ -48,29 +49,28 @@ func backupLog(arch archive.Archive, cronTimeExpression string, fileNameRegrexPa
 	err := c.AddFunc(cronTimeExpression, func() {
 		files, rErr := ioutil.ReadDir(logDir)
 		if rErr != nil {
-			log.Printf("ERROR: Log backup: Can not view log folder - %s", rErr.Error())
+			log.Printf("BACKUPLOG ERROR: Can not view log folder - %s", rErr.Error())
 		}
 		for _, file := range files {
 			matched, err := regexp.MatchString(fileNameRegrexPattern, file.Name())
 			if (!file.IsDir()) && (matched) && (err == nil) {
-				log.Printf("File name is %s", file.Name())
-				err := arch.UploadFile(arch.GetLogBucketName(), remoteLogPath, logDir+file.Name())
+				err := arch.UploadFile(arch.GetLogBucketName(), remoteLogPath, filepath.Join(logDir, file.Name()))
 				if err != nil {
-					log.Printf("ERROR: Log backup: Can not upload Log file %s", err)
+					log.Printf("BACKUPLOG ERROR: Can not upload Log file %s", err)
 				} else {
 					var err error
 					var ok bool
-					if file.Name() != "core.log" {
-						ok, err = arch.CheckFileIntergrity(arch.GetLogBucketName(), remoteLogPath, logDir+file.Name())
+					if file.Name() != logFileName {
+						ok, err = arch.CheckFileIntergrity(arch.GetLogBucketName(), remoteLogPath, filepath.Join(logDir, file.Name()))
 						if !ok || (err != nil) {
-							log.Printf("ERROR: Log backup: File intergrity is corrupted")
+							log.Printf("BACKUPLOG ERROR: File intergrity is corrupted")
 						}
-						err = os.Remove(logDir + file.Name())
+						err = os.Remove(filepath.Join(logDir, file.Name()))
 					}
 					if err != nil {
-						log.Printf("ERROR: Log backup: Cannot remove local log file %s", err)
+						log.Printf("BACKUPLOG ERROR: Cannot remove local log file %s", err)
 					} else {
-						log.Printf("Log backup: backup file %s succesfully", file.Name())
+						log.Printf("BACKUPLOG Log backup: backup file %s succesfully", file.Name())
 					}
 				}
 			}
@@ -78,7 +78,7 @@ func backupLog(arch archive.Archive, cronTimeExpression string, fileNameRegrexPa
 		return
 	})
 	if err != nil {
-		log.Printf("Cannot rotate log: %s", err.Error())
+		log.Printf("BACKUPLOG Cannot rotate log: %s", err.Error())
 	}
 	c.Start()
 }
@@ -87,7 +87,7 @@ func backupLog(arch archive.Archive, cronTimeExpression string, fileNameRegrexPa
 //if stdoutLog is set, the log is also printed on stdout.
 func configLog(stdoutLog bool) {
 	logger := &lumberjack.Logger{
-		Filename: filepath.Join(logDir, "core.log"),
+		Filename: filepath.Join(logDir, logFileName),
 		// MaxSize:  1, // megabytes
 		MaxBackups: 0,
 		MaxAge:     0, //days
@@ -250,6 +250,7 @@ func CreateStat(config *configuration.Config, kyberENV string, bc *blockchain.St
 		config.StatControllerRunner,
 		statFetcher,
 		config.Archive,
+		baseblockchain.NewCMCEthUSDRate(),
 		settingClient,
 	)
 	return rStat

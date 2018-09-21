@@ -171,8 +171,7 @@ func (self *Config) AddStatConfig(settingPath SettingPaths) {
 			10*time.Second, // rate fetching interval
 			2*time.Second,  // tradelog processing interval
 			2*time.Second)  // catlog processing interval
-		statControllerRunner = statpruner.NewControllerTickerRunner(24 * time.Hour)
-
+		statControllerRunner = statpruner.NewControllerTickerRunner(24*time.Hour, 24*time.Hour)
 	}
 
 	apiKey := GetEtherscanAPIKey(settingPath.secretPath)
@@ -277,6 +276,7 @@ var ConfigPaths = map[string]SettingPaths{
 		[]string{
 			semidNodeKyberEndpoint,
 			infuraMainnetEndpoint,
+			myCryptoAPIEndpoint,
 			myEtherAPIMainnetEndpoint,
 		},
 	),
