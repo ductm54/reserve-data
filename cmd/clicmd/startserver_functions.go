@@ -43,15 +43,15 @@ var (
 	stagingOldNetwork = [1]string{"0xD2D21FdeF0D054D2864ce328cc56D1238d6b239e"}
 )
 
-func backupLog(arch archive.Archive) {
+func backupLog(arch archive.Archive, cronTimeExpression string, fileNameRegrexPattern string) {
 	c := cron.New()
-	err := c.AddFunc("@daily", func() {
+	err := c.AddFunc(cronTimeExpression, func() {
 		files, rErr := ioutil.ReadDir(logDir)
 		if rErr != nil {
 			log.Printf("ERROR: Log backup: Can not view log folder - %s", rErr.Error())
 		}
 		for _, file := range files {
-			matched, err := regexp.MatchString("core.*\\.log", file.Name())
+			matched, err := regexp.MatchString(fileNameRegrexPattern, file.Name())
 			if (!file.IsDir()) && (matched) && (err == nil) {
 				log.Printf("File name is %s", file.Name())
 				err := arch.UploadFile(arch.GetLogBucketName(), remoteLogPath, logDir+file.Name())
