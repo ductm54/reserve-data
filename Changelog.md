@@ -8,7 +8,8 @@
 
 ### Bug fixes:
 
-### Improvements
+### Improvements: 
+- change MEW endpoint to new endpoint (#425)
 
 ### Compatibility
 
