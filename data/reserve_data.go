@@ -265,7 +265,7 @@ func (self ReserveData) ControlAuthDataSize() error {
 	if err != nil {
 		panic(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer archive.TearDown(tmpDir)
 	for {
 		log.Printf("DataPruner: waiting for signal from runner AuthData controller channel")
 		t := <-self.storageController.Runner.GetAuthBucketTicker()

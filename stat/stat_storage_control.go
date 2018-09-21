@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/common/archive"
 )
 
 func (self ReserveStats) ControllPriceAnalyticSize() error {
@@ -16,7 +17,7 @@ func (self ReserveStats) ControllPriceAnalyticSize() error {
 	if err != nil {
 		panic(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer archive.TearDown(tmpDir)
 	for {
 		log.Printf("StatPruner: waiting for signal from analytic storage control channel")
 		t := <-self.storageController.Runner.GetAnalyticStorageControlTicker()
@@ -103,7 +104,7 @@ func (self ReserveStats) ControlRateSize() error {
 	if err != nil {
 		panic(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer archive.TearDown(tmpDir)
 	for {
 		//continuously pruning until there is no more expired data.
 		for {
