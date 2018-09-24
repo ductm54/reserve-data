@@ -953,7 +953,7 @@ func (hs *HTTPServer) GetCapByAddress(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithReason("address is not valid"))
 		return
 	}
-	data, kyced, err := h.stat.GetTxCapByAddress(address)
+	data, kyced, err := hs.stat.GetTxCapByAddress(address)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	} else {
@@ -985,8 +985,8 @@ func (hs *HTTPServer) GetPendingAddresses(c *gin.Context) {
 	}
 }
 
-func (h *HTTPServer) GetWalletStats(c *gin.Context) {
-	fromTime, toTime, ok := h.ValidateTimeInput(c)
+func (hs *HTTPServer) GetWalletStats(c *gin.Context) {
+	fromTime, toTime, ok := hs.ValidateTimeInput(c)
 	if !ok {
 		return
 	}
@@ -1239,7 +1239,7 @@ func (hs *HTTPServer) GetReserveVolume(c *gin.Context) {
 		return
 	}
 
-	data, err := h.stat.GetReserveVolume(fromTime, toTime, freq, reserveAddr, tokenID)
+	data, err := hs.stat.GetReserveVolume(fromTime, toTime, freq, reserveAddr, tokenID)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
