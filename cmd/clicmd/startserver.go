@@ -52,21 +52,21 @@ func serverStart(_ *cobra.Command, _ []string) {
 	)
 	//Create Data and Core, run if not in dry mode
 	if !noCore {
-		var iErr error
+		var err error
 		//create blockchain only if there is core
-		bc, iErr = CreateBlockchain(config, kyberENV)
-		if iErr != nil {
-			log.Panicf("Can not create blockchain: (%s)", iErr)
+		bc, err = CreateBlockchain(config, kyberENV)
+		if err != nil {
+			log.Panicf("Can not create blockchain: (%s)", err)
 		}
 		rData, rCore = CreateDataCore(config, kyberENV, bc)
 		if !dryrun {
 			if kyberENV != common.SimulationMode {
-				if iErr = rData.RunStorageController(); iErr != nil {
-					log.Panic(iErr)
+				if err = rData.RunStorageController(); err != nil {
+					log.Panic(err)
 				}
 			}
-			if iErr = rData.Run(); iErr != nil {
-				log.Panic(iErr)
+			if err = rData.Run(); err != nil {
+				log.Panic(err)
 			}
 		}
 		//set static field supportExchange from common...

@@ -9,15 +9,20 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-data/common"
-	"github.com/KyberNetwork/reserve-data/common/archive"
 )
 
 func (self ReserveStats) ControllPriceAnalyticSize() error {
 	tmpDir, err := ioutil.TempDir("", "ExpiredPriceAnalyticData")
 	if err != nil {
-		panic(err)
+		return err
 	}
-	defer archive.TearDown(tmpDir)
+
+	defer func() {
+		if rErr := os.RemoveAll(tmpDir); rErr != nil {
+			log.Printf("failed to cleanup temp dir: %s, err : %s", tmpDir, rErr.Error())
+		}
+	}()
+
 	for {
 		log.Printf("StatPruner: waiting for signal from analytic storage control channel")
 		t := <-self.storageController.Runner.GetAnalyticStorageControlTicker()
@@ -86,7 +91,7 @@ func (self ReserveStats) uploadAndVerify(fileName, remotePath string) (bool, err
 
 	//if the integrity check doesn't meet any error but the integrity is false, remove it from remote storage
 	if !integrity {
-		log.Printf("ERROR: c: file upload corrupted")
+		log.Printf("ERROR: StatPruner: file upload corrupted")
 		removalErr := self.storageController.Arch.RemoveFile(self.storageController.Arch.GetStatDataBucketName(), remotePath, fileName)
 		if removalErr != nil {
 			log.Printf("ERROR: StatPruner: cannot remove remote file :(%s)", removalErr)
@@ -102,9 +107,15 @@ func (self ReserveStats) uploadAndVerify(fileName, remotePath string) (bool, err
 func (self ReserveStats) ControlRateSize() error {
 	tmpDir, err := ioutil.TempDir("", "ExpiredRateData")
 	if err != nil {
-		panic(err)
+		return err
 	}
-	defer archive.TearDown(tmpDir)
+
+	defer func() {
+		if rErr := os.RemoveAll(tmpDir); rErr != nil {
+			log.Printf("failed to cleanup temp dir: %s, err : %s", tmpDir, rErr.Error())
+		}
+	}()
+
 	for {
 		//continuously pruning until there is no more expired data.
 		for {
