@@ -81,9 +81,9 @@ func (bc *Blockchain) StandardGasPrice() float64 {
 	return common.BigToFloat(price, 9)
 }
 
-func (b *Blockchain) CheckTokenIndices(tokenAddr ethereum.Address) error {
-	opts := self.GetCallOpts(0)
-	pricingAddr, err := b.setting.GetAddress(settings.Pricing)
+func (bc *Blockchain) CheckTokenIndices(tokenAddr ethereum.Address) error {
+	opts := bc.GetCallOpts(0)
+	pricingAddr, err := bc.setting.GetAddress(settings.Pricing)
 	if err != nil {
 		return err
 	}
