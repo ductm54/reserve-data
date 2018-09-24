@@ -53,10 +53,10 @@ func NewBoltStorage(path string) (*BoltStorage, error) {
 }
 
 //GetPendingIntermediateTXs return pending transaction for first deposit phase
-func (self *BoltStorage) GetPendingIntermediateTXs() (map[common.ActivityID]common.TXEntry, error) {
+func (bs *BoltStorage) GetPendingIntermediateTXs() (map[common.ActivityID]common.TXEntry, error) {
 	result := make(map[common.ActivityID]common.TXEntry)
 	var err error
-	err = self.db.View(func(tx *bolt.Tx) error {
+	err = bs.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(pendingIntermediateTx))
 		c := b.Cursor()
 		for k, v := c.First(); k != nil; k, v = c.Next() {
@@ -76,9 +76,9 @@ func (self *BoltStorage) GetPendingIntermediateTXs() (map[common.ActivityID]comm
 }
 
 //StorePendingIntermediateTx store pending transaction
-func (self *BoltStorage) StorePendingIntermediateTx(id common.ActivityID, data common.TXEntry) error {
+func (bs *BoltStorage) StorePendingIntermediateTx(id common.ActivityID, data common.TXEntry) error {
 	var err error
-	err = self.db.Update(func(tx *bolt.Tx) error {
+	err = bs.db.Update(func(tx *bolt.Tx) error {
 		var dataJSON []byte
 		b := tx.Bucket([]byte(pendingIntermediateTx))
 		dataJSON, uErr := json.Marshal(data)
@@ -95,9 +95,9 @@ func (self *BoltStorage) StorePendingIntermediateTx(id common.ActivityID, data c
 }
 
 //StoreIntermediateTx store intermediate transaction and remove it from pending bucket
-func (self *BoltStorage) StoreIntermediateTx(id common.ActivityID, data common.TXEntry) error {
+func (bs *BoltStorage) StoreIntermediateTx(id common.ActivityID, data common.TXEntry) error {
 	var err error
-	err = self.db.Update(func(tx *bolt.Tx) error {
+	err = bs.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(intermediateTx))
 		dataJSON, uErr := json.Marshal(data)
 		if uErr != nil {
@@ -132,10 +132,10 @@ func isTheSame(a []byte, b []byte) bool {
 }
 
 //GetIntermedatorTx get intermediate transaction
-func (self *BoltStorage) GetIntermedatorTx(id common.ActivityID) (common.TXEntry, error) {
+func (bs *BoltStorage) GetIntermedatorTx(id common.ActivityID) (common.TXEntry, error) {
 	var tx2 common.TXEntry
 	var err error
-	err = self.db.View(func(tx *bolt.Tx) error {
+	err = bs.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(intermediateTx))
 		c := b.Cursor()
 		idBytes := id.ToBytes()
@@ -149,9 +149,9 @@ func (self *BoltStorage) GetIntermedatorTx(id common.ActivityID) (common.TXEntry
 }
 
 //StoreTradeHistory store trade history
-func (self *BoltStorage) StoreTradeHistory(data common.ExchangeTradeHistory) error {
+func (bs *BoltStorage) StoreTradeHistory(data common.ExchangeTradeHistory) error {
 	var err error
-	err = self.db.Update(func(tx *bolt.Tx) error {
+	err = bs.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(tradeHistory))
 		for pair, pairHistory := range data {
 			pairBk, uErr := b.CreateBucketIfNotExists([]byte(pair))
@@ -176,7 +176,7 @@ func (self *BoltStorage) StoreTradeHistory(data common.ExchangeTradeHistory) err
 }
 
 //GetTradeHistory get trade history
-func (self *BoltStorage) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
+func (bs *BoltStorage) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
 	result := common.ExchangeTradeHistory{}
 	var err error
 	if toTime-fromTime > maxGetTradeHistory {
@@ -184,7 +184,7 @@ func (self *BoltStorage) GetTradeHistory(fromTime, toTime uint64) (common.Exchan
 	}
 	min := []byte(strconv.FormatUint(fromTime, 10))
 	max := []byte(strconv.FormatUint(toTime, 10))
-	err = self.db.View(func(tx *bolt.Tx) error {
+	err = bs.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(tradeHistory))
 		c := b.Cursor()
 		exchangeHistory := common.ExchangeTradeHistory{}

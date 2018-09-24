@@ -14,8 +14,8 @@ type Signer struct {
 	Secret string `json:"huobi_secret"`
 }
 
-func (self Signer) Sign(msg string) string {
-	mac := hmac.New(sha256.New, []byte(self.Secret))
+func (s Signer) Sign(msg string) string {
+	mac := hmac.New(sha256.New, []byte(s.Secret))
 	if _, err := mac.Write([]byte(msg)); err != nil {
 		log.Printf("Encode message error: %s", err.Error())
 	}
@@ -23,8 +23,8 @@ func (self Signer) Sign(msg string) string {
 	return result
 }
 
-func (self Signer) GetKey() string {
-	return self.Key
+func (s Signer) GetKey() string {
+	return s.Key
 }
 
 func NewSigner(key, secret string) *Signer {

@@ -27,25 +27,25 @@ type Binance struct {
 	setting Setting
 }
 
-func (self *Binance) TokenAddresses() (map[string]ethereum.Address, error) {
-	addresses, err := self.setting.GetDepositAddresses(settings.Binance)
+func (bi *Binance) TokenAddresses() (map[string]ethereum.Address, error) {
+	addresses, err := bi.setting.GetDepositAddresses(settings.Binance)
 	if err != nil {
 		return nil, err
 	}
 	return addresses.GetData(), nil
 }
 
-func (self *Binance) MarshalText() (text []byte, err error) {
-	return []byte(self.ID()), nil
+func (bi *Binance) MarshalText() (text []byte, err error) {
+	return []byte(bi.ID()), nil
 }
 
 // Address returns the deposit address of a token on Binance.
 // It will prioritize the live adress from Binance over the current address in storage
-func (self *Binance) Address(token common.Token) (ethereum.Address, bool) {
-	liveAddress, err := self.interf.GetDepositAddress(token.ID)
+func (bi *Binance) Address(token common.Token) (ethereum.Address, bool) {
+	liveAddress, err := bi.interf.GetDepositAddress(token.ID)
 	if err != nil || liveAddress.Address == "" {
 		log.Printf("WARNING: Get Binance live deposit address for token %s failed: err: (%v) or the address repplied is empty . Use the currently available address instead", token.ID, err)
-		addrs, uErr := self.setting.GetDepositAddresses(settings.Binance)
+		addrs, uErr := bi.setting.GetDepositAddresses(settings.Binance)
 		if uErr != nil {
 			log.Printf("WARNING: get address of token %s in Binance exchange failed:(%s), it will be considered as not supported", token.ID, err.Error())
 			return ethereum.Address{}, false
@@ -55,27 +55,27 @@ func (self *Binance) Address(token common.Token) (ethereum.Address, bool) {
 	log.Printf("Got Binance live deposit address for token %s, attempt to update it to current setting", token.ID)
 	addrs := common.NewExchangeAddresses()
 	addrs.Update(token.ID, ethereum.HexToAddress(liveAddress.Address))
-	if err = self.setting.UpdateDepositAddress(settings.Binance, *addrs, common.GetTimepoint()); err != nil {
+	if err = bi.setting.UpdateDepositAddress(settings.Binance, *addrs, common.GetTimepoint()); err != nil {
 		log.Printf("WARNING: cannot update deposit address for token %s on Binance: (%s)", token.ID, err.Error())
 	}
 	return ethereum.HexToAddress(liveAddress.Address), true
 }
 
-func (self *Binance) UpdateDepositAddress(token common.Token, address string) error {
-	liveAddress, err := self.interf.GetDepositAddress(token.ID)
+func (bi *Binance) UpdateDepositAddress(token common.Token, address string) error {
+	liveAddress, err := bi.interf.GetDepositAddress(token.ID)
 	if err != nil || liveAddress.Address == "" {
 		log.Printf("WARNING: Get Binance live deposit address for token %s failed: err: (%v) or the address repplied is empty . Use the currently available address instead", token.ID, err)
 		addrs := common.NewExchangeAddresses()
 		addrs.Update(token.ID, ethereum.HexToAddress(address))
-		return self.setting.UpdateDepositAddress(settings.Binance, *addrs, common.GetTimepoint())
+		return bi.setting.UpdateDepositAddress(settings.Binance, *addrs, common.GetTimepoint())
 	}
 	log.Printf("Got Binance live deposit address for token %s, attempt to update it to current setting", token.ID)
 	addrs := common.NewExchangeAddresses()
 	addrs.Update(token.ID, ethereum.HexToAddress(liveAddress.Address))
-	return self.setting.UpdateDepositAddress(settings.Binance, *addrs, common.GetTimepoint())
+	return bi.setting.UpdateDepositAddress(settings.Binance, *addrs, common.GetTimepoint())
 }
 
-func (self *Binance) precisionFromStepSize(stepSize string) int {
+func (bi *Binance) precisionFromStepSize(stepSize string) int {
 	re := regexp.MustCompile("0*$")
 	parts := strings.Split(re.ReplaceAllString(stepSize, ""), ".")
 	if len(parts) > 1 {
@@ -86,15 +86,15 @@ func (self *Binance) precisionFromStepSize(stepSize string) int {
 
 // GetLiveExchangeInfo queries the Exchange Endpoint for exchange precision and limit of a certain pair ID
 // It return error if occurs.
-func (self *Binance) GetLiveExchangeInfos(tokenPairIDs []common.TokenPairID) (common.ExchangeInfo, error) {
+func (bi *Binance) GetLiveExchangeInfos(tokenPairIDs []common.TokenPairID) (common.ExchangeInfo, error) {
 	result := make(common.ExchangeInfo)
-	exchangeInfo, err := self.interf.GetExchangeInfo()
+	exchangeInfo, err := bi.interf.GetExchangeInfo()
 	if err != nil {
 		return result, err
 	}
 	symbols := exchangeInfo.Symbols
 	for _, pairID := range tokenPairIDs {
-		exchangePrecisionLimit, ok := self.getPrecisionLimitFromSymbols(pairID, symbols)
+		exchangePrecisionLimit, ok := bi.getPrecisionLimitFromSymbols(pairID, symbols)
 		if !ok {
 			return result, fmt.Errorf("Binance Exchange Info reply doesn't contain token pair %s", string(pairID))
 		}
@@ -105,7 +105,7 @@ func (self *Binance) GetLiveExchangeInfos(tokenPairIDs []common.TokenPairID) (co
 
 // getPrecisionLimitFromSymbols find the pairID amongs symbols from exchanges,
 // return ExchangePrecisionLimit of that pair and true if the pairID exist amongs symbols, false if otherwise
-func (self *Binance) getPrecisionLimitFromSymbols(pair common.TokenPairID, symbols []BinanceSymbol) (common.ExchangePrecisionLimit, bool) {
+func (bi *Binance) getPrecisionLimitFromSymbols(pair common.TokenPairID, symbols []BinanceSymbol) (common.ExchangePrecisionLimit, bool) {
 	var result common.ExchangePrecisionLimit
 	pairName := strings.ToUpper(strings.Replace(string(pair), "-", "", 1))
 	for _, symbol := range symbols {
@@ -122,7 +122,7 @@ func (self *Binance) getPrecisionLimitFromSymbols(pair common.TokenPairID, symbo
 					// update amount max
 					maxQuantity, _ := strconv.ParseFloat(filter.MaxQuantity, 64)
 					result.AmountLimit.Max = maxQuantity
-					result.Precision.Amount = self.precisionFromStepSize(filter.StepSize)
+					result.Precision.Amount = bi.precisionFromStepSize(filter.StepSize)
 				}
 
 				if filter.FilterType == "PRICE_FILTER" {
@@ -132,7 +132,7 @@ func (self *Binance) getPrecisionLimitFromSymbols(pair common.TokenPairID, symbo
 					// update price max
 					maxPrice, _ := strconv.ParseFloat(filter.MaxPrice, 64)
 					result.PriceLimit.Max = maxPrice
-					result.Precision.Price = self.precisionFromStepSize(filter.TickSize)
+					result.Precision.Price = bi.precisionFromStepSize(filter.TickSize)
 				}
 
 				if filter.FilterType == "MIN_NOTIONAL" {
@@ -146,13 +146,13 @@ func (self *Binance) getPrecisionLimitFromSymbols(pair common.TokenPairID, symbo
 	return result, false
 }
 
-func (self *Binance) UpdatePairsPrecision() error {
-	exchangeInfo, err := self.interf.GetExchangeInfo()
+func (bi *Binance) UpdatePairsPrecision() error {
+	exchangeInfo, err := bi.interf.GetExchangeInfo()
 	if err != nil {
 		return err
 	}
 	symbols := exchangeInfo.Symbols
-	exInfo, err := self.GetInfo()
+	exInfo, err := bi.GetInfo()
 	if err != nil {
 		return fmt.Errorf("Can't get Exchange Info for Binance from persistent storage. (%s)", err)
 	}
@@ -160,43 +160,43 @@ func (self *Binance) UpdatePairsPrecision() error {
 		return errors.New("Exchange info of Binance is nil")
 	}
 	for pair := range exInfo.GetData() {
-		exchangePrecisionLimit, exist := self.getPrecisionLimitFromSymbols(pair, symbols)
+		exchangePrecisionLimit, exist := bi.getPrecisionLimitFromSymbols(pair, symbols)
 		if !exist {
 			return fmt.Errorf("Binance Exchange Info reply doesn't contain token pair %s", pair)
 		}
 		exInfo[pair] = exchangePrecisionLimit
 	}
-	return self.setting.UpdateExchangeInfo(settings.Binance, exInfo, common.GetTimepoint())
+	return bi.setting.UpdateExchangeInfo(settings.Binance, exInfo, common.GetTimepoint())
 }
 
-func (self *Binance) GetInfo() (common.ExchangeInfo, error) {
-	return self.setting.GetExchangeInfo(settings.Binance)
+func (bi *Binance) GetInfo() (common.ExchangeInfo, error) {
+	return bi.setting.GetExchangeInfo(settings.Binance)
 }
 
-func (self *Binance) GetExchangeInfo(pair common.TokenPairID) (common.ExchangePrecisionLimit, error) {
-	exInfo, err := self.setting.GetExchangeInfo(settings.Binance)
+func (bi *Binance) GetExchangeInfo(pair common.TokenPairID) (common.ExchangePrecisionLimit, error) {
+	exInfo, err := bi.setting.GetExchangeInfo(settings.Binance)
 	if err != nil {
 		return common.ExchangePrecisionLimit{}, err
 	}
 	return exInfo.Get(pair)
 }
 
-func (self *Binance) GetFee() (common.ExchangeFees, error) {
-	return self.setting.GetFee(settings.Binance)
+func (bi *Binance) GetFee() (common.ExchangeFees, error) {
+	return bi.setting.GetFee(settings.Binance)
 }
 
-func (self *Binance) GetMinDeposit() (common.ExchangesMinDeposit, error) {
-	return self.setting.GetMinDeposit(settings.Binance)
+func (bi *Binance) GetMinDeposit() (common.ExchangesMinDeposit, error) {
+	return bi.setting.GetMinDeposit(settings.Binance)
 }
 
 // ID must return the exact string or else simulation will fail
-func (self *Binance) ID() common.ExchangeID {
+func (bi *Binance) ID() common.ExchangeID {
 	return common.ExchangeID(settings.Binance.String())
 }
 
-func (self *Binance) TokenPairs() ([]common.TokenPair, error) {
+func (bi *Binance) TokenPairs() ([]common.TokenPair, error) {
 	result := []common.TokenPair{}
-	exInfo, err := self.setting.GetExchangeInfo(settings.Binance)
+	exInfo, err := bi.setting.GetExchangeInfo(settings.Binance)
 	if err != nil {
 		return nil, err
 	}
@@ -205,11 +205,11 @@ func (self *Binance) TokenPairs() ([]common.TokenPair, error) {
 		if len(pairIDs) != 2 {
 			return result, fmt.Errorf("Binance PairID %s is malformed", string(pair))
 		}
-		tok1, uErr := self.setting.GetTokenByID(pairIDs[0])
+		tok1, uErr := bi.setting.GetTokenByID(pairIDs[0])
 		if uErr != nil {
 			return result, fmt.Errorf("Binance cant get Token %s, %s", pairIDs[0], uErr)
 		}
-		tok2, uErr := self.setting.GetTokenByID(pairIDs[1])
+		tok2, uErr := bi.setting.GetTokenByID(pairIDs[1])
 		if uErr != nil {
 			return result, fmt.Errorf("Binance cant get Token %s, %s", pairIDs[1], uErr)
 		}
@@ -222,12 +222,12 @@ func (self *Binance) TokenPairs() ([]common.TokenPair, error) {
 	return result, nil
 }
 
-func (self *Binance) Name() string {
+func (bi *Binance) Name() string {
 	return "binance"
 }
 
-func (self *Binance) QueryOrder(symbol string, id uint64) (done float64, remaining float64, finished bool, err error) {
-	result, err := self.interf.OrderStatus(symbol, id)
+func (bi *Binance) QueryOrder(symbol string, id uint64) (done float64, remaining float64, finished bool, err error) {
+	result, err := bi.interf.OrderStatus(symbol, id)
 	if err != nil {
 		return 0, 0, false, err
 	} else {
@@ -237,13 +237,13 @@ func (self *Binance) QueryOrder(symbol string, id uint64) (done float64, remaini
 	}
 }
 
-func (self *Binance) Trade(tradeType string, base common.Token, quote common.Token, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
-	result, err := self.interf.Trade(tradeType, base, quote, rate, amount)
+func (bi *Binance) Trade(tradeType string, base common.Token, quote common.Token, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
+	result, err := bi.interf.Trade(tradeType, base, quote, rate, amount)
 
 	if err != nil {
 		return "", 0, 0, false, err
 	} else {
-		done, remaining, finished, err := self.QueryOrder(
+		done, remaining, finished, err := bi.QueryOrder(
 			base.ID+quote.ID,
 			result.OrderID,
 		)
@@ -252,25 +252,25 @@ func (self *Binance) Trade(tradeType string, base common.Token, quote common.Tok
 	}
 }
 
-func (self *Binance) Withdraw(token common.Token, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
-	tx, err := self.interf.Withdraw(token, amount, address)
+func (bi *Binance) Withdraw(token common.Token, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
+	tx, err := bi.interf.Withdraw(token, amount, address)
 	return tx, err
 }
 
-func (self *Binance) CancelOrder(id string, base, quote string) error {
+func (bi *Binance) CancelOrder(id string, base, quote string) error {
 	idNo, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
 		return err
 	}
 	symbol := base + quote
-	_, err = self.interf.CancelOrder(symbol, idNo)
+	_, err = bi.interf.CancelOrder(symbol, idNo)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (self *Binance) FetchOnePairData(
+func (bi *Binance) FetchOnePairData(
 	wg *sync.WaitGroup,
 	pair common.TokenPair,
 	data *sync.Map,
@@ -282,7 +282,7 @@ func (self *Binance) FetchOnePairData(
 	timestamp := common.Timestamp(fmt.Sprintf("%d", timepoint))
 	result.Timestamp = timestamp
 	result.Valid = true
-	resp_data, err := self.interf.GetDepthOnePair(pair)
+	resp_data, err := bi.interf.GetDepthOnePair(pair)
 	returnTime := common.GetTimestamp()
 	result.ReturnTime = returnTime
 	if err != nil {
@@ -320,10 +320,10 @@ func (self *Binance) FetchOnePairData(
 	data.Store(pair.PairID(), result)
 }
 
-func (self *Binance) FetchPriceData(timepoint uint64) (map[common.TokenPairID]common.ExchangePrice, error) {
+func (bi *Binance) FetchPriceData(timepoint uint64) (map[common.TokenPairID]common.ExchangePrice, error) {
 	wait := sync.WaitGroup{}
 	data := sync.Map{}
-	pairs, err := self.TokenPairs()
+	pairs, err := bi.TokenPairs()
 	if err != nil {
 		return nil, err
 	}
@@ -333,7 +333,7 @@ func (self *Binance) FetchPriceData(timepoint uint64) (map[common.TokenPairID]co
 		for x = i; x < len(pairs) && x < i+batchSize; x++ {
 			wait.Add(1)
 			pair := pairs[x]
-			go self.FetchOnePairData(&wait, pair, &data, timepoint)
+			go bi.FetchOnePairData(&wait, pair, &data, timepoint)
 		}
 		wait.Wait()
 		i = x
@@ -357,7 +357,7 @@ func (self *Binance) FetchPriceData(timepoint uint64) (map[common.TokenPairID]co
 	return result, err
 }
 
-func (self *Binance) OpenOrdersForOnePair(
+func (bi *Binance) OpenOrdersForOnePair(
 	wg *sync.WaitGroup,
 	pair common.TokenPair,
 	data *sync.Map,
@@ -365,7 +365,7 @@ func (self *Binance) OpenOrdersForOnePair(
 
 	defer wg.Done()
 
-	result, err := self.interf.OpenOrdersForOnePair(pair)
+	result, err := bi.interf.OpenOrdersForOnePair(pair)
 
 	if err == nil {
 		orders := []common.Order{}
@@ -395,12 +395,12 @@ func (self *Binance) OpenOrdersForOnePair(
 	}
 }
 
-func (self *Binance) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, error) {
+func (bi *Binance) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, error) {
 	result := common.EBalanceEntry{}
 	result.Timestamp = common.Timestamp(fmt.Sprintf("%d", timepoint))
 	result.Valid = true
 	result.Error = ""
-	resp_data, err := self.interf.GetInfo()
+	resp_data, err := bi.interf.GetInfo()
 	result.ReturnTime = common.GetTimestamp()
 	if err != nil {
 		result.Valid = false
@@ -418,7 +418,7 @@ func (self *Binance) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, 
 		} else {
 			for _, b := range resp_data.Balances {
 				tokenID := b.Asset
-				_, err := self.setting.GetTokenByID(tokenID)
+				_, err := bi.setting.GetTokenByID(tokenID)
 				if err == nil {
 					avai, _ := strconv.ParseFloat(b.Free, 64)
 					locked, _ := strconv.ParseFloat(b.Locked, 64)
@@ -433,7 +433,7 @@ func (self *Binance) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, 
 }
 
 //FetchOnePairTradeHistory fetch trade history for one pair from exchange
-func (self *Binance) FetchOnePairTradeHistory(
+func (bi *Binance) FetchOnePairTradeHistory(
 	wait *sync.WaitGroup,
 	data *sync.Map,
 	pair common.TokenPair) {
@@ -441,11 +441,11 @@ func (self *Binance) FetchOnePairTradeHistory(
 	defer wait.Done()
 	result := []common.TradeHistory{}
 	tokenPair := fmt.Sprintf("%s-%s", pair.Base.ID, pair.Quote.ID)
-	fromID, err := self.storage.GetLastIDTradeHistory(tokenPair)
+	fromID, err := bi.storage.GetLastIDTradeHistory(tokenPair)
 	if err != nil {
 		log.Printf("Cannot get last ID trade history: %s", err.Error())
 	}
-	resp, err := self.interf.GetAccountTradeHistory(pair.Base, pair.Quote, fromID)
+	resp, err := bi.interf.GetAccountTradeHistory(pair.Base, pair.Quote, fromID)
 	if err != nil {
 		log.Printf("Binance Cannot fetch data for pair %s%s: %s", pair.Base.ID, pair.Quote.ID, err.Error())
 	}
@@ -470,13 +470,13 @@ func (self *Binance) FetchOnePairTradeHistory(
 }
 
 //FetchTradeHistory get all trade history for all tokens in the exchange
-func (self *Binance) FetchTradeHistory() {
+func (bi *Binance) FetchTradeHistory() {
 	t := time.NewTicker(10 * time.Minute)
 	go func() {
 		for {
 			result := common.ExchangeTradeHistory{}
 			data := sync.Map{}
-			pairs, err := self.TokenPairs()
+			pairs, err := bi.TokenPairs()
 			if err != nil {
 				log.Printf("Binance Get Token pairs setting failed (%s)", err.Error())
 				continue
@@ -488,7 +488,7 @@ func (self *Binance) FetchTradeHistory() {
 				for x = i; x < len(pairs) && x < i+batchSize; x++ {
 					wait.Add(1)
 					pair := pairs[x]
-					go self.FetchOnePairTradeHistory(&wait, &data, pair)
+					go bi.FetchOnePairTradeHistory(&wait, &data, pair)
 				}
 				i = x
 				wait.Wait()
@@ -515,7 +515,7 @@ func (self *Binance) FetchTradeHistory() {
 				log.Print("Binance fetch trade history returns corrupted. Try again in 10 mins")
 				continue
 			}
-			if err := self.storage.StoreTradeHistory(result); err != nil {
+			if err := bi.storage.StoreTradeHistory(result); err != nil {
 				log.Printf("Binance Store trade history error: %s", err.Error())
 			}
 			<-t.C
@@ -523,14 +523,14 @@ func (self *Binance) FetchTradeHistory() {
 	}()
 }
 
-func (self *Binance) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
-	return self.storage.GetTradeHistory(fromTime, toTime)
+func (bi *Binance) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
+	return bi.storage.GetTradeHistory(fromTime, toTime)
 }
 
-func (self *Binance) DepositStatus(id common.ActivityID, txHash, currency string, amount float64, timepoint uint64) (string, error) {
+func (bi *Binance) DepositStatus(id common.ActivityID, txHash, currency string, amount float64, timepoint uint64) (string, error) {
 	startTime := timepoint - 86400000
 	endTime := timepoint
-	deposits, err := self.interf.DepositHistory(startTime, endTime)
+	deposits, err := bi.interf.DepositHistory(startTime, endTime)
 	if err != nil || !deposits.Success {
 		return "", err
 	} else {
@@ -548,10 +548,10 @@ func (self *Binance) DepositStatus(id common.ActivityID, txHash, currency string
 	}
 }
 
-func (self *Binance) WithdrawStatus(id, currency string, amount float64, timepoint uint64) (string, string, error) {
+func (bi *Binance) WithdrawStatus(id, currency string, amount float64, timepoint uint64) (string, string, error) {
 	startTime := timepoint - 86400000
 	endTime := timepoint
-	withdraws, err := self.interf.WithdrawHistory(startTime, endTime)
+	withdraws, err := bi.interf.WithdrawHistory(startTime, endTime)
 	if err != nil || !withdraws.Success {
 		return "", "", err
 	} else {
@@ -569,13 +569,13 @@ func (self *Binance) WithdrawStatus(id, currency string, amount float64, timepoi
 	}
 }
 
-func (self *Binance) OrderStatus(id string, base, quote string) (string, error) {
+func (bi *Binance) OrderStatus(id string, base, quote string) (string, error) {
 	orderID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
 		return "", fmt.Errorf("Can not parse orderID (val %s) to uint", id)
 	}
 	symbol := base + quote
-	order, err := self.interf.OrderStatus(symbol, orderID)
+	order, err := bi.interf.OrderStatus(symbol, orderID)
 	if err != nil {
 		return "", err
 	}

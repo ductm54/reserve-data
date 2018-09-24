@@ -15,12 +15,12 @@ type Signer struct {
 	Secret string `json:"bittrex_secret"`
 }
 
-func (self Signer) GetKey() string {
-	return self.Key
+func (s Signer) GetKey() string {
+	return s.Key
 }
 
-func (self Signer) Sign(msg string) string {
-	mac := hmac.New(sha512.New, []byte(self.Secret))
+func (s Signer) Sign(msg string) string {
+	mac := hmac.New(sha512.New, []byte(s.Secret))
 	if _, err := mac.Write([]byte(msg)); err != nil {
 		log.Printf("Encode message error: %s", err.Error())
 	}

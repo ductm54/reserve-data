@@ -27,15 +27,15 @@ func getSimulationURL(baseURL string) string {
 
 type RealInterface struct{}
 
-func (self *RealInterface) PublicEndpoint() string {
+func (ri *RealInterface) PublicEndpoint() string {
 	return bittrexAPIEndpoint + apiVersion + "/public"
 }
 
-func (self *RealInterface) MarketEndpoint() string {
+func (ri *RealInterface) MarketEndpoint() string {
 	return bittrexAPIEndpoint + apiVersion + "/market"
 }
 
-func (self *RealInterface) AccountEndpoint() string {
+func (ri *RealInterface) AccountEndpoint() string {
 	return bittrexAPIEndpoint + apiVersion + "/account"
 }
 
@@ -47,16 +47,16 @@ type SimulatedInterface struct {
 	baseURL string
 }
 
-func (self *SimulatedInterface) PublicEndpoint() string {
-	return fmt.Sprintf("%s/api/%s/public", getSimulationURL(self.baseURL), apiVersion)
+func (si *SimulatedInterface) PublicEndpoint() string {
+	return fmt.Sprintf("%s/api/%s/public", getSimulationURL(si.baseURL), apiVersion)
 }
 
-func (self *SimulatedInterface) MarketEndpoint() string {
-	return fmt.Sprintf("%s/api/%s/market", getSimulationURL(self.baseURL), apiVersion)
+func (si *SimulatedInterface) MarketEndpoint() string {
+	return fmt.Sprintf("%s/api/%s/market", getSimulationURL(si.baseURL), apiVersion)
 }
 
-func (self *SimulatedInterface) AccountEndpoint() string {
-	return fmt.Sprintf("%s/api/%s/account", getSimulationURL(self.baseURL), apiVersion)
+func (si *SimulatedInterface) AccountEndpoint() string {
+	return fmt.Sprintf("%s/api/%s/account", getSimulationURL(si.baseURL), apiVersion)
 }
 
 func NewSimulatedInterface(flagVariable string) *SimulatedInterface {
@@ -65,15 +65,15 @@ func NewSimulatedInterface(flagVariable string) *SimulatedInterface {
 
 type DevInterface struct{}
 
-func (self *DevInterface) PublicEndpoint() string {
+func (di *DevInterface) PublicEndpoint() string {
 	return bittrexAPIEndpoint + apiVersion + "/public"
 }
 
-func (self *DevInterface) MarketEndpoint() string {
+func (di *DevInterface) MarketEndpoint() string {
 	return bittrexAPIEndpoint + apiVersion + "/market"
 }
 
-func (self *DevInterface) AccountEndpoint() string {
+func (di *DevInterface) AccountEndpoint() string {
 	return bittrexAPIEndpoint + apiVersion + "/account"
 }
 
@@ -85,16 +85,16 @@ type RopstenInterface struct {
 	baseURL string
 }
 
-func (self *RopstenInterface) PublicEndpoint() string {
+func (ri *RopstenInterface) PublicEndpoint() string {
 	return bittrexAPIEndpoint + apiVersion + "/public"
 }
 
-func (self *RopstenInterface) MarketEndpoint() string {
-	return fmt.Sprintf("%s/api/%s/market", getSimulationURL(self.baseURL), apiVersion)
+func (ri *RopstenInterface) MarketEndpoint() string {
+	return fmt.Sprintf("%s/api/%s/market", getSimulationURL(ri.baseURL), apiVersion)
 }
 
-func (self *RopstenInterface) AccountEndpoint() string {
-	return fmt.Sprintf("%s/api/%s/account", getSimulationURL(self.baseURL), apiVersion)
+func (ri *RopstenInterface) AccountEndpoint() string {
+	return fmt.Sprintf("%s/api/%s/account", getSimulationURL(ri.baseURL), apiVersion)
 }
 
 func NewRopstenInterface(flagVariable string) *RopstenInterface {
@@ -105,16 +105,16 @@ type KovanInterface struct {
 	baseURL string
 }
 
-func (self *KovanInterface) PublicEndpoint() string {
+func (ki *KovanInterface) PublicEndpoint() string {
 	return bittrexAPIEndpoint + apiVersion + "/public"
 }
 
-func (self *KovanInterface) MarketEndpoint() string {
-	return fmt.Sprintf("%s/api/%s/market", getSimulationURL(self.baseURL), apiVersion)
+func (ki *KovanInterface) MarketEndpoint() string {
+	return fmt.Sprintf("%s/api/%s/market", getSimulationURL(ki.baseURL), apiVersion)
 }
 
-func (self *KovanInterface) AccountEndpoint() string {
-	return fmt.Sprintf("%s/api/%s/account", getSimulationURL(self.baseURL), apiVersion)
+func (ki *KovanInterface) AccountEndpoint() string {
+	return fmt.Sprintf("%s/api/%s/account", getSimulationURL(ki.baseURL), apiVersion)
 }
 
 func NewKovanInterface(flagVariable string) *KovanInterface {
