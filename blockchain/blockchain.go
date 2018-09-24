@@ -538,16 +538,16 @@ func NewBlockchain(base *blockchain.BaseBlockchain, setting Setting) (*Blockchai
 	}, nil
 }
 
-func (self *Blockchain) GetPricingOPAddress() ethereum.Address {
-	return self.MustGetOperator(pricingOP).Address
+func (bc *Blockchain) GetPricingOPAddress() ethereum.Address {
+	return bc.MustGetOperator(pricingOP).Address
 }
 
-func (self *Blockchain) GetDepositOPAddress() ethereum.Address {
-	return self.MustGetOperator(depositOP).Address
+func (bc *Blockchain) GetDepositOPAddress() ethereum.Address {
+	return bc.MustGetOperator(depositOP).Address
 }
 
-func (self *Blockchain) GetIntermediatorOPAddress() ethereum.Address {
-	return self.MustGetOperator(huobiblockchain.HuobiOP).Address
+func (bc *Blockchain) GetIntermediatorOPAddress() ethereum.Address {
+	return bc.MustGetOperator(huobiblockchain.HuobiOP).Address
 }
 
 func processBigIntOutput(ret *big.Int) *big.Int {

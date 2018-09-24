@@ -14,7 +14,7 @@ type AnalyticStorageTest struct {
 func NewAnalyticStorageTest(storage AnalyticStorage) *AnalyticStorageTest {
 	return &AnalyticStorageTest{storage}
 }
-func (self *AnalyticStorageTest) TestPriceAnalyticData() error {
+func (ast *AnalyticStorageTest) TestPriceAnalyticData() error {
 	var err error
 	//test UpdatePriceAnalytic
 	testDict := map[string]interface{}{
@@ -27,13 +27,13 @@ func (self *AnalyticStorageTest) TestPriceAnalyticData() error {
 		"trigger_update":    true,
 	}
 	data, _ := json.Marshal(testDict)
-	err = self.storage.UpdatePriceAnalyticData(5678, data)
+	err = ast.storage.UpdatePriceAnalyticData(5678, data)
 	if err != nil {
 		return err
 	}
 
 	//test GetPriceAnalytic
-	resp, err := self.storage.GetPriceAnalyticData(0, 86400000)
+	resp, err := ast.storage.GetPriceAnalyticData(0, 86400000)
 	if (resp == nil) || (len(resp) < 1) {
 		return fmt.Errorf("GetPriceAnalyticData returns empty")
 	}
@@ -60,7 +60,7 @@ func (self *AnalyticStorageTest) TestPriceAnalyticData() error {
 		}
 	}()
 	//test ExportExpiredPriceAnalyticData
-	nRecord, err := self.storage.ExportExpiredPriceAnalyticData(31*86400000+1, fileName)
+	nRecord, err := ast.storage.ExportExpiredPriceAnalyticData(31*86400000+1, fileName)
 	if err != nil {
 		return err
 	}
@@ -68,7 +68,7 @@ func (self *AnalyticStorageTest) TestPriceAnalyticData() error {
 		return fmt.Errorf("Expect pruned 1 record, got %d", nRecord)
 	}
 	//test PruneExpiredPriceAnalyticData
-	nRecord, err = self.storage.PruneExpiredPriceAnalyticData(31*86400000 + 1)
+	nRecord, err = ast.storage.PruneExpiredPriceAnalyticData(31*86400000 + 1)
 	if err != nil {
 		return err
 	}
