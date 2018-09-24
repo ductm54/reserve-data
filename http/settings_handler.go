@@ -22,8 +22,8 @@ const (
 	validAddressLength        = 42
 )
 
-func (h *HTTPServer) updateInternalTokensIndices(tokenUpdates map[string]common.TokenUpdate) error {
-	tokens, err := h.setting.GetInternalTokens()
+func (hs *HTTPServer) updateInternalTokensIndices(tokenUpdates map[string]common.TokenUpdate) error {
+	tokens, err := hs.setting.GetInternalTokens()
 	if err != nil {
 		return err
 	}
@@ -216,8 +216,8 @@ func (hs *HTTPServer) GetPendingTokenUpdates(c *gin.Context) {
 	return
 }
 
-func (h *HTTPServer) ConfirmTokenUpdate(c *gin.Context) {
-	postForm, ok := h.Authenticated(c, []string{"data"}, []Permission{ConfirmConfPermission})
+func (hs *HTTPServer) ConfirmTokenUpdate(c *gin.Context) {
+	postForm, ok := hs.Authenticated(c, []string{"data"}, []Permission{ConfirmConfPermission})
 	if !ok {
 		return
 	}
@@ -305,7 +305,7 @@ func (h *HTTPServer) ConfirmTokenUpdate(c *gin.Context) {
 		}
 	}
 	// Apply the change into setting database
-	if err = h.setting.ApplyTokenWithExchangeSetting(preparedToken, preparedExchangeSetting, timestamp); err != nil {
+	if err = hs.setting.ApplyTokenWithExchangeSetting(preparedToken, preparedExchangeSetting, timestamp); err != nil {
 		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Can not apply token and exchange setting for token listing (%s). Metric data and token indices changes has to be manually revert", err.Error())))
 		return
 	}
@@ -426,8 +426,8 @@ func (hs *HTTPServer) TokenSettings(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(data))
 }
 
-func (h *HTTPServer) UpdateExchangeFee(c *gin.Context) {
-	postForm, ok := h.Authenticated(c, []string{"name", "data"}, []Permission{RebalancePermission, ConfigurePermission})
+func (hs *HTTPServer) UpdateExchangeFee(c *gin.Context) {
+	postForm, ok := hs.Authenticated(c, []string{"name", "data"}, []Permission{RebalancePermission, ConfigurePermission})
 	if !ok {
 		return
 	}
@@ -448,7 +448,7 @@ func (h *HTTPServer) UpdateExchangeFee(c *gin.Context) {
 	if exFee.Trading == nil || exFee.Funding.Deposit == nil || exFee.Funding.Withdraw == nil {
 		httputil.ResponseFailure(c, httputil.WithReason("Data is in the wrong format: there is nil map inside the data"))
 	}
-	if err := h.setting.UpdateFee(exName, exFee, timestamp); err != nil {
+	if err := hs.setting.UpdateFee(exName, exFee, timestamp); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -474,7 +474,7 @@ func (hs *HTTPServer) UpdateExchangeMinDeposit(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	if err := h.setting.UpdateMinDeposit(exName, exMinDeposit, timestamp); err != nil {
+	if err := hs.setting.UpdateMinDeposit(exName, exMinDeposit, timestamp); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -506,7 +506,7 @@ func (hs *HTTPServer) UpdateDepositAddress(c *gin.Context) {
 		exDepositAddress[tokenID] = ethereum.HexToAddress(addrStr)
 		log.Printf(exDepositAddress[tokenID].Hex())
 	}
-	if err := h.setting.UpdateDepositAddress(exName, exDepositAddress, timestamp); err != nil {
+	if err := hs.setting.UpdateDepositAddress(exName, exDepositAddress, timestamp); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -557,7 +557,7 @@ func (hs *HTTPServer) UpdateExchangeInfo(c *gin.Context) {
 			exInfo[tokenPairID] = epl
 		}
 	}
-	if err := h.setting.UpdateExchangeInfo(exName, exInfo, timestamp); err != nil {
+	if err := hs.setting.UpdateExchangeInfo(exName, exInfo, timestamp); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -569,17 +569,17 @@ func (hs *HTTPServer) GetAllSetting(c *gin.Context) {
 	if !ok {
 		return
 	}
-	addrReponse, err := h.getAddressResponse()
+	addrReponse, err := hs.getAddressResponse()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	tokResponse, err := h.getTokenResponse()
+	tokResponse, err := hs.getTokenResponse()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	exchangeResponse, err := h.getExchangeResponse()
+	exchangeResponse, err := hs.getExchangeResponse()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -592,15 +592,15 @@ func (hs *HTTPServer) GetAllSetting(c *gin.Context) {
 	}))
 }
 
-func (h *HTTPServer) getAddressResponse() (*common.AddressesResponse, error) {
-	addressSettings, err := h.setting.GetAllAddresses()
+func (hs *HTTPServer) getAddressResponse() (*common.AddressesResponse, error) {
+	addressSettings, err := hs.setting.GetAllAddresses()
 	if err != nil {
 		return nil, err
 	}
-	addressSettings[pricingOPAddressName] = h.blockchain.GetPricingOPAddress().Hex()
-	addressSettings[depositOPAddressName] = h.blockchain.GetDepositOPAddress().Hex()
+	addressSettings[pricingOPAddressName] = hs.blockchain.GetPricingOPAddress().Hex()
+	addressSettings[depositOPAddressName] = hs.blockchain.GetDepositOPAddress().Hex()
 	if _, ok := common.SupportedExchanges["huobi"]; ok {
-		addressSettings[intermediateOPAddressName] = h.blockchain.GetIntermediatorOPAddress().Hex()
+		addressSettings[intermediateOPAddressName] = hs.blockchain.GetIntermediatorOPAddress().Hex()
 	}
 	if err != nil {
 		return nil, err
@@ -609,12 +609,12 @@ func (h *HTTPServer) getAddressResponse() (*common.AddressesResponse, error) {
 	return addressResponse, nil
 }
 
-func (h *HTTPServer) getTokenResponse() (*common.TokenResponse, error) {
-	tokens, err := h.setting.GetAllTokens()
+func (hs *HTTPServer) getTokenResponse() (*common.TokenResponse, error) {
+	tokens, err := hs.setting.GetAllTokens()
 	if err != nil {
 		return nil, err
 	}
-	version, err := h.setting.GetTokenVersion()
+	version, err := hs.setting.GetTokenVersion()
 	if err != nil {
 		return nil, err
 	}
@@ -622,32 +622,32 @@ func (h *HTTPServer) getTokenResponse() (*common.TokenResponse, error) {
 	return tokenResponse, nil
 }
 
-func (h *HTTPServer) getExchangeResponse() (*common.ExchangeResponse, error) {
+func (hs *HTTPServer) getExchangeResponse() (*common.ExchangeResponse, error) {
 	exchangeSettings := make(map[string]*common.ExchangeSetting)
 	for exID := range common.SupportedExchanges {
-		exName, err := h.ensureRunningExchange(string(exID))
+		exName, err := hs.ensureRunningExchange(string(exID))
 		if err != nil {
 			return nil, err
 		}
-		exSett, err := h.getExchangeSetting(exName)
+		exSett, err := hs.getExchangeSetting(exName)
 		if err != nil {
 			return nil, err
 		}
 		exchangeSettings[string(exID)] = exSett
 	}
-	version, err := h.setting.GetExchangeVersion()
+	version, err := hs.setting.GetExchangeVersion()
 	if err != nil {
 		return nil, err
 	}
 	return common.NewExchangeResponse(exchangeSettings, version), nil
 }
 
-func (h *HTTPServer) GetInternalTokens(c *gin.Context) {
-	_, ok := h.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
+func (hs *HTTPServer) GetInternalTokens(c *gin.Context) {
+	_, ok := hs.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
 	if !ok {
 		return
 	}
-	tokens, err := h.setting.GetInternalTokens()
+	tokens, err := hs.setting.GetInternalTokens()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -655,12 +655,12 @@ func (h *HTTPServer) GetInternalTokens(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(tokens))
 }
 
-func (h *HTTPServer) GetActiveTokens(c *gin.Context) {
-	_, ok := h.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
+func (hs *HTTPServer) GetActiveTokens(c *gin.Context) {
+	_, ok := hs.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
 	if !ok {
 		return
 	}
-	tokens, err := h.setting.GetActiveTokens()
+	tokens, err := hs.setting.GetActiveTokens()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -668,8 +668,8 @@ func (h *HTTPServer) GetActiveTokens(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(tokens))
 }
 
-func (h *HTTPServer) GetTokenByAddress(c *gin.Context) {
-	_, ok := h.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
+func (hs *HTTPServer) GetTokenByAddress(c *gin.Context) {
+	_, ok := hs.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
 	if !ok {
 		return
 	}
@@ -678,7 +678,7 @@ func (h *HTTPServer) GetTokenByAddress(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithReason("address is invalid length "))
 		return
 	}
-	token, err := h.setting.GetTokenByAddress(ethereum.HexToAddress(addr))
+	token, err := hs.setting.GetTokenByAddress(ethereum.HexToAddress(addr))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -686,13 +686,13 @@ func (h *HTTPServer) GetTokenByAddress(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(token))
 }
 
-func (h *HTTPServer) GetActiveTokenByID(c *gin.Context) {
-	_, ok := h.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
+func (hs *HTTPServer) GetActiveTokenByID(c *gin.Context) {
+	_, ok := hs.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
 	if !ok {
 		return
 	}
 	ID := c.Query("ID")
-	token, err := h.setting.GetActiveTokenByID((ID))
+	token, err := hs.setting.GetActiveTokenByID((ID))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -700,8 +700,8 @@ func (h *HTTPServer) GetActiveTokenByID(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(token))
 }
 
-func (h *HTTPServer) GetAddress(c *gin.Context) {
-	_, ok := h.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
+func (hs *HTTPServer) GetAddress(c *gin.Context) {
+	_, ok := hs.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
 	if !ok {
 		return
 	}
@@ -712,7 +712,7 @@ func (h *HTTPServer) GetAddress(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("address name %s is not avail in this list of valid address name", name)))
 		return
 	}
-	address, err := h.setting.GetAddress(addrName)
+	address, err := hs.setting.GetAddress(addrName)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -720,8 +720,8 @@ func (h *HTTPServer) GetAddress(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(address))
 }
 
-func (h *HTTPServer) GetAddresses(c *gin.Context) {
-	_, ok := h.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
+func (hs *HTTPServer) GetAddresses(c *gin.Context) {
+	_, ok := hs.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
 	if !ok {
 		return
 	}
@@ -732,7 +732,7 @@ func (h *HTTPServer) GetAddresses(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("address set name %s is not avail in this list of valid address set name", name)))
 		return
 	}
-	address, err := h.setting.GetAddresses(addrSetName)
+	address, err := hs.setting.GetAddresses(addrSetName)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -740,8 +740,8 @@ func (h *HTTPServer) GetAddresses(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(address))
 }
 
-func (h *HTTPServer) ReadyToServe(c *gin.Context) {
-	_, ok := h.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
+func (hs *HTTPServer) ReadyToServe(c *gin.Context) {
+	_, ok := hs.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
 	if !ok {
 		return
 	}
