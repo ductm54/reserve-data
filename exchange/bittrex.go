@@ -51,7 +51,7 @@ func (b *Bittrex) Address(token common.Token) (ethereum.Address, bool) {
 	log.Printf("Got Bittrex live deposit address for token %s, attempt to update it to current setting", token.ID)
 	addrs := common.NewExchangeAddresses()
 	addrs.Update(token.ID, ethereum.HexToAddress(liveAddress.Result.Address))
-	if err = b.setting.UpdateDepositAddress(settings.Bittrex, *addrs); err != nil {
+	if err = b.setting.UpdateDepositAddress(settings.Bittrex, *addrs, common.GetTimepoint()); err != nil {
 		log.Printf("WARNING: can not update deposit address for token %s on Bittrex: (%s)", token.ID, err.Error())
 	}
 	return ethereum.HexToAddress(liveAddress.Result.Address), true
@@ -71,12 +71,12 @@ func (b *Bittrex) UpdateDepositAddress(token common.Token, address string) error
 		log.Printf("WARNING: Get Bittrex live deposit address for token %s failed: err: (%v) or the address repplied is empty . Use the currently available address instead", token.ID, err)
 		addrs := common.NewExchangeAddresses()
 		addrs.Update(token.ID, ethereum.HexToAddress(address))
-		return b.setting.UpdateDepositAddress(settings.Bittrex, *addrs)
+		return b.setting.UpdateDepositAddress(settings.Bittrex, *addrs, common.GetTimepoint())
 	}
 	log.Printf("Got Bittrex live deposit address for token %s, attempt to update it to current setting", token.ID)
 	addrs := common.NewExchangeAddresses()
 	addrs.Update(token.ID, ethereum.HexToAddress(liveAddress.Result.Address))
-	return b.setting.UpdateDepositAddress(settings.Bittrex, *addrs)
+	return b.setting.UpdateDepositAddress(settings.Bittrex, *addrs, common.GetTimepoint())
 }
 
 // GetLiveExchangeInfos querry the Exchange Endpoint for exchange precision and limit of a list of tokenPairIDs
@@ -138,7 +138,7 @@ func (b *Bittrex) UpdatePairsPrecision() error {
 		}
 		exInfo[pair] = exchangePrecisionLimit
 	}
-	return b.setting.UpdateExchangeInfo(settings.Bittrex, exInfo)
+	return b.setting.UpdateExchangeInfo(settings.Bittrex, exInfo, common.GetTimepoint())
 }
 
 func (b *Bittrex) GetExchangeInfo(pair common.TokenPairID) (common.ExchangePrecisionLimit, error) {
