@@ -383,23 +383,13 @@ func (rc ReserveCore) GetSetRateResult(tokens []common.Token,
 	if err != nil {
 		return tx, fmt.Errorf("Couldn't get mined nonce of set rate operator (%s)", err.Error())
 	}
-<<<<<<< HEAD
 	oldNonce, initPrice, count, err = rc.pendingSetrateInfo(minedNonce)
 	log.Printf("old nonce: %v, init price: %v, count: %d, err: %s", oldNonce, initPrice, count, common.ErrorToString(err))
-=======
-	oldNonce, oldPrice, count, err = rc.pendingSetrateInfo(minedNonce)
-	log.Printf("old nonce: %v, old price: %v, count: %d, err: %s", oldNonce, oldPrice, count, common.ErrorToString(err))
->>>>>>> 113252ff... update receiver name
 	if err != nil {
 		return tx, fmt.Errorf("Couldn't check pending set rate tx pool (%s). Please try later", err.Error())
 	}
 	if oldNonce != nil {
-<<<<<<< HEAD
 		newPrice := calculateNewGasPrice(initPrice, count)
-=======
-		newPrice := calculateNewGasPrice(oldPrice, count)
-		log.Printf("Trying to replace old tx with new price: %s", newPrice.Text(10))
->>>>>>> 113252ff... update receiver name
 		tx, err = rc.blockchain.SetRates(
 			tokenAddrs, buys, sells, block,
 			oldNonce,
@@ -423,10 +413,7 @@ func (rc ReserveCore) GetSetRateResult(tokens []common.Token,
 		} else {
 			initPrice = common.GweiToWei(recommendedPrice)
 		}
-<<<<<<< HEAD
 		log.Printf("initial set rate tx, init price: %s", initPrice.String())
-=======
->>>>>>> 113252ff... update receiver name
 		tx, err = rc.blockchain.SetRates(
 			tokenAddrs, buys, sells, block,
 			big.NewInt(int64(minedNonce)),
