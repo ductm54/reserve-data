@@ -674,7 +674,8 @@ func getFirstAndCountPendingSetrate(pendings []common.ActivityRecord, minedNonce
 			log.Printf("looking for pending set_rates: %+v", act)
 			nonce := interfaceConverstionToUint64(act.Result["nonce"])
 			if nonce < minedNonce {
-				// this is a stale actitivity, ignore it
+				log.Printf("NONCE_ISSUE: stalled pending set rate transaction, pending: %d, mined: %d",
+					nonce, minedNonce)
 				continue
 			}
 			gasPrice := interfaceConverstionToUint64(act.Result["gasPrice"])
@@ -693,6 +694,12 @@ func getFirstAndCountPendingSetrate(pendings []common.ActivityRecord, minedNonce
 			}
 		}
 	}
+
+	if result == nil {
+		log.Printf("NONCE_ISSUE: found no pending set rate transaction with nonce newer than equal to mined nonce: %d",
+			minedNonce)
+	}
+
 	return result, count, nil
 }
 
