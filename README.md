@@ -841,6 +841,52 @@ response
   }
 ```
 
+
+### Get Cap by addr
+```
+<host>:8000/cap-by-address/:addr
+GET request
+
+Url params:
+  - address (required): ethereum Address of the user. 
+
+Return : a record of type UserCap struct {
+	UserID     string
+	Category   string
+	DailyLimit float64
+	TxLimit    float64
+	Type       string}
+  - if the address is Kyced, the kyced Cap is returned
+  - otherwise return normal cap
+```
+
+### Get Cap by addr
+```
+<host>:8000/richguy/:addr
+GET request
+
+Url params:
+  - address (required): ethereum Address of the user. 
+
+Return : boolean
+  - true if the address trading volume has pasted the limit, false otherwise
+```
+### Get User Lists
+```
+<host>:8000/get-user-list
+GET request
+
+Url params:
+  - fromTime (millisecond - required): from time stamp
+  - toTime (millisecond - required: to time stamp
+Return : a list of records available with timestamp in between fromTime toTime, of type UserInfo struct {
+	Addr      string  `json:"user_address"`
+	Email     string  `json:"email"`
+	ETHVolume float64 `json:"total_eth_volume"`
+	USDVolume float64 `json:"total_usd_volume"`
+}
+```
+
 ### Get asset volume for aggregate time (hour, day, month)
 ```
 <host>:8000/get-asset-volume
