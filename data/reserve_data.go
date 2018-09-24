@@ -263,9 +263,15 @@ func (self ReserveData) Stop() error {
 func (self ReserveData) ControlAuthDataSize() error {
 	tmpDir, err := ioutil.TempDir("", "ExpiredAuthData")
 	if err != nil {
-		panic(err)
+		return err
 	}
-	defer archive.TearDown(tmpDir)
+
+	defer func() {
+		if rErr := os.RemoveAll(tmpDir); rErr != nil {
+			log.Printf("failed to cleanup temp dir: %s, err : %s", tmpDir, rErr.Error())
+		}
+	}()
+
 	for {
 		log.Printf("DataPruner: waiting for signal from runner AuthData controller channel")
 		t := <-self.storageController.Runner.GetAuthBucketTicker()
