@@ -17,56 +17,56 @@ import (
 type testExchange struct {
 }
 
-func (self testExchange) ID() common.ExchangeID {
+func (te testExchange) ID() common.ExchangeID {
 	return "bittrex"
 }
 
-func (self testExchange) Address(token common.Token) (address ethereum.Address, supported bool) {
+func (te testExchange) Address(token common.Token) (address ethereum.Address, supported bool) {
 	return ethereum.Address{}, true
 }
-func (self testExchange) Withdraw(token common.Token, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
+func (te testExchange) Withdraw(token common.Token, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
 	return "withdrawid", nil
 }
-func (self testExchange) Trade(tradeType string, base common.Token, quote common.Token, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
+func (te testExchange) Trade(tradeType string, base common.Token, quote common.Token, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
 	return "tradeid", 10, 5, false, nil
 }
-func (self testExchange) CancelOrder(id string, base, quote string) error {
+func (te testExchange) CancelOrder(id string, base, quote string) error {
 	return nil
 }
-func (self testExchange) MarshalText() (text []byte, err error) {
+func (te testExchange) MarshalText() (text []byte, err error) {
 	return []byte("bittrex"), nil
 }
-func (self testExchange) GetExchangeInfo(pair common.TokenPairID) (common.ExchangePrecisionLimit, error) {
+func (te testExchange) GetExchangeInfo(pair common.TokenPairID) (common.ExchangePrecisionLimit, error) {
 	return common.ExchangePrecisionLimit{}, nil
 }
-func (self testExchange) GetFee() (common.ExchangeFees, error) {
+func (te testExchange) GetFee() (common.ExchangeFees, error) {
 	return common.ExchangeFees{}, nil
 }
-func (self testExchange) GetMinDeposit() (common.ExchangesMinDeposit, error) {
+func (te testExchange) GetMinDeposit() (common.ExchangesMinDeposit, error) {
 	return common.ExchangesMinDeposit{}, nil
 }
-func (self testExchange) GetInfo() (common.ExchangeInfo, error) {
+func (te testExchange) GetInfo() (common.ExchangeInfo, error) {
 	return common.ExchangeInfo{}, nil
 }
-func (self testExchange) TokenAddresses() (map[string]ethereum.Address, error) {
+func (te testExchange) TokenAddresses() (map[string]ethereum.Address, error) {
 	return map[string]ethereum.Address{}, nil
 }
-func (self testExchange) UpdateDepositAddress(token common.Token, address string) error {
+func (te testExchange) UpdateDepositAddress(token common.Token, address string) error {
 	return nil
 }
 
-func (self testExchange) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
+func (te testExchange) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
 	return common.ExchangeTradeHistory{}, nil
 }
 
-func (self testExchange) GetLiveExchangeInfos(pairIDs []common.TokenPairID) (common.ExchangeInfo, error) {
+func (te testExchange) GetLiveExchangeInfos(pairIDs []common.TokenPairID) (common.ExchangeInfo, error) {
 	return common.ExchangeInfo{}, nil
 }
 
 type testBlockchain struct {
 }
 
-func (self testBlockchain) Send(
+func (te testBlockchain) Send(
 	token common.Token,
 	amount *big.Int,
 	address ethereum.Address) (*types.Transaction, error) {
@@ -80,7 +80,7 @@ func (self testBlockchain) Send(
 	return tx, nil
 }
 
-func (self testBlockchain) SetRates(
+func (te testBlockchain) SetRates(
 	tokens []ethereum.Address,
 	buys []*big.Int,
 	sells []*big.Int,
@@ -97,11 +97,11 @@ func (self testBlockchain) SetRates(
 	return tx, nil
 }
 
-func (self testBlockchain) StandardGasPrice() float64 {
+func (te testBlockchain) StandardGasPrice() float64 {
 	return 0
 }
 
-func (self testBlockchain) SetRateMinedNonce() (uint64, error) {
+func (te testBlockchain) SetRateMinedNonce() (uint64, error) {
 	return 0, nil
 }
 
@@ -109,7 +109,7 @@ type testActivityStorage struct {
 	PendingDeposit bool
 }
 
-func (self testActivityStorage) Record(
+func (te testActivityStorage) Record(
 	action string,
 	id common.ActivityID,
 	destination string,
@@ -121,17 +121,17 @@ func (self testActivityStorage) Record(
 	return nil
 }
 
-func (self testActivityStorage) GetActivity(id common.ActivityID) (common.ActivityRecord, error) {
+func (te testActivityStorage) GetActivity(id common.ActivityID) (common.ActivityRecord, error) {
 	return common.ActivityRecord{}, nil
 }
 
-func (self testActivityStorage) PendingSetrate(minedNonce uint64) (*common.ActivityRecord, uint64, error) {
+func (te testActivityStorage) PendingSetrate(minedNonce uint64) (*common.ActivityRecord, uint64, error) {
 	return nil, 0, nil
 }
 
-func (self testActivityStorage) HasPendingDeposit(token common.Token, exchange common.Exchange) (bool, error) {
+func (te testActivityStorage) HasPendingDeposit(token common.Token, exchange common.Exchange) (bool, error) {
 	if token.ID == "OMG" && exchange.ID() == "bittrex" {
-		return self.PendingDeposit, nil
+		return te.PendingDeposit, nil
 	} else {
 		return false, nil
 	}
