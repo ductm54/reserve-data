@@ -444,7 +444,7 @@ func (self *Blockchain) GetPrice(token ethereum.Address, block *big.Int, priceTy
 // the nonce from node to be equal or greater than it.
 // If the nonce from node is smaller than the local one, we will use
 // the local one. However, if the local one stay with the same value
-// for more than 15mins, the local one is considered incorrect
+// for more than 15 mins, the local one is considered incorrect
 // because the chain might be reorganized so we will invalidate it
 // and assign it to the nonce from node.
 func (self *Blockchain) SetRateMinedNonce() (uint64, error) {
@@ -453,14 +453,22 @@ func (self *Blockchain) SetRateMinedNonce() (uint64, error) {
 		return nonceFromNode, err
 	}
 	if nonceFromNode < self.localSetRateNonce {
+		log.Printf("SET_RATE_MINED_NONCE: nonce returned from node %d is smaller than cached nonce: %d",
+			nonceFromNode, self.localSetRateNonce)
 		if common.GetTimepoint()-self.setRateNonceTimestamp > uint64(15*time.Minute) {
+			log.Printf("SET_RATE_MINED_NONCE: cached nonce %d stalled, overwriting with nonce from node %d",
+				self.localSetRateNonce, nonceFromNode)
 			self.localSetRateNonce = nonceFromNode
 			self.setRateNonceTimestamp = common.GetTimepoint()
 			return nonceFromNode, nil
 		} else {
+			log.Printf("SET_RATE_MINED_NONCE: using cached nonce %d instead of nonce from node %d",
+				self.localSetRateNonce, nonceFromNode)
 			return self.localSetRateNonce, nil
 		}
 	} else {
+		log.Printf("SET_RATE_MINED_NONCE: updating cached nonce, current: %d, new: %d",
+			self.localSetRateNonce, nonceFromNode)
 		self.localSetRateNonce = nonceFromNode
 		self.setRateNonceTimestamp = common.GetTimepoint()
 		return nonceFromNode, nil
