@@ -16,16 +16,35 @@ import (
 
 const token_version = "token_version"
 
+func getTokenCreationTime(b *bolt.Bucket, key []byte) (uint64, error) {
+	v := b.Get(key)
+	if v == nil {
+		return common.GetTimepoint(), nil
+	}
+	var temp common.Token
+	vErr := json.Unmarshal(v, &temp)
+	if vErr != nil {
+		return 0, vErr
+	}
+	return temp.CreationTime, nil
+}
+
 func addTokenByID(tx *bolt.Tx, t common.Token) error {
 	b, uErr := tx.CreateBucketIfNotExists([]byte(TOKEN_BUCKET_BY_ID))
 	if uErr != nil {
 		return uErr
 	}
+	key := []byte(strings.ToLower(t.ID))
+	creationTime, vErr := getTokenCreationTime(b, key)
+	if vErr != nil {
+		return vErr
+	}
+	t.CreationTime = creationTime
 	dataJSON, uErr := json.Marshal(t)
 	if uErr != nil {
 		return uErr
 	}
-	return b.Put([]byte(strings.ToLower(t.ID)), dataJSON)
+	return b.Put(key, dataJSON)
 }
 
 func addTokenByAddress(tx *bolt.Tx, t common.Token) error {
@@ -33,11 +52,17 @@ func addTokenByAddress(tx *bolt.Tx, t common.Token) error {
 	if uErr != nil {
 		return uErr
 	}
+	key := []byte(strings.ToLower(t.Address))
+	creationTime, vErr := getTokenCreationTime(b, key)
+	if vErr != nil {
+		return vErr
+	}
+	t.CreationTime = creationTime
 	dataJson, uErr := json.Marshal(t)
 	if uErr != nil {
 		return uErr
 	}
-	return b.Put([]byte(strings.ToLower(t.Address)), dataJson)
+	return b.Put(key, dataJson)
 }
 
 func updateTokenVersion(tx *bolt.Tx, timestamp uint64) error {

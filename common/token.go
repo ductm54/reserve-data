@@ -31,6 +31,7 @@ type Token struct {
 	Active               bool   `json:"active"`
 	Internal             bool   `json:"internal"`
 	LastActivationChange uint64 `json:"last_activation_change"`
+	CreationTime         uint64 `json:"creation_time"`
 }
 
 // NewToken creates a new Token.
