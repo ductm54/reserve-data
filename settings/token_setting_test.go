@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
 
 	"github.com/KyberNetwork/reserve-data/common"
@@ -50,14 +49,14 @@ func testPositiveGetInternalToken(t *testing.T, setting *settings.Settings, test
 	if err != nil {
 		t.Fatalf("cannot get internal token by address %s", err.Error())
 	}
-	if !reflect.DeepEqual(token, testToken) {
+	if !isSameToken(token, testToken) {
 		t.Fatalf("token returned was different from the input")
 	}
 	token, err = setting.GetInternalTokenByID(testToken.ID)
 	if err != nil {
 		t.Fatalf("cannot get internal token by ID %s", err.Error())
 	}
-	if !reflect.DeepEqual(token, testToken) {
+	if !isSameToken(token, testToken) {
 		t.Fatalf("token returned was different from the input")
 	}
 }
@@ -97,16 +96,32 @@ func testGetActiveToken(setting *settings.Settings, testToken common.Token, t *t
 	if err != nil {
 		t.Fatalf("cannot get active token by ID %s", err.Error())
 	}
-	if !reflect.DeepEqual(token, testToken) {
+	if !isSameToken(token, testToken) {
 		t.Fatalf("token returned was different from the input")
 	}
 	token, err = setting.GetActiveTokenByAddress(testAddress)
 	if err != nil {
 		t.Fatalf("cannot get active token by Address %s", err.Error())
 	}
-	if !reflect.DeepEqual(token, testToken) {
+	if !isSameToken(token, testToken) {
 		t.Fatalf("token returned was different from the input")
 	}
+}
+
+func isSameToken(t1, t2 common.Token) bool {
+	if t1.ID != t2.ID {
+		return false
+	}
+	if t1.Address != t2.Address {
+		return false
+	}
+	if t1.Decimals != t2.Decimals {
+		return false
+	}
+	if t1.Name != t2.Name {
+		return false
+	}
+	return true
 }
 
 func testGetToken(t *testing.T, setting *settings.Settings, testToken common.Token) {
@@ -123,14 +138,14 @@ func testGetToken(t *testing.T, setting *settings.Settings, testToken common.Tok
 	if err != nil {
 		t.Fatalf("cannot  get token by ID %s", err.Error())
 	}
-	if !reflect.DeepEqual(token, testToken) {
+	if !isSameToken(token, testToken) {
 		t.Fatalf("token returned was different from the input")
 	}
 	token, err = setting.GetTokenByAddress(testAddress)
 	if err != nil {
 		t.Fatalf("cannot get token by ID %s", err.Error())
 	}
-	if !reflect.DeepEqual(token, testToken) {
+	if !isSameToken(token, testToken) {
 		t.Fatalf("token returned was different from the input")
 	}
 }
