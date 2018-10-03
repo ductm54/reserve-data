@@ -50,6 +50,8 @@ func testPositiveGetInternalToken(t *testing.T, setting *settings.Settings, test
 	if err != nil {
 		t.Fatalf("cannot get internal token by address %s", err.Error())
 	}
+	// CreationTime shall be ignore since it's not from UserInput
+	token.CreationTime, testToken.CreationTime = 0, 0
 	if !reflect.DeepEqual(token, testToken) {
 		t.Fatalf("token returned was different from the input")
 	}
@@ -57,6 +59,8 @@ func testPositiveGetInternalToken(t *testing.T, setting *settings.Settings, test
 	if err != nil {
 		t.Fatalf("cannot get internal token by ID %s", err.Error())
 	}
+	// CreationTime shall be ignore since it's not from UserInput
+	token.CreationTime, testToken.CreationTime = 0, 0
 	if !reflect.DeepEqual(token, testToken) {
 		t.Fatalf("token returned was different from the input")
 	}
@@ -97,6 +101,8 @@ func testGetActiveToken(setting *settings.Settings, testToken common.Token, t *t
 	if err != nil {
 		t.Fatalf("cannot get active token by ID %s", err.Error())
 	}
+	// CreationTime shall be ignore since it's not from UserInput
+	token.CreationTime, testToken.CreationTime = 0, 0
 	if !reflect.DeepEqual(token, testToken) {
 		t.Fatalf("token returned was different from the input")
 	}
@@ -104,6 +110,8 @@ func testGetActiveToken(setting *settings.Settings, testToken common.Token, t *t
 	if err != nil {
 		t.Fatalf("cannot get active token by Address %s", err.Error())
 	}
+	// CreationTime shall be ignore since it's not from UserInput
+	token.CreationTime, testToken.CreationTime = 0, 0
 	if !reflect.DeepEqual(token, testToken) {
 		t.Fatalf("token returned was different from the input")
 	}
@@ -123,6 +131,8 @@ func testGetToken(t *testing.T, setting *settings.Settings, testToken common.Tok
 	if err != nil {
 		t.Fatalf("cannot  get token by ID %s", err.Error())
 	}
+	// CreationTime shall be ignore since it's not from UserInput
+	token.CreationTime, testToken.CreationTime = 0, 0
 	if !reflect.DeepEqual(token, testToken) {
 		t.Fatalf("token returned was different from the input")
 	}
@@ -130,6 +140,8 @@ func testGetToken(t *testing.T, setting *settings.Settings, testToken common.Tok
 	if err != nil {
 		t.Fatalf("cannot get token by ID %s", err.Error())
 	}
+	// CreationTime shall be ignore since it's not from UserInput
+	token.CreationTime, testToken.CreationTime = 0, 0
 	if !reflect.DeepEqual(token, testToken) {
 		t.Fatalf("token returned was different from the input")
 	}
