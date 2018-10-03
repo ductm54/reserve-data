@@ -22,9 +22,9 @@ func getTokenCreationTime(b *bolt.Bucket, key []byte) (uint64, error) {
 		return common.GetTimepoint(), nil
 	}
 	var temp common.Token
-	vErr := json.Unmarshal(v, &temp)
-	if vErr != nil {
-		return 0, vErr
+	err := json.Unmarshal(v, &temp)
+	if err != nil {
+		return 0, err
 	}
 	return temp.CreationTime, nil
 }
@@ -35,9 +35,9 @@ func addTokenByID(tx *bolt.Tx, t common.Token) error {
 		return uErr
 	}
 	key := []byte(strings.ToLower(t.ID))
-	creationTime, vErr := getTokenCreationTime(b, key)
-	if vErr != nil {
-		return vErr
+	creationTime, uErr := getTokenCreationTime(b, key)
+	if uErr != nil {
+		return uErr
 	}
 	t.CreationTime = creationTime
 	dataJSON, uErr := json.Marshal(t)
@@ -53,9 +53,9 @@ func addTokenByAddress(tx *bolt.Tx, t common.Token) error {
 		return uErr
 	}
 	key := []byte(strings.ToLower(t.Address))
-	creationTime, vErr := getTokenCreationTime(b, key)
-	if vErr != nil {
-		return vErr
+	creationTime, uErr := getTokenCreationTime(b, key)
+	if uErr != nil {
+		return uErr
 	}
 	t.CreationTime = creationTime
 	dataJson, uErr := json.Marshal(t)
