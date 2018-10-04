@@ -4,9 +4,13 @@
 
 ### Features:
 
+- add /get-step-function-data API for fetching tokens step function configuration
+- add "creation_time" field to Token info
+
 ### Bug fixes:
 
-### Improvements
+### Improvements: 
+- change MEW endpoint to new endpoint (#425)
 
 ### Compatibility
 

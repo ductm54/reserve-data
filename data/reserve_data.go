@@ -2,8 +2,10 @@ package data
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/KyberNetwork/reserve-data/common"
@@ -13,12 +15,13 @@ import (
 
 //ReserveData struct for reserve data
 type ReserveData struct {
-	storage           Storage
-	fetcher           Fetcher
-	storageController datapruner.StorageController
-	globalStorage     GlobalStorage
-	exchanges         []common.Exchange
-	setting           Setting
+	storage                 Storage
+	stepFunctionDataStorage StepFunctionDataStorage
+	fetcher                 Fetcher
+	storageController       datapruner.StorageController
+	globalStorage           GlobalStorage
+	exchanges               []common.Exchange
+	setting                 Setting
 }
 
 func (self ReserveData) CurrentGoldInfoVersion(timepoint uint64) (common.Version, error) {
@@ -258,12 +261,23 @@ func (self ReserveData) Stop() error {
 
 //ControlAuthDataSize pack old data to file, push to S3 and prune outdated data
 func (self ReserveData) ControlAuthDataSize() error {
+	tmpDir, err := ioutil.TempDir("", "ExpiredAuthData")
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if rErr := os.RemoveAll(tmpDir); rErr != nil {
+			log.Printf("failed to cleanup temp dir: %s, err : %s", tmpDir, rErr.Error())
+		}
+	}()
+
 	for {
 		log.Printf("DataPruner: waiting for signal from runner AuthData controller channel")
 		t := <-self.storageController.Runner.GetAuthBucketTicker()
 		timepoint := common.TimeToTimepoint(t)
 		log.Printf("DataPruner: got signal in AuthData controller channel with timestamp %d", common.TimeToTimepoint(t))
-		fileName := fmt.Sprintf("./exported/ExpiredAuthData_at_%s", time.Unix(int64(timepoint/1000), 0).UTC())
+		fileName := filepath.Join(tmpDir, fmt.Sprintf("ExpiredAuthData_at_%s", time.Unix(int64(timepoint/1000), 0).UTC()))
 		nRecord, err := self.storage.ExportExpiredAuthData(common.TimeToTimepoint(t), fileName)
 		if err != nil {
 			log.Printf("ERROR: DataPruner export AuthData operation failed: %s", err)
@@ -337,6 +351,7 @@ func (self ReserveData) RunStorageController() error {
 
 //NewReserveData initiate a new reserve instance
 func NewReserveData(storage Storage,
+	stepFunctionDataStorage StepFunctionDataStorage,
 	fetcher Fetcher, storageControllerRunner datapruner.StorageControllerRunner,
 	arch archive.Archive, globalStorage GlobalStorage,
 	exchanges []common.Exchange, setting Setting) *ReserveData {
@@ -344,5 +359,17 @@ func NewReserveData(storage Storage,
 	if err != nil {
 		panic(err)
 	}
-	return &ReserveData{storage, fetcher, storageController, globalStorage, exchanges, setting}
+	return &ReserveData{
+		storage,
+		stepFunctionDataStorage,
+		fetcher,
+		storageController,
+		globalStorage,
+		exchanges,
+		setting}
+}
+
+//GetStepFunctionData return step function data and error if happen
+func (rc ReserveData) GetStepFunctionData() (common.StepFunctionData, error) {
+	return rc.stepFunctionDataStorage.GetStepFunctionData()
 }

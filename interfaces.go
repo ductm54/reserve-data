@@ -72,6 +72,8 @@ type ReserveData interface {
 
 	GetTradeHistory(fromTime, toTime uint64) (common.AllTradeHistory, error)
 
+	GetStepFunctionData() (common.StepFunctionData, error)
+
 	Run() error
 	RunStorageController() error
 	Stop() error

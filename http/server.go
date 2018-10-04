@@ -1544,6 +1544,8 @@ func (self *HTTPServer) register() {
 		self.r.GET("/pending-stable-token-params", self.GetPendingStableTokenParams)
 		self.r.GET("/stable-token-params", self.GetStableTokenParams)
 
+		self.r.GET("/get-step-function-data", self.GetStepFunctionData)
+
 		self.r.GET("/gold-feed", self.GetGoldData)
 	}
 

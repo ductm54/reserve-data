@@ -85,7 +85,6 @@ sample:
   "keystore_path": "path to the JSON keystore file, recommended to be absolute path",
   "passphrase": "passphrase to unlock the JSON keystore",
   "keystore_deposit_path": "path to the JSON keystore file that will be used to deposit",
-  "passphrase_deposit": "passphrase to unlock the JSON keytore",
   "passphrase_deposit": "passphrase to unlock the JSON keystore",
   "keystore_intermediator_path": "path to JSON keystore file that will be used to deposit to Huobi",
   "passphrase_intermediate_account": "passphrase to unlock JSON keystore",
@@ -840,6 +839,52 @@ response
   {
     "success": true
   }
+```
+
+
+### Get Cap by addr
+```
+<host>:8000/cap-by-address/:addr
+GET request
+
+Url params:
+  - address (required): ethereum Address of the user. 
+
+Return : a record of type UserCap struct {
+	UserID     string
+	Category   string
+	DailyLimit float64
+	TxLimit    float64
+	Type       string}
+  - if the address is Kyced, the kyced Cap is returned
+  - otherwise return normal cap
+```
+
+### Get Cap by addr
+```
+<host>:8000/richguy/:addr
+GET request
+
+Url params:
+  - address (required): ethereum Address of the user. 
+
+Return : boolean
+  - true if the address trading volume has pasted the limit, false otherwise
+```
+### Get User Lists
+```
+<host>:8000/get-user-list
+GET request
+
+Url params:
+  - fromTime (millisecond - required): from time stamp
+  - toTime (millisecond - required: to time stamp
+Return : a list of records available with timestamp in between fromTime toTime, of type UserInfo struct {
+	Addr      string  `json:"user_address"`
+	Email     string  `json:"email"`
+	ETHVolume float64 `json:"total_eth_volume"`
+	USDVolume float64 `json:"total_usd_volume"`
+}
 ```
 
 ### Get asset volume for aggregate time (hour, day, month)
@@ -2659,6 +2704,198 @@ Response
   }
 ```
 
+### Get step function data
+GET request
+
+```shell
+<host>:8000/get-step-function-data
+```
+
+Example:
+
+```shell
+curl -X "GET" "http://localhost:8000/get-step-function-data"
+```
+
+Sample response:
+
+```json
+{
+    "data": {
+        "block_number": 6268056,
+        "tokens": {
+            "ABT": {
+                "quantity_step_function": {
+                    "x_buy": [
+                        0
+                    ],
+                    "y_buy": [
+                        0
+                    ],
+                    "x_sell": [
+                        0
+                    ],
+                    "y_sell": [
+                        0
+                    ]
+                },
+                "imbalance_step_function": {
+                    "x_buy": [
+                        1.412926597970062737408e+21,
+                        6.593657461903380709376e+21,
+                        1.1774388311707434876928e+22,
+                        1.412926597970062737408e+23
+                    ],
+                    "y_buy": [
+                        0,
+                        -64,
+                        -113,
+                        -134
+                    ],
+                    "x_sell": [
+                        -1.1774388311707434876928e+22,
+                        -6.593657461903380709376e+21,
+                        -1.412926597970062737408e+21,
+                        0
+                    ],
+                    "y_sell": [
+                        -153,
+                        -116,
+                        -56,
+                        0
+                    ]
+                }
+            },
+            "AE": {
+                "quantity_step_function": {
+                    "x_buy": [
+                        0
+                    ],
+                    "y_buy": [
+                        0
+                    ],
+                    "x_sell": [
+                        0
+                    ],
+                    "y_sell": [
+                        0
+                    ]
+                },
+                "imbalance_step_function": {
+                    "x_buy": [
+                        253691585433581977600,
+                        1.183894066202354384896e+21,
+                        2.114096544434211520512e+21,
+                        2.536915854335819776e+22
+                    ],
+                    "y_buy": [
+                        0,
+                        -28,
+                        -55,
+                        -74
+                    ],
+                    "x_sell": [
+                        -2.114096544434211520512e+21,
+                        -1.183894066202354384896e+21,
+                        -253691585433581977600,
+                        0
+                    ],
+                    "y_sell": [
+                        -79,
+                        -65,
+                        -37,
+                        0
+                    ]
+                }
+            },
+            "AION": {
+                "quantity_step_function": {
+                    "x_buy": [
+                        0
+                    ],
+                    "y_buy": [
+                        0
+                    ],
+                    "x_sell": [
+                        0
+                    ],
+                    "y_sell": [
+                        0
+                    ]
+                },
+                "imbalance_step_function": {
+                    "x_buy": [
+                        48677652746,
+                        227162379646,
+                        405647106058,
+                        4867765274600
+                    ],
+                    "y_buy": [
+                        0,
+                        -73,
+                        -134,
+                        -175
+                    ],
+                    "x_sell": [
+                        -405647106058,
+                        -227162379646,
+                        -48677652746,
+                        0
+                    ],
+                    "y_sell": [
+                        -54,
+                        -46,
+                        -29,
+                        0
+                    ]
+                }
+            },
+            "APPC": {
+                "quantity_step_function": {
+                    "x_buy": [
+                        0
+                    ],
+                    "y_buy": [
+                        0
+                    ],
+                    "x_sell": [
+                        0
+                    ],
+                    "y_sell": [
+                        0
+                    ]
+                },
+                "imbalance_step_function": {
+                    "x_buy": [
+                        2.906114516419146678272e+21,
+                        1.3561867752976399990784e+22,
+                        2.4217620960472509448192e+22,
+                        2.906114516419146678272e+23
+                    ],
+                    "y_buy": [
+                        0,
+                        -71,
+                        -153,
+                        -226
+                    ],
+                    "x_sell": [
+                        -2.4217620960472509448192e+22,
+                        -1.3561867752976399990784e+22,
+                        -2.906114516419146678272e+21,
+                        0
+                    ],
+                    "y_sell": [
+                        -92,
+                        -76,
+                        -45,
+                        0
+                    ]
+                }
+            }
+        }
+    },
+    "success": true
+}
 ### Get user cap
  Return user cap for one Tx by wei
  

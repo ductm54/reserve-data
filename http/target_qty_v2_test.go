@@ -160,7 +160,7 @@ func TestHTTPServerTargetQtyV2(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := HTTPServer{
-		app:         data.NewReserveData(st, nil, nil, nil, nil, nil, setting),
+		app:         data.NewReserveData(st, nil, nil, nil, nil, nil, nil, setting),
 		core:        core.NewReserveCore(nil, st, setting),
 		metric:      st,
 		authEnabled: false,

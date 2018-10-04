@@ -31,8 +31,8 @@ const (
 	infuraMainnetEndpoint     = "https://mainnet.infura.io"
 	infuraKovanEndpoint       = "https://kovan.infura.io"
 	infuraRopstenEndpoint     = "https://ropsten.infura.io"
-	myEtherAPIMainnetEndpoint = "https://api.myetherapi.com/eth"
-	myEtherAPIRopstenEndpoint = "https://api.myetherapi.com/rop"
+	myEtherAPIMainnetEndpoint = "https://api.myetherwallet.com/eth"
+	myEtherAPIRopstenEndpoint = "https://api.myetherwallet.com/rop"
 	semidNodeKyberEndpoint    = "https://semi-node.kyber.network"
 	myCryptoAPIEndpoint       = "https://api.mycryptoapi.com/eth"
 	mewGivethAPIEndpoint      = "https://mew.giveth.io/"
@@ -79,19 +79,20 @@ func NewSettingPaths(
 }
 
 type Config struct {
-	ActivityStorage      core.ActivityStorage
-	DataStorage          data.Storage
-	DataGlobalStorage    data.GlobalStorage
-	StatStorage          stat.StatStorage
-	AnalyticStorage      stat.AnalyticStorage
-	UserStorage          stat.UserStorage
-	LogStorage           stat.LogStorage
-	RateStorage          stat.RateStorage
-	FeeSetRateStorage    stat.FeeSetRateStorage
-	FetcherStorage       fetcher.Storage
-	FetcherGlobalStorage fetcher.GlobalStorage
-	MetricStorage        metric.MetricStorage
-	Archive              archive.Archive
+	ActivityStorage         core.ActivityStorage
+	StepFunctionDataStorage data.StepFunctionDataStorage
+	DataStorage             data.Storage
+	DataGlobalStorage       data.GlobalStorage
+	StatStorage             stat.StatStorage
+	AnalyticStorage         stat.AnalyticStorage
+	UserStorage             stat.UserStorage
+	LogStorage              stat.LogStorage
+	RateStorage             stat.RateStorage
+	FeeSetRateStorage       stat.FeeSetRateStorage
+	FetcherStorage          fetcher.Storage
+	FetcherGlobalStorage    fetcher.GlobalStorage
+	MetricStorage           metric.MetricStorage
+	Archive                 archive.Archive
 
 	World                *world.TheWorld
 	FetcherRunner        fetcher.FetcherRunner
@@ -219,6 +220,7 @@ func (self *Config) AddCoreConfig(settingPath SettingPaths, kyberENV string) {
 	depositSigner := DepositSignerFromConfigFile(settingPath.secretPath)
 
 	self.ActivityStorage = dataStorage
+	self.StepFunctionDataStorage = dataStorage
 	self.DataStorage = dataStorage
 	self.DataGlobalStorage = dataStorage
 	self.FetcherStorage = dataStorage
@@ -272,6 +274,8 @@ var ConfigPaths = map[string]SettingPaths{
 		"config.json",
 		infuraMainnetEndpoint,
 		[]string{
+			semidNodeKyberEndpoint,
+			infuraMainnetEndpoint,
 			myCryptoAPIEndpoint,
 			myEtherAPIMainnetEndpoint,
 		},

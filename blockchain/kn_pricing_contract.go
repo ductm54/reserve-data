@@ -40,3 +40,14 @@ func (self *Blockchain) GeneratedGetRate(opts blockchain.CallOpts, token ethereu
 	err := self.Call(timeOut, opts, self.pricing, out, "getRate", token, currentBlockNumber, buy, qty)
 	return out, err
 }
+
+//GeneratedGetStepFunctionData get step function data for an token
+func (bc *Blockchain) GeneratedGetStepFunctionData(opts blockchain.CallOpts, token ethereum.Address, command *big.Int, param *big.Int) (*big.Int, error) {
+	timeOut := 2 * time.Second
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := bc.Call(timeOut, opts, bc.pricing, out, "getStepFunctionData", token, command, param)
+	return *ret0, err
+}
