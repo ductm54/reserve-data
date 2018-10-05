@@ -8,9 +8,14 @@ services:
   - docker
 
 install:
-  - go get -u github.com/alecthomas/gometalinter
-  - gometalinter --install
+  - export GOMETALINTER_VERSION=2.0.11
+  - ./.travis/gometalinter-install.sh
+  - export PATH=$PATH:${TRAVIS_HOME}/gometalinter/gometalinter-${GOMETALINTER_VERSION}-linux-amd64
   - go get github.com/mattn/goveralls
+  
+cache: 
+  directories:
+  - ${TRAVIS_HOME}/gometalinter/gometalinter-${GOMETALINTER_VERSION}-linux-amd64
 
 script:
   - gometalinter --config=gometalinter.json ./...
