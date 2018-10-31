@@ -113,24 +113,38 @@ func (self *Fetcher) SetBlockchain(blockchain Blockchain) {
 	self.FetchCurrentBlock()
 }
 
-func (self *Fetcher) WaitForCoreAndRun() {
-	const waitTime = 5 * time.Second
-	//wait till core is ready to serve
-	for {
-		err := self.setting.ReadyToServe()
-		log.Printf("STAT: waiting for core.... try to ping core, got err %v. ", err)
-		if err == nil {
-			break
-		}
-		time.Sleep(waitTime)
-	}
+func (self *Fetcher) WaitForCoreAndRun() error {
+	const (
+		sleep   = 5 * time.Second
+		timeout = time.Minute
+	)
 
-	go self.RunBlockFetcher()
-	go self.RunLogFetcher()
-	go self.RunReserveRatesFetcher()
-	go self.RunTradeLogProcessor()
-	go self.RunCatLogProcessor()
-	go self.RunFeeSetrateFetcher()
+	var doneCh = make(chan struct{}, 1)
+
+	go func() {
+		for {
+			if err := self.setting.ReadyToServe(); err != nil {
+				log.Printf("STAT: waiting for core.... try to ping core, got err %v. ", err)
+				time.Sleep(sleep)
+
+			}
+			log.Print("STAT: connected to core")
+			doneCh <- struct{}{}
+		}
+	}()
+
+	select {
+	case <-time.After(timeout):
+		return fmt.Errorf("waiting for core timed out after %s", timeout.String())
+	case <-doneCh:
+		go self.RunBlockFetcher()
+		go self.RunLogFetcher()
+		go self.RunReserveRatesFetcher()
+		go self.RunTradeLogProcessor()
+		go self.RunCatLogProcessor()
+		go self.RunFeeSetrateFetcher()
+		return nil
+	}
 }
 
 func (self *Fetcher) Run() error {
@@ -138,7 +152,9 @@ func (self *Fetcher) Run() error {
 	if err := self.runner.Start(); err != nil {
 		return err
 	}
-	go self.WaitForCoreAndRun()
+	if err := self.WaitForCoreAndRun(); err != nil {
+		return err
+	}
 
 	log.Printf("Fetcher runner is running...")
 	return nil
