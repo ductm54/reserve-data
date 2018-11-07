@@ -13,6 +13,9 @@ type Endpoint interface {
 	GDAXDataEndpoint() string
 	KrakenDataEndpoint() string
 	GeminiDataEndpoint() string
+
+	BitfinexEndpoint() string
+	BinanceEndpoint() string
 }
 
 type RealEndpoint struct {
@@ -41,6 +44,14 @@ func (self RealEndpoint) KrakenDataEndpoint() string {
 
 func (self RealEndpoint) GeminiDataEndpoint() string {
 	return "https://api.gemini.com/v1/pubticker/ethusd"
+}
+
+func (self RealEndpoint) BitfinexEndpoint() string {
+	return "https://api.bitfinex.com/v1/pubticker/ethbtc"
+}
+
+func (self RealEndpoint) BinanceEndpoint() string {
+	return "https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHBTC"
 }
 
 func NewRealEndpointFromFile(path string) (*RealEndpoint, error) {
@@ -78,4 +89,12 @@ func (self SimulatedEndpoint) KrakenDataEndpoint() string {
 
 func (self SimulatedEndpoint) GeminiDataEndpoint() string {
 	return "http://simulator:5800/v1/pubticker/ethusd"
+}
+
+func (self SimulatedEndpoint) BitfinexEndpoint() string {
+	panic("unimplemented")
+}
+
+func (self SimulatedEndpoint) BinanceEndpoint() string {
+	panic("unimplemented")
 }

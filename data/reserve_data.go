@@ -28,12 +28,24 @@ func (self ReserveData) CurrentGoldInfoVersion(timepoint uint64) (common.Version
 	return self.globalStorage.CurrentGoldInfoVersion(timepoint)
 }
 
+func (self ReserveData) CurrentBTCInfoVersion(timepoint uint64) (common.Version, error) {
+	return self.globalStorage.CurrentBTCInfoVersion(timepoint)
+}
+
 func (self ReserveData) GetGoldData(timestamp uint64) (common.GoldData, error) {
 	version, err := self.CurrentGoldInfoVersion(timestamp)
 	if err != nil {
 		return common.GoldData{}, nil
 	}
 	return self.globalStorage.GetGoldInfo(version)
+}
+
+func (self ReserveData) GetBTCData(timestamp uint64) (common.BTCData, error) {
+	version, err := self.CurrentBTCInfoVersion(timestamp)
+	if err != nil {
+		return common.BTCData{}, nil
+	}
+	return self.globalStorage.GetBTCInfo(version)
 }
 
 func (self ReserveData) CurrentPriceVersion(timepoint uint64) (common.Version, error) {

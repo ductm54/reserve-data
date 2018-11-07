@@ -8,4 +8,5 @@ import (
 // pricing information. For now, only gold pricing is supported.
 type TheWorld interface {
 	GetGoldInfo() (common.GoldData, error)
+	GetBTCInfo() (common.BTCData, error)
 }

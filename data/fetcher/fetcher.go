@@ -106,11 +106,25 @@ func (self *Fetcher) RunGlobalDataFetcher() {
 }
 
 func (self *Fetcher) FetchGlobalData(timepoint uint64) {
-	data, _ := self.theworld.GetGoldInfo()
-	data.Timestamp = common.GetTimepoint()
-	err := self.globalStorage.StoreGoldInfo(data)
+	goldData, err := self.theworld.GetGoldInfo()
 	if err != nil {
+		log.Printf("failed to fetch Gold Info: %s", err.Error())
+		return
+	}
+	goldData.Timestamp = common.GetTimepoint()
+
+	if err = self.globalStorage.StoreGoldInfo(goldData); err != nil {
 		log.Printf("Storing gold info failed: %s", err.Error())
+	}
+
+	btcData, err := self.theworld.GetBTCInfo()
+	if err != nil {
+		log.Printf("failed to fetch BTC Info: %s", err.Error())
+		return
+	}
+	btcData.Timestamp = common.GetTimepoint()
+	if err = self.globalStorage.StoreBTCInfo(btcData); err != nil {
+		log.Printf("Storing BTC info failed: %s", err.Error())
 	}
 }
 

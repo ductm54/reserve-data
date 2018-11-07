@@ -64,6 +64,8 @@ type ReserveData interface {
 
 	GetGoldData(timepoint uint64) (common.GoldData, error)
 
+	GetBTCData(timepoint uint64) (common.BTCData, error)
+
 	GetExchangeStatus() (common.ExchangesStatus, error)
 	UpdateExchangeStatus(exchange string, status bool, timestamp uint64) error
 
