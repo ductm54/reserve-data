@@ -92,9 +92,9 @@ func (self SimulatedEndpoint) GeminiDataEndpoint() string {
 }
 
 func (self SimulatedEndpoint) BitfinexEndpoint() string {
-	panic("unimplemented")
+	return "http://simulator:5900/v1/pubticker/ethbtc"
 }
 
 func (self SimulatedEndpoint) BinanceEndpoint() string {
-	panic("unimplemented")
+	return "http://simulator:5100/api/v3/ticker/bookTicker?symbol=ETHBTC"
 }
