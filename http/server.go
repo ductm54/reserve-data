@@ -752,6 +752,15 @@ func (self *HTTPServer) GetGoldData(c *gin.Context) {
 	}
 }
 
+func (self *HTTPServer) GetBTCData(c *gin.Context) {
+	data, err := self.app.GetBTCData(getTimePoint(c, true))
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+	} else {
+		httputil.ResponseSuccess(c, httputil.WithData(data))
+	}
+}
+
 func (self *HTTPServer) GetTimeServer(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(common.GetTimestamp()))
 }
@@ -1547,6 +1556,7 @@ func (self *HTTPServer) register() {
 		self.r.GET("/get-step-function-data", self.GetStepFunctionData)
 
 		self.r.GET("/gold-feed", self.GetGoldData)
+		self.r.GET("/btc-feed", self.GetBTCData)
 	}
 
 	if self.stat != nil {

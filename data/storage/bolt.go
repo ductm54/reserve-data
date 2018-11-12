@@ -37,6 +37,7 @@ const (
 	stableTokenParamsBucket         string = "stable-token-params"
 	pendingStatbleTokenParamsBucket string = "pending-stable-token-params"
 	goldBucket                      string = "gold_feeds"
+	btcBucket                       string = "btc_feeds"
 	stepFunctionBucket              string = "step_function"
 	stepFunctionLatestDataKey       string = "latest_data"
 
@@ -77,6 +78,10 @@ func NewBoltStorage(path string) (*BoltStorage, error) {
 	// init buckets
 	err = db.Update(func(tx *bolt.Tx) error {
 		if _, cErr := tx.CreateBucketIfNotExists([]byte(goldBucket)); cErr != nil {
+			return cErr
+		}
+
+		if _, cErr := tx.CreateBucketIfNotExists([]byte(btcBucket)); cErr != nil {
 			return cErr
 		}
 
@@ -218,6 +223,54 @@ func (self *BoltStorage) StoreGoldInfo(data common.GoldData) error {
 	err = self.db.Update(func(tx *bolt.Tx) error {
 		var dataJSON []byte
 		b := tx.Bucket([]byte(goldBucket))
+		dataJSON, uErr := json.Marshal(data)
+		if uErr != nil {
+			return uErr
+		}
+		return b.Put(boltutil.Uint64ToBytes(timepoint), dataJSON)
+	})
+	return err
+}
+
+// CurrentBTCInfoVersion returns the most recent time point of gold info record.
+// It implements data.GlobalStorage interface.
+func (self *BoltStorage) CurrentBTCInfoVersion(timepoint uint64) (common.Version, error) {
+	var result uint64
+	var err error
+	err = self.db.View(func(tx *bolt.Tx) error {
+		c := tx.Bucket([]byte(btcBucket)).Cursor()
+		result, err = reverseSeek(timepoint, c)
+		return nil
+	})
+	return common.Version(result), err
+}
+
+// GetBTCInfo returns BTC info at given time point. It implements data.GlobalStorage interface.
+func (self *BoltStorage) GetBTCInfo(version common.Version) (common.BTCData, error) {
+	var (
+		err    error
+		result = common.BTCData{}
+	)
+	err = self.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(btcBucket))
+		data := b.Get(boltutil.Uint64ToBytes(uint64(version)))
+		if data == nil {
+			return fmt.Errorf("version %s doesn't exist", string(version))
+		}
+		return json.Unmarshal(data, &result)
+	})
+	return result, err
+}
+
+// StoreBTCInfo stores the given BTC information to database. It implements fetcher.GlobalStorage interface.
+func (self *BoltStorage) StoreBTCInfo(data common.BTCData) error {
+	var (
+		err       error
+		timepoint = data.Timestamp
+	)
+	err = self.db.Update(func(tx *bolt.Tx) error {
+		var dataJSON []byte
+		b := tx.Bucket([]byte(btcBucket))
 		dataJSON, uErr := json.Marshal(data)
 		if uErr != nil {
 			return uErr

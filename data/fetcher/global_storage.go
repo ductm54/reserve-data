@@ -7,4 +7,5 @@ import (
 // GlobalStorage is the storage to store real world data pricing information.
 type GlobalStorage interface {
 	StoreGoldInfo(data common.GoldData) error
+	StoreBTCInfo(data common.BTCData) error
 }

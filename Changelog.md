@@ -5,6 +5,7 @@
 ### Features:
 
 - add /get-step-function-data API for fetching tokens step function configuration
+- add /btc-feed API (#453)
 
 ### Bug fixes:
 
@@ -13,7 +14,7 @@
 
 ### Compatibility
 
-## 0.10.0 (2018-07-03)
+## 0.11.0 (2018-07-03)
 
 ### Features:
 
