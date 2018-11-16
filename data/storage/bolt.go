@@ -285,7 +285,7 @@ func (self *BoltStorage) UpdateFeedConfiguration(name string, enabled bool) erro
 	})
 }
 
-func (self BoltStorage) GetFeedConfiguration() ([]common.FeedConfiguration, error) {
+func (self *BoltStorage) GetFeedConfiguration() ([]common.FeedConfiguration, error) {
 	var (
 		err      error
 		allFeeds = world.AllFeeds()
