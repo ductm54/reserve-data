@@ -741,26 +741,6 @@ func (self *HTTPServer) GetTradeHistory(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(data))
 }
 
-func (self *HTTPServer) GetGoldData(c *gin.Context) {
-	log.Printf("Getting gold data")
-
-	data, err := self.app.GetGoldData(getTimePoint(c, true))
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-	} else {
-		httputil.ResponseSuccess(c, httputil.WithData(data))
-	}
-}
-
-func (self *HTTPServer) GetBTCData(c *gin.Context) {
-	data, err := self.app.GetBTCData(getTimePoint(c, true))
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-	} else {
-		httputil.ResponseSuccess(c, httputil.WithData(data))
-	}
-}
-
 func (self *HTTPServer) GetTimeServer(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(common.GetTimestamp()))
 }
@@ -1557,6 +1537,8 @@ func (self *HTTPServer) register() {
 
 		self.r.GET("/gold-feed", self.GetGoldData)
 		self.r.GET("/btc-feed", self.GetBTCData)
+		self.r.POST("/set-feed-configuration", self.UpdateFeedConfiguration)
+		self.r.GET("/get-feed-configuration", self.GetFeedConfiguration)
 	}
 
 	if self.stat != nil {

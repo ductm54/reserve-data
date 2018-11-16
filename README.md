@@ -1416,6 +1416,68 @@ response:
 }
 ```
 
+### Set Feed Configuration - (signing required)
+
+```
+<host>:8000/set-feed-configuration
+URL Params:
+- data: JSON encoded string {"name": <feed_name>, "enabled": true/false}
+```
+
+response:
+
+```json
+{"success":true}
+```
+
+### Get Feed Configuration - (signing required)
+
+
+```
+<host>:8000/get-feed-configuration
+```
+
+response:
+
+```json
+{
+  "data": [
+    {
+      "name": "DGX",
+      "enabled": true
+    },
+    {
+      "name": "OneForgeETH",
+      "enabled": true
+    },
+    {
+      "name": "OneForgeUSD",
+      "enabled": true
+    },
+    {
+      "name": "GDAX",
+      "enabled": true
+    },
+    {
+      "name": "Kraken",
+      "enabled": true
+    },
+    {
+      "name": "Gemini",
+      "enabled": true
+    },
+    {
+      "name": "bitfinex",
+      "enabled": true
+    },
+    {
+      "name": "binance",
+      "enabled": true
+    }
+  ],
+  "success": true
+}
+```
 
 ### set target quantity v2 - (signing required)
 ```

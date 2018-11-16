@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/KyberNetwork/reserve-data/world"
 	"log"
 	"math"
 	"os"
@@ -38,6 +39,7 @@ const (
 	pendingStatbleTokenParamsBucket string = "pending-stable-token-params"
 	goldBucket                      string = "gold_feeds"
 	btcBucket                       string = "btc_feeds"
+	disabledFeedsBucket             string = "disabled_feeds"
 	stepFunctionBucket              string = "step_function"
 	stepFunctionLatestDataKey       string = "latest_data"
 
@@ -82,6 +84,10 @@ func NewBoltStorage(path string) (*BoltStorage, error) {
 		}
 
 		if _, cErr := tx.CreateBucketIfNotExists([]byte(btcBucket)); cErr != nil {
+			return cErr
+		}
+
+		if _, cErr := tx.CreateBucketIfNotExists([]byte(disabledFeedsBucket)); cErr != nil {
 			return cErr
 		}
 
@@ -243,6 +249,67 @@ func (self *BoltStorage) CurrentBTCInfoVersion(timepoint uint64) (common.Version
 		return nil
 	})
 	return common.Version(result), err
+}
+
+func (self *BoltStorage) UpdateFeedConfiguration(name string, enabled bool) error {
+	const disableValue = "disabled"
+	var (
+		allFeeds = world.AllFeeds()
+		exists   = false
+	)
+
+	for _, feed := range allFeeds {
+		if strings.ToLower(name) == strings.ToLower(feed) {
+			exists = true
+			break
+		}
+	}
+	if !exists {
+		return fmt.Errorf("unknown feed: %q", name)
+	}
+
+	return self.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(disabledFeedsBucket))
+		if v := b.Get([]byte(name)); v == nil {
+			// feed does not exists in disabled feeds bucket yet
+			if !enabled {
+				return b.Put([]byte(name), []byte(disableValue))
+			}
+			return nil
+		}
+
+		if enabled {
+			return b.Delete([]byte(name))
+		}
+		return nil
+	})
+}
+
+func (self BoltStorage) GetFeedConfiguration() ([]common.FeedConfiguration, error) {
+	var (
+		err      error
+		allFeeds = world.AllFeeds()
+		results  []common.FeedConfiguration
+	)
+
+	for _, feed := range allFeeds {
+		results = append(results, common.FeedConfiguration{Name: feed, Enabled: true})
+	}
+
+	err = self.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(disabledFeedsBucket))
+		return b.ForEach(func(k, _ []byte) error {
+			for i := range results {
+				if strings.ToLower(results[i].Name) == strings.ToLower(string(k)) {
+					results[i].Enabled = false
+					break
+				}
+			}
+			return nil
+		})
+	})
+
+	return results, err
 }
 
 // GetBTCInfo returns BTC info at given time point. It implements data.GlobalStorage interface.
