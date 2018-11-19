@@ -5,6 +5,24 @@ import (
 	"io/ioutil"
 )
 
+var (
+	allFeeds = []string{
+		"DGX",
+		"OneForgeETH",
+		"OneForgeUSD",
+		"GDAX",
+		"Kraken",
+		"Gemini",
+		"bitfinex",
+		"binance",
+	}
+)
+
+// AllFeeds returns all configured feed sources.
+func AllFeeds() []string {
+	return allFeeds
+}
+
 // Endpoint returns all API endpoints to use in TheWorld struct.
 type Endpoint interface {
 	GoldDataEndpoint() string

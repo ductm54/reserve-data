@@ -12,4 +12,6 @@ type GlobalStorage interface {
 
 	GetBTCInfo(version common.Version) (common.BTCData, error)
 	CurrentBTCInfoVersion(timepoint uint64) (common.Version, error)
+	UpdateFeedConfiguration(string, bool) error
+	GetFeedConfiguration() ([]common.FeedConfiguration, error)
 }

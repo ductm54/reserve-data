@@ -66,6 +66,9 @@ type ReserveData interface {
 
 	GetBTCData(timepoint uint64) (common.BTCData, error)
 
+	UpdateFeedConfiguration(string, bool) error
+	GetFeedConfiguration() ([]common.FeedConfiguration, error)
+
 	GetExchangeStatus() (common.ExchangesStatus, error)
 	UpdateExchangeStatus(exchange string, status bool, timestamp uint64) error
 

@@ -48,6 +48,14 @@ func (self ReserveData) GetBTCData(timestamp uint64) (common.BTCData, error) {
 	return self.globalStorage.GetBTCInfo(version)
 }
 
+func (self ReserveData) UpdateFeedConfiguration(name string, enabled bool) error {
+	return self.globalStorage.UpdateFeedConfiguration(name, enabled)
+}
+
+func (self ReserveData) GetFeedConfiguration() ([]common.FeedConfiguration, error) {
+	return self.globalStorage.GetFeedConfiguration()
+}
+
 func (self ReserveData) CurrentPriceVersion(timepoint uint64) (common.Version, error) {
 	return self.storage.CurrentPriceVersion(timepoint)
 }
