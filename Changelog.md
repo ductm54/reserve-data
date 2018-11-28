@@ -2,17 +2,32 @@
 
 ## Unreleased
 
+### Features
+
+### Bug fixes
+
+### Improvements
+
+### Compatibility
+
+## 0.12.0 (2018-11-28)
+
 ### Features:
 
 - add /get-step-function-data API for fetching tokens step function configuration
 - add /btc-feed API (#453)
+- add feed configuration APIs (#455)
 
 ### Bug fixes:
 
 ### Improvements: 
+
 - change MEW endpoint to new endpoint (#425)
 
 ### Compatibility
+
+- KyberNetwork smart contracts (>= 0.3.0)
+- KyberNetwork analytic (0.11.0)
 
 ## 0.11.0 (2018-07-03)
 
