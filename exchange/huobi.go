@@ -93,7 +93,7 @@ func (self *Huobi) UpdateDepositAddress(token common.Token, address string) erro
 // GetLiveExchangeInfos querry the Exchange Endpoint for exchange precision and limit of a list of tokenPairIDs
 // It return error if occurs.
 func (self *Huobi) GetLiveExchangeInfos(tokenPairIDs []common.TokenPairID) (common.ExchangeInfo, error) {
-	var result common.ExchangeInfo
+	result := make(common.ExchangeInfo)
 	exchangeInfo, err := self.interf.GetExchangeInfo()
 	if err != nil {
 		return result, err
