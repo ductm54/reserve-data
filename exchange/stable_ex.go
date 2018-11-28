@@ -3,6 +3,7 @@ package exchange
 import (
 	"errors"
 	"fmt"
+	"log"
 	"math/big"
 	"strings"
 
@@ -45,7 +46,17 @@ func (self *StableEx) GetInfo() (common.ExchangeInfo, error) {
 }
 
 func (self *StableEx) GetLiveExchangeInfos(tokenPairIDs []common.TokenPairID) (common.ExchangeInfo, error) {
-	return common.ExchangeInfo{}, errors.New("Stable exchange doesn't support live token")
+	log.Print("WARNING stabel_exchange shouldn't come with live exchange info. Return an all 0 result...")
+	result := make(common.ExchangeInfo)
+	for _, tokenPairID := range tokenPairIDs {
+		result[tokenPairID] = common.ExchangePrecisionLimit{
+			Precision:   common.TokenPairPrecision{},
+			AmountLimit: common.TokenPairAmountLimit{},
+			PriceLimit:  common.TokenPairPriceLimit{},
+			MinNotional: 0,
+		}
+	}
+	return result, nil
 }
 
 func (self *StableEx) GetExchangeInfo(pair common.TokenPairID) (common.ExchangePrecisionLimit, error) {
