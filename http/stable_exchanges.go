@@ -32,7 +32,7 @@ func (self *HTTPServer) GetBTCData(c *gin.Context) {
 func (self *HTTPServer) UpdateFeedConfiguration(c *gin.Context) {
 	const dataPostFormKey = "data"
 
-	postForm, ok := self.Authenticated(c, []string{dataPostFormKey}, []Permission{ConfigurePermission})
+	postForm, ok := self.Authenticated(c, []string{dataPostFormKey}, []Permission{ConfirmConfPermission})
 	if !ok {
 		return
 	}
