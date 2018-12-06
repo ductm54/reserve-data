@@ -455,7 +455,7 @@ func (self *Blockchain) SetRateMinedNonce() (uint64, error) {
 	if nonceFromNode < self.localSetRateNonce {
 		log.Printf("SET_RATE_MINED_NONCE: nonce returned from node %d is smaller than cached nonce: %d",
 			nonceFromNode, self.localSetRateNonce)
-		if common.GetTimepoint()-self.setRateNonceTimestamp > uint64(15*time.Minute) {
+		if common.GetTimepoint()-self.setRateNonceTimestamp > uint64(15*time.Minute/time.Millisecond) {
 			log.Printf("SET_RATE_MINED_NONCE: cached nonce %d stalled, overwriting with nonce from node %d",
 				self.localSetRateNonce, nonceFromNode)
 			self.localSetRateNonce = nonceFromNode
