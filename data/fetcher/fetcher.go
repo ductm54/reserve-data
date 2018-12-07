@@ -378,7 +378,7 @@ func (self *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord)
 				var (
 					// expiredDuration is the amount of time after that if a transaction doesn't appear,
 					// it is considered failed
-					expiredDuration = 15 * time.Minute
+					expiredDuration = 15 * time.Minute / time.Millisecond
 					txFailed        = false
 				)
 				if nonceValidator(activity) {
