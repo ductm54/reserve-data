@@ -5,6 +5,7 @@
 ### Features:
 
 - add /get-step-function-data API for fetching tokens step function configuration
+- add "creation_time" field to Token info
 - add /btc-feed API (#453)
 
 ### Bug fixes:
