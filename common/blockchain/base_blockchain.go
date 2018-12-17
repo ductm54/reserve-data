@@ -90,7 +90,7 @@ func (self *BaseBlockchain) GetDominantMinedNonceFromAllNodes(operator string) (
 	for endpoint, client := range self.broadcaster.clients {
 		go func(endpoint string, client *ethclient.Client) {
 			nonce, err := op.NonceCorpus.MinedNonce(client)
-			log.Printf("SET_RATE_MINED_NONCE: request for mined nonce from endpoint %s, got result %d, error %s", endpoint, err)
+			log.Printf("SET_RATE_MINED_NONCE: request for mined nonce from endpoint %s, got result %d, error %s", endpoint, nonce, err)
 			if err == nil {
 				nonceChannel <- nonce.Uint64()
 			}
