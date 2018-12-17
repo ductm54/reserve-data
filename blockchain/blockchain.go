@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"path/filepath"
 	"sync"
-	"time"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
@@ -33,6 +32,8 @@ const (
 	etherReceivalEvent = "0x75f33ed68675112c77094e7c5b073890598be1d23e27cd7f6907b4a7d98ac619"
 	// userCatEvent is the topic of event UserCategorySet(address user, uint category).
 	userCatEvent = "0x0aeb0f7989a09b8cccf58cea1aefa196ccf738cb14781d6910448dd5649d0e6e"
+	// nonceFromNodeRetryCount is the number of retry count for nonce from All node before return error
+	nonceFromNodeRetryCount = 3
 )
 
 var (
@@ -455,24 +456,29 @@ func (self *Blockchain) SetRateMinedNonce() (uint64, error) {
 	if nonceFromNode < self.localSetRateNonce {
 		log.Printf("SET_RATE_MINED_NONCE: nonce returned from node %d is smaller than cached nonce: %d",
 			nonceFromNode, self.localSetRateNonce)
-		if common.GetTimepoint()-self.setRateNonceTimestamp > uint64(15*time.Minute) {
-			log.Printf("SET_RATE_MINED_NONCE: cached nonce %d stalled, overwriting with nonce from node %d",
-				self.localSetRateNonce, nonceFromNode)
-			self.localSetRateNonce = nonceFromNode
-			self.setRateNonceTimestamp = common.GetTimepoint()
-			return nonceFromNode, nil
-		} else {
-			log.Printf("SET_RATE_MINED_NONCE: using cached nonce %d instead of nonce from node %d",
-				self.localSetRateNonce, nonceFromNode)
-			return self.localSetRateNonce, nil
+		nonceFromAllNode, err := self.GetDominantMinedNonceFromAllNodes(pricingOP)
+		//if err!=nil, retry until no error
+		if err != nil {
+			for retryCount := 1; retryCount < nonceFromNodeRetryCount; retryCount++ {
+				log.Printf("SET_RATE_MINED_NONCE: retry getting dominant mined nonce from all node count %d", retryCount)
+				nonceFromAllNode, err = self.GetDominantMinedNonceFromAllNodes(pricingOP)
+				if err == nil {
+					break
+				}
+			}
 		}
-	} else {
-		log.Printf("SET_RATE_MINED_NONCE: updating cached nonce, current: %d, new: %d",
-			self.localSetRateNonce, nonceFromNode)
-		self.localSetRateNonce = nonceFromNode
-		self.setRateNonceTimestamp = common.GetTimepoint()
-		return nonceFromNode, nil
+		// if even after retrying and there is still error, return the error
+		if err != nil {
+			return self.localSetRateNonce, err
+		}
+		self.localSetRateNonce = nonceFromAllNode
+		return self.localSetRateNonce, nil
 	}
+	log.Printf("SET_RATE_MINED_NONCE: updating cached nonce, current: %d, new: %d",
+		self.localSetRateNonce, nonceFromNode)
+	self.localSetRateNonce = nonceFromNode
+	self.setRateNonceTimestamp = common.GetTimepoint()
+	return nonceFromNode, nil
 }
 
 func (self *Blockchain) GetPricingMethod(inputData string) (*abi.Method, error) {
