@@ -62,7 +62,7 @@ func (self *BaseBlockchain) GetDominantMinedNonceFromAllNodes(operator string) (
 		op           = self.MustGetOperator(operator)
 		nonceChannel = make(chan uint64)
 		//nonceResults is the map of [nonce]Count, to count the occurrence of all nonces return from nodes.
-		nonceResults map[uint64]uint64
+		nonceResults = make(map[uint64]uint64)
 	)
 	go fetchNonceFromAllNode(op, self.broadcaster.clients, nonceChannel)
 	for nonce := range nonceChannel {
