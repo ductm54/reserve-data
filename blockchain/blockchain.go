@@ -436,6 +436,21 @@ func (self *Blockchain) GetPrice(token ethereum.Address, block *big.Int, priceTy
 	return self.GeneratedGetRate(opts, token, block, false, qty)
 }
 
+func retryGetMinedNoneFromNodes(maxAttemp int, fn func(string) (uint64, error)) (uint64, error) {
+	var (
+		nonceFromAllNode uint64
+		err              error
+	)
+	for retryCount := 0; retryCount < nonceFromNodeRetryCount; retryCount++ {
+		log.Printf("SET_RATE_MINED_NONCE: getting dominant mined nonce from all node. Try count %d", retryCount)
+		nonceFromAllNode, err = fn(pricingOP)
+		if err == nil {
+			return nonceFromAllNode, err
+		}
+	}
+	return nonceFromAllNode, err
+}
+
 // SetRateMinedNonce returns nonce of the pricing operator in confirmed
 // state (not pending state).
 //
@@ -454,20 +469,10 @@ func (self *Blockchain) SetRateMinedNonce() (uint64, error) {
 		return nonceFromNode, err
 	}
 	if nonceFromNode < self.localSetRateNonce {
+		var nonceFromAllNode uint64
 		log.Printf("SET_RATE_MINED_NONCE: nonce returned from node %d is smaller than cached nonce: %d",
 			nonceFromNode, self.localSetRateNonce)
-		nonceFromAllNode, err := self.GetDominantMinedNonceFromAllNodes(pricingOP)
-		//if err!=nil, retry until no error
-		if err != nil {
-			for retryCount := 1; retryCount < nonceFromNodeRetryCount; retryCount++ {
-				log.Printf("SET_RATE_MINED_NONCE: retry getting dominant mined nonce from all node count %d", retryCount)
-				nonceFromAllNode, err = self.GetDominantMinedNonceFromAllNodes(pricingOP)
-				if err == nil {
-					break
-				}
-			}
-		}
-		// if even after retrying and there is still error, return the error
+		nonceFromAllNode, err := retryGetMinedNoneFromNodes(nonceFromNodeRetryCount, self.GetDominantMinedNonceFromAllNodes)
 		if err != nil {
 			return self.localSetRateNonce, err
 		}

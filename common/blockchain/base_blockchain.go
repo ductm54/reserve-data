@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/KyberNetwork/reserve-data/common"
@@ -76,19 +77,12 @@ func (self *BaseBlockchain) MustGetOperator(name string) *Operator {
 	return op
 }
 
-//GetDominantMinedNonceFromAllNodes  return the nonce that is dominant from all nodes
-func (self *BaseBlockchain) GetDominantMinedNonceFromAllNodes(operator string) (uint64, error) {
-	var (
-		op                   = self.MustGetOperator(operator)
-		maxPopularNonce      uint64
-		maxPopularNonceCount uint64
-		nonceChannel         = make(chan uint64)
-		nonceResults         map[uint64]uint64
-		sameMaxcount         bool
-	)
-	defer close(nonceChannel)
-	for endpoint, client := range self.broadcaster.clients {
+func fetchNonceFromAllNode(op *Operator, clients map[string]*ethclient.Client, nonceChannel chan uint64) {
+	var wg sync.WaitGroup
+	for endpoint, client := range clients {
+		wg.Add(1)
 		go func(endpoint string, client *ethclient.Client) {
+			defer wg.Done()
 			nonce, err := op.NonceCorpus.MinedNonce(client)
 			log.Printf("SET_RATE_MINED_NONCE: request for mined nonce from endpoint %s, got result %d, error %s", endpoint, nonce, err)
 			if err == nil {
@@ -96,24 +90,54 @@ func (self *BaseBlockchain) GetDominantMinedNonceFromAllNodes(operator string) (
 			}
 		}(endpoint, client)
 	}
-	for i := range nonceChannel {
-		nonceResults[i]++
-		if nonceResults[i] > maxPopularNonceCount {
-			maxPopularNonceCount = nonceResults[i]
-			maxPopularNonce = i
-			sameMaxcount = false
+	wg.Wait()
+	close(nonceChannel)
+}
 
-		} else if nonceResults[i] == maxPopularNonceCount {
-			sameMaxcount = true
+func getDominantMinedNonceFromResults(nonceResults map[uint64]uint64) (uint64, error) {
+	var (
+		mostPopularNonce      uint64
+		mostPopularNonceCount uint64
+		sameMaxCount          bool
+	)
+	if len(nonceResults) == 0 {
+		return 0, errors.New("All nodes failed: nonce Results is empty")
+	}
+	for nonce := range nonceResults {
+		if nonceResults[nonce] > mostPopularNonceCount {
+			mostPopularNonceCount = nonceResults[nonce]
+			mostPopularNonce = nonce
+			sameMaxCount = false
+
+		} else if nonceResults[nonce] == mostPopularNonceCount {
+			sameMaxCount = true
 		}
 	}
-	if maxPopularNonce == 0 {
-		return 0, errors.New("SET_RATE_MINED_NONCE: all node fail")
-	}
-	if sameMaxcount == true {
+	if sameMaxCount == true {
 		return 0, errors.New("SET_RATE_MINED_NONCE: cannot determine dominant nonce since they have equal count")
 	}
-	return maxPopularNonce, nil
+	log.Printf("SET_RATE_MINED_NONCE: most popular none is %d, with number of occurrence %d on total of %d result from nodes", mostPopularNonce, mostPopularNonceCount, len(nonceResults))
+	return mostPopularNonce, nil
+}
+
+//GetDominantMinedNonceFromAllNodes  return the nonce that is dominant from all nodes
+func (self *BaseBlockchain) GetDominantMinedNonceFromAllNodes(operator string) (uint64, error) {
+	var (
+		op           = self.MustGetOperator(operator)
+		nonceChannel = make(chan uint64)
+		//nonceResults is the map of [nonce]Count, to count the occurrence of all nonces return from nodes.
+		nonceResults map[uint64]uint64
+	)
+	go fetchNonceFromAllNode(op, self.broadcaster.clients, nonceChannel)
+	for nonce := range nonceChannel {
+		_, avail := nonceResults[nonce]
+		if !avail {
+			nonceResults[nonce] = 1
+		} else {
+			nonceResults[nonce]++
+		}
+	}
+	return getDominantMinedNonceFromResults(nonceResults)
 }
 
 func (self *BaseBlockchain) GetMinedNonce(operator string) (uint64, error) {
