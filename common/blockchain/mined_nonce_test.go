@@ -12,7 +12,7 @@ type NonceResultTestCase struct {
 
 func TestGetDominantMinedNonceFromResults(t *testing.T) {
 	var testCases = []NonceResultTestCase{
-		NonceResultTestCase{
+		{
 			nonceResultInput: map[uint64]uint64{
 				1: 3,
 				2: 1,
@@ -21,7 +21,7 @@ func TestGetDominantMinedNonceFromResults(t *testing.T) {
 			expectedMostPopularNonce: 1,
 			expectedError:            nil,
 		},
-		NonceResultTestCase{
+		{
 			nonceResultInput: map[uint64]uint64{
 				1: 2,
 				2: 2,
@@ -30,7 +30,7 @@ func TestGetDominantMinedNonceFromResults(t *testing.T) {
 			expectedMostPopularNonce: 0,
 			expectedError:            errEqualCount,
 		},
-		NonceResultTestCase{
+		{
 			nonceResultInput:         map[uint64]uint64{},
 			expectedMostPopularNonce: 0,
 			expectedError:            errEmptyResult,
