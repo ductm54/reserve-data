@@ -35,11 +35,13 @@ func getDominantMinedNonceFromResults(nonceResults map[uint64]uint64) (uint64, e
 		mostPopularNonce      uint64
 		mostPopularNonceCount uint64
 		sameMaxCount          bool
+		totalResult           uint64 = 0
 	)
 	if len(nonceResults) == 0 {
 		return 0, errEmptyResult
 	}
 	for nonce := range nonceResults {
+		totalResult += nonceResults[nonce]
 		if nonceResults[nonce] > mostPopularNonceCount {
 			mostPopularNonceCount = nonceResults[nonce]
 			mostPopularNonce = nonce
@@ -52,7 +54,7 @@ func getDominantMinedNonceFromResults(nonceResults map[uint64]uint64) (uint64, e
 	if sameMaxCount == true {
 		return 0, errEqualCount
 	}
-	log.Printf("SET_RATE_MINED_NONCE: most popular none is %d, with number of occurrence %d on total of %d result from nodes", mostPopularNonce, mostPopularNonceCount, len(nonceResults))
+	log.Printf("SET_RATE_MINED_NONCE: most popular none is %d, with number of occurrence %d on total of %d result from nodes", mostPopularNonce, mostPopularNonceCount, totalResult)
 	return mostPopularNonce, nil
 }
 
