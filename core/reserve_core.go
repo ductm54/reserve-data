@@ -443,7 +443,7 @@ func (self ReserveCore) SetRates(
 		txprice = tx.GasPrice().Text(10)
 	}
 	uid := timebasedID(txhex)
-	err = self.activityStorage.Record(
+	sErr := self.activityStorage.Record(
 		common.ActionSetrate,
 		uid,
 		"blockchain",
@@ -465,8 +465,8 @@ func (self ReserveCore) SetRates(
 		common.GetTimepoint(),
 	)
 	log.Printf(
-		"Core ----------> Set rates: ==> Result: tx: %s, nonce: %s, price: %s, error: %s",
-		txhex, txnonce, txprice, common.ErrorToString(err),
+		"Core ----------> Set rates: ==> Result: tx: %s, nonce: %s, price: %s, error: %s, storage error: %s",
+		txhex, txnonce, txprice, common.ErrorToString(err), common.ErrorToString(sErr),
 	)
 	return uid, err
 }
