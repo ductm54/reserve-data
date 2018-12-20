@@ -13,10 +13,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/KyberNetwork/reserve-data/world"
-
 	"github.com/KyberNetwork/reserve-data/boltutil"
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/world"
 	"github.com/boltdb/bolt"
 )
 
