@@ -12,6 +12,7 @@
 
 ### Improvements: 
 - change MEW endpoint to new endpoint (#425)
+- remove unused step function data endpoint (#465)
 
 ### Compatibility
 
