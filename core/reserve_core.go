@@ -468,7 +468,15 @@ func (self ReserveCore) SetRates(
 		"Core ----------> Set rates: ==> Result: tx: %s, nonce: %s, price: %s, error: %s, storage error: %s",
 		txhex, txnonce, txprice, common.ErrorToString(err), common.ErrorToString(sErr),
 	)
-	return uid, err
+
+	return uid, combineErr(err, sErr)
+}
+
+func combineErr(err, sErr error) error {
+	if err == nil && sErr == nil {
+		return nil
+	}
+	return fmt.Errorf("setRate error: %s, storage error: %s", common.ErrorToString(err), common.ErrorToString(sErr))
 }
 
 func sanityCheck(buys, afpMid, sells []*big.Int) error {
