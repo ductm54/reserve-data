@@ -37,7 +37,7 @@ func (self ContractCaller) CallContract(msg ether.CallMsg, blockNo *big.Int, tim
 			continue
 		}
 
-		log.Printf("FALLBACK: Ether client %s done, returnning result...", url)
+		// log.Printf("FALLBACK: Ether client %s done, returnning result...", url)
 		return output, nil
 	}
 	return nil, errors.New("failed to call contract, all clients failed")
