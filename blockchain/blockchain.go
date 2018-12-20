@@ -557,17 +557,3 @@ func (self *Blockchain) GetDepositOPAddress() ethereum.Address {
 func (self *Blockchain) GetIntermediatorOPAddress() ethereum.Address {
 	return self.MustGetOperator(huobiblockchain.HuobiOP).Address
 }
-
-func processBigIntOutput(ret *big.Int) *big.Int {
-	var maxUint256 = big.NewInt(0).Exp(big.NewInt(2), big.NewInt(256), nil)
-	maxUint256 = big.NewInt(0).Add(maxUint256, big.NewInt(-1))
-
-	var maxInt256 = big.NewInt(0).Exp(big.NewInt(2), big.NewInt(255), nil)
-	maxInt256 = big.NewInt(0).Add(maxInt256, big.NewInt(-1))
-
-	if ret.Cmp(maxInt256) > 0 {
-		ret.Add(maxUint256, big.NewInt(0).Neg(ret)).Add(ret, big.NewInt(1))
-		ret.Neg(ret)
-	}
-	return ret
-}
