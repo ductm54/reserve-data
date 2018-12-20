@@ -53,7 +53,7 @@ func (self RealEndpoint) OneForgeGoldUSDDataEndpoint() string {
 }
 
 func (self RealEndpoint) GDAXDataEndpoint() string {
-	return "https://api.gdax.com/products/eth-usd/ticker"
+	return "https://api.pro.coinbase.com/products/eth-usd/ticker"
 }
 
 func (self RealEndpoint) KrakenDataEndpoint() string {
