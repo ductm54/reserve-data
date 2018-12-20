@@ -15,13 +15,12 @@ import (
 
 //ReserveData struct for reserve data
 type ReserveData struct {
-	storage                 Storage
-	stepFunctionDataStorage StepFunctionDataStorage
-	fetcher                 Fetcher
-	storageController       datapruner.StorageController
-	globalStorage           GlobalStorage
-	exchanges               []common.Exchange
-	setting                 Setting
+	storage           Storage
+	fetcher           Fetcher
+	storageController datapruner.StorageController
+	globalStorage     GlobalStorage
+	exchanges         []common.Exchange
+	setting           Setting
 }
 
 func (self ReserveData) CurrentGoldInfoVersion(timepoint uint64) (common.Version, error) {
@@ -371,7 +370,6 @@ func (self ReserveData) RunStorageController() error {
 
 //NewReserveData initiate a new reserve instance
 func NewReserveData(storage Storage,
-	stepFunctionDataStorage StepFunctionDataStorage,
 	fetcher Fetcher, storageControllerRunner datapruner.StorageControllerRunner,
 	arch archive.Archive, globalStorage GlobalStorage,
 	exchanges []common.Exchange, setting Setting) *ReserveData {
@@ -381,15 +379,9 @@ func NewReserveData(storage Storage,
 	}
 	return &ReserveData{
 		storage,
-		stepFunctionDataStorage,
 		fetcher,
 		storageController,
 		globalStorage,
 		exchanges,
 		setting}
-}
-
-//GetStepFunctionData return step function data and error if happen
-func (rc ReserveData) GetStepFunctionData() (common.StepFunctionData, error) {
-	return rc.stepFunctionDataStorage.GetStepFunctionData()
 }

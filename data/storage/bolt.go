@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/KyberNetwork/reserve-data/world"
 	"log"
 	"math"
 	"os"
@@ -16,6 +15,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/boltutil"
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/world"
 	"github.com/boltdb/bolt"
 )
 
@@ -40,8 +40,6 @@ const (
 	goldBucket                      string = "gold_feeds"
 	btcBucket                       string = "btc_feeds"
 	disabledFeedsBucket             string = "disabled_feeds"
-	stepFunctionBucket              string = "step_function"
-	stepFunctionLatestDataKey       string = "latest_data"
 
 	// pendingTargetQuantityV2 constant for bucket name for pending target quantity v2
 	pendingTargetQuantityV2 string = "pending_target_qty_v2"
@@ -153,9 +151,6 @@ func NewBoltStorage(path string) (*BoltStorage, error) {
 			return cErr
 		}
 		if _, cErr := tx.CreateBucketIfNotExists([]byte(rebalanceQuadratic)); cErr != nil {
-			return cErr
-		}
-		if _, cErr := tx.CreateBucketIfNotExists([]byte(stepFunctionBucket)); cErr != nil {
 			return cErr
 		}
 		return nil
@@ -1809,35 +1804,4 @@ func (self *BoltStorage) ConfirmTokenUpdateInfo(tarQty common.TokenTargetQtyV2, 
 		return self.storeJSONByteArray(tx, rebalanceQuadratic, timeStampKey, dataJSON)
 	})
 	return err
-}
-
-//StoreStepFunctionData store data get from blockchain to db
-func (bs *BoltStorage) StoreStepFunctionData(data common.StepFunctionData) error {
-	key := []byte(stepFunctionLatestDataKey)
-	err := bs.db.Update(func(tx *bolt.Tx) error {
-		dataJSON, uErr := json.Marshal(data)
-		if uErr != nil {
-			return uErr
-		}
-		b := tx.Bucket([]byte(stepFunctionBucket))
-		return b.Put(key, dataJSON)
-	})
-	return err
-}
-
-//GetStepFunctionData return current step function data
-func (bs *BoltStorage) GetStepFunctionData() (common.StepFunctionData, error) {
-	key := []byte(stepFunctionLatestDataKey)
-	var result common.StepFunctionData
-	err := bs.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(stepFunctionBucket))
-		dataJSON := b.Get(key)
-		if dataJSON != nil {
-			if vErr := json.Unmarshal(dataJSON, &result); vErr != nil {
-				return vErr
-			}
-		}
-		return nil
-	})
-	return result, err
 }
