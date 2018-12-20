@@ -112,7 +112,13 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string, noCore, enable
 		endpoint = setPath.endPoint
 	}
 
-	bkendpoints := setPath.bkendpoints
+	bkEndpoints := setPath.bkendpoints
+
+	// appending secret node to backup endpoints, as the fallback contract won't use endpoint
+	if endpointOW != "" {
+		bkEndpoints = append([]string{endpointOW}, bkEndpoints...)
+	}
+
 	chainType := GetChainType(kyberENV)
 
 	//set client & endpoint
@@ -120,10 +126,11 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string, noCore, enable
 	if err != nil {
 		panic(err)
 	}
+
 	infura := ethclient.NewClient(client)
 	bkclients := map[string]*ethclient.Client{}
 	var callClients []*ethclient.Client
-	for _, ep := range bkendpoints {
+	for _, ep := range bkEndpoints {
 		var bkclient *ethclient.Client
 		bkclient, err = ethclient.Dial(ep)
 		if err != nil {
@@ -153,7 +160,7 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string, noCore, enable
 	config := &Config{
 		Blockchain:              blockchain,
 		EthereumEndpoint:        endpoint,
-		BackupEthereumEndpoints: bkendpoints,
+		BackupEthereumEndpoints: bkEndpoints,
 		ChainType:               chainType,
 		AuthEngine:              hmac512auth,
 		EnableAuthentication:    authEnbl,
