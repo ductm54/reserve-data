@@ -169,6 +169,8 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string, noCore, enable
 		AddressSetting:          addressSetting,
 	}
 
+	log.Printf("configured endpoint: %s, backup: %v", config.EthereumEndpoint, config.BackupEthereumEndpoints)
+
 	if enableStat {
 		config.AddStatConfig(setPath)
 	}
