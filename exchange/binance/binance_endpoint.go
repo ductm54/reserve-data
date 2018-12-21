@@ -35,7 +35,6 @@ func (self *BinanceEndpoint) fillRequest(req *http.Request, signNeeded bool, tim
 		req.Header.Add("User-Agent", "binance/go")
 	}
 	req.Header.Add("Accept", "application/json")
-	// log.Printf("Bin Time Delta: %d", self.timeDelta)
 	if signNeeded {
 		q := req.URL.Query()
 		sig := url.Values{}
