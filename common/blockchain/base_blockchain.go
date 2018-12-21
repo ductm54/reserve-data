@@ -343,7 +343,7 @@ func (self *BaseBlockchain) TxStatus(hash ethereum.Hash) (string, uint64, error)
 	}
 	// tx exist
 	if pending {
-		return "", 0, nil
+		return common.MiningStatusPending, 0, nil
 	}
 	var receipt *types.Receipt
 	receipt, err = self.client.TransactionReceipt(option, hash)

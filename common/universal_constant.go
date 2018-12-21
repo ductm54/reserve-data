@@ -5,6 +5,7 @@ const (
 	MiningStatusFailed      = "failed"
 	MiningStatusSubmitted   = "submitted"
 	MiningStatusLost        = "lost"
+	MiningStatusPending     = "pending"
 	ExchangeStatusDone      = "done"
 	ExchangeStatusPending   = "pending"
 	ExchangeStatusFailed    = "failed"

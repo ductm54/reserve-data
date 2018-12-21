@@ -355,19 +355,11 @@ func (self *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord)
 				log.Printf("Getting tx status failed, tx will be considered as pending: %s", err)
 			}
 			switch status {
-			case "":
-				if nonceValidator(activity) {
-					result[activity.ID] = common.NewActivityStatus(
-						activity.ExchangeStatus,
-						txStr,
-						blockNum,
-						common.MiningStatusFailed,
-						err,
-					)
-				}
+			case common.MiningStatusPending:
+				log.Printf("TX_STATUS: tx (%s) status is pending", tx)
 			case common.MiningStatusMined:
 				if activity.Action == common.ActionSetrate {
-					log.Printf("set rate transaction is mined, id: %s", activity.ID.EID)
+					log.Printf("TX_STATUS set rate transaction is mined, id: %s", activity.ID.EID)
 				}
 				result[activity.ID] = common.NewActivityStatus(
 					activity.ExchangeStatus,
@@ -396,7 +388,7 @@ func (self *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord)
 				} else {
 					elapsed := common.GetTimepoint() - activity.Timestamp.MustToUint64()
 					if elapsed > uint64(expiredDuration/time.Millisecond) {
-						log.Printf("Fetcher tx status: tx(%s) is lost, elapsed time: %d", txStr, elapsed)
+						log.Printf("TX_STATUS: tx(%s) is lost, elapsed time: %d", txStr, elapsed)
 						txFailed = true
 					}
 				}
@@ -410,7 +402,10 @@ func (self *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord)
 						err,
 					)
 				}
+			default:
+				log.Printf("TX_STATUS: tx (%s) status is not available, error (%s). Wait till next try", tx, common.ErrorToString(err))
 			}
+
 		}
 	}
 	return result
