@@ -127,26 +127,27 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string, noCore, enable
 		panic(err)
 	}
 
-	infura := ethclient.NewClient(client)
-	bkclients := map[string]*ethclient.Client{}
+	mainClient := ethclient.NewClient(client)
+	bkClients := map[string]*ethclient.Client{}
+
 	var callClients []*ethclient.Client
 	for _, ep := range bkEndpoints {
-		var bkclient *ethclient.Client
-		bkclient, err = ethclient.Dial(ep)
+		var bkClient *ethclient.Client
+		bkClient, err = ethclient.Dial(ep)
 		if err != nil {
 			log.Printf("Cannot connect to %s, err %s. Ignore it.", ep, err)
 		} else {
-			bkclients[ep] = bkclient
-			callClients = append(callClients, bkclient)
+			bkClients[ep] = bkClient
+			callClients = append(callClients, bkClient)
 		}
 	}
 
-	blockchain := blockchain.NewBaseBlockchain(
-		client, infura, map[string]*blockchain.Operator{},
-		blockchain.NewBroadcaster(bkclients),
+	bc := blockchain.NewBaseBlockchain(
+		client, mainClient, map[string]*blockchain.Operator{},
+		blockchain.NewBroadcaster(bkClients),
 		blockchain.NewCMCEthUSDRate(),
 		chainType,
-		blockchain.NewContractCaller(callClients, setPath.bkendpoints),
+		blockchain.NewContractCaller(callClients, bkEndpoints),
 	)
 
 	if !authEnbl {
@@ -158,7 +159,7 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string, noCore, enable
 	}
 	s3archive := archive.NewS3Archive(awsConf)
 	config := &Config{
-		Blockchain:              blockchain,
+		Blockchain:              bc,
 		EthereumEndpoint:        endpoint,
 		BackupEthereumEndpoints: bkEndpoints,
 		ChainType:               chainType,
