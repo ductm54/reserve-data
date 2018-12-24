@@ -1363,6 +1363,7 @@ func (self *HTTPServer) SetTargetQtyV2(c *gin.Context) {
 
 	for tokenID := range tokenTargetQty {
 		if _, err := self.setting.GetInternalTokenByID(tokenID); err != nil {
+			err = fmt.Errorf("TokenID: %s, error: %s", tokenID, err)
 			httputil.ResponseFailure(c, httputil.WithError(err))
 			return
 		}
