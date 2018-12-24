@@ -119,7 +119,7 @@ func TestExchangeDown(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fetcher := NewFetcher(fstorage, fstorage, fstorage, &world.TheWorld{}, runner, true, setting)
+	fetcher := NewFetcher(fstorage, fstorage, &world.TheWorld{}, runner, true, setting)
 
 	// mock normal data
 	var estatuses, bstatuses sync.Map

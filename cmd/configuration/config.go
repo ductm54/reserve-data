@@ -80,20 +80,19 @@ func NewSettingPaths(
 }
 
 type Config struct {
-	ActivityStorage         core.ActivityStorage
-	StepFunctionDataStorage data.StepFunctionDataStorage
-	DataStorage             data.Storage
-	DataGlobalStorage       data.GlobalStorage
-	StatStorage             stat.StatStorage
-	AnalyticStorage         stat.AnalyticStorage
-	UserStorage             stat.UserStorage
-	LogStorage              stat.LogStorage
-	RateStorage             stat.RateStorage
-	FeeSetRateStorage       stat.FeeSetRateStorage
-	FetcherStorage          fetcher.Storage
-	FetcherGlobalStorage    fetcher.GlobalStorage
-	MetricStorage           metric.MetricStorage
-	Archive                 archive.Archive
+	ActivityStorage      core.ActivityStorage
+	DataStorage          data.Storage
+	DataGlobalStorage    data.GlobalStorage
+	StatStorage          stat.StatStorage
+	AnalyticStorage      stat.AnalyticStorage
+	UserStorage          stat.UserStorage
+	LogStorage           stat.LogStorage
+	RateStorage          stat.RateStorage
+	FeeSetRateStorage    stat.FeeSetRateStorage
+	FetcherStorage       fetcher.Storage
+	FetcherGlobalStorage fetcher.GlobalStorage
+	MetricStorage        metric.MetricStorage
+	Archive              archive.Archive
 
 	World                *world.TheWorld
 	FetcherRunner        fetcher.FetcherRunner
@@ -221,7 +220,6 @@ func (self *Config) AddCoreConfig(settingPath SettingPaths, kyberENV string) {
 	depositSigner := DepositSignerFromConfigFile(settingPath.secretPath)
 
 	self.ActivityStorage = dataStorage
-	self.StepFunctionDataStorage = dataStorage
 	self.DataStorage = dataStorage
 	self.DataGlobalStorage = dataStorage
 	self.FetcherStorage = dataStorage

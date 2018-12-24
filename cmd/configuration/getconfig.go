@@ -112,7 +112,13 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string, noCore, enable
 		endpoint = setPath.endPoint
 	}
 
-	bkendpoints := setPath.bkendpoints
+	bkEndpoints := setPath.bkendpoints
+
+	// appending secret node to backup endpoints, as the fallback contract won't use endpoint
+	if endpointOW != "" {
+		bkEndpoints = append([]string{endpointOW}, bkEndpoints...)
+	}
+
 	chainType := GetChainType(kyberENV)
 
 	//set client & endpoint
@@ -120,26 +126,28 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string, noCore, enable
 	if err != nil {
 		panic(err)
 	}
-	infura := ethclient.NewClient(client)
-	bkclients := map[string]*ethclient.Client{}
+
+	mainClient := ethclient.NewClient(client)
+	bkClients := map[string]*ethclient.Client{}
+
 	var callClients []*ethclient.Client
-	for _, ep := range bkendpoints {
-		var bkclient *ethclient.Client
-		bkclient, err = ethclient.Dial(ep)
+	for _, ep := range bkEndpoints {
+		var bkClient *ethclient.Client
+		bkClient, err = ethclient.Dial(ep)
 		if err != nil {
 			log.Printf("Cannot connect to %s, err %s. Ignore it.", ep, err)
 		} else {
-			bkclients[ep] = bkclient
-			callClients = append(callClients, bkclient)
+			bkClients[ep] = bkClient
+			callClients = append(callClients, bkClient)
 		}
 	}
 
-	blockchain := blockchain.NewBaseBlockchain(
-		client, infura, map[string]*blockchain.Operator{},
-		blockchain.NewBroadcaster(bkclients),
+	bc := blockchain.NewBaseBlockchain(
+		client, mainClient, map[string]*blockchain.Operator{},
+		blockchain.NewBroadcaster(bkClients),
 		blockchain.NewCMCEthUSDRate(),
 		chainType,
-		blockchain.NewContractCaller(callClients, setPath.bkendpoints),
+		blockchain.NewContractCaller(callClients, bkEndpoints),
 	)
 
 	if !authEnbl {
@@ -151,9 +159,9 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string, noCore, enable
 	}
 	s3archive := archive.NewS3Archive(awsConf)
 	config := &Config{
-		Blockchain:              blockchain,
+		Blockchain:              bc,
 		EthereumEndpoint:        endpoint,
-		BackupEthereumEndpoints: bkendpoints,
+		BackupEthereumEndpoints: bkEndpoints,
 		ChainType:               chainType,
 		AuthEngine:              hmac512auth,
 		EnableAuthentication:    authEnbl,
@@ -161,6 +169,8 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string, noCore, enable
 		World:                   theWorld,
 		AddressSetting:          addressSetting,
 	}
+
+	log.Printf("configured endpoint: %s, backup: %v", config.EthereumEndpoint, config.BackupEthereumEndpoints)
 
 	if enableStat {
 		config.AddStatConfig(setPath)

@@ -994,12 +994,6 @@ type StepFunctionResponse struct {
 	ImbalanceStepResponse ImbalanceStepFunction `json:"imbalance_step_function"`
 }
 
-//StepFunctionData save data for each token map[tokenID]StepFunctionResponse
-type StepFunctionData struct {
-	BlockNumber uint64                          `json:"block_number"`
-	Tokens      map[string]StepFunctionResponse `json:"tokens"`
-}
-
 type ExportedReserverRateRecord struct {
 	ReserveAddress string
 	Rate           ReserveRates

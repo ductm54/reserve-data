@@ -13,6 +13,4 @@ type Blockchain interface {
 	TxStatus(tx ethereum.Hash) (string, uint64, error)
 	CurrentBlock() (uint64, error)
 	SetRateMinedNonce() (uint64, error)
-
-	GetStepFunctionData(block uint64, token ethereum.Address) (common.StepFunctionResponse, error)
 }

@@ -448,6 +448,7 @@ func (self *Blockchain) GetPrice(token ethereum.Address, block *big.Int, priceTy
 // because the chain might be reorganized so we will invalidate it
 // and assign it to the nonce from node.
 func (self *Blockchain) SetRateMinedNonce() (uint64, error) {
+	const localNonceExpiration = time.Minute * 2
 	nonceFromNode, err := self.GetMinedNonce(pricingOP)
 	if err != nil {
 		return nonceFromNode, err
@@ -455,7 +456,7 @@ func (self *Blockchain) SetRateMinedNonce() (uint64, error) {
 	if nonceFromNode < self.localSetRateNonce {
 		log.Printf("SET_RATE_MINED_NONCE: nonce returned from node %d is smaller than cached nonce: %d",
 			nonceFromNode, self.localSetRateNonce)
-		if common.GetTimepoint()-self.setRateNonceTimestamp > uint64(15*time.Minute/time.Millisecond) {
+		if common.GetTimepoint()-self.setRateNonceTimestamp > uint64(localNonceExpiration/time.Millisecond) {
 			log.Printf("SET_RATE_MINED_NONCE: cached nonce %d stalled, overwriting with nonce from node %d",
 				self.localSetRateNonce, nonceFromNode)
 			self.localSetRateNonce = nonceFromNode
@@ -556,86 +557,4 @@ func (self *Blockchain) GetDepositOPAddress() ethereum.Address {
 
 func (self *Blockchain) GetIntermediatorOPAddress() ethereum.Address {
 	return self.MustGetOperator(huobiblockchain.HuobiOP).Address
-}
-
-func processBigIntOutput(ret *big.Int) *big.Int {
-	var maxUint256 = big.NewInt(0).Exp(big.NewInt(2), big.NewInt(256), nil)
-	maxUint256 = big.NewInt(0).Add(maxUint256, big.NewInt(-1))
-
-	var maxInt256 = big.NewInt(0).Exp(big.NewInt(2), big.NewInt(255), nil)
-	maxInt256 = big.NewInt(0).Add(maxInt256, big.NewInt(-1))
-
-	if ret.Cmp(maxInt256) > 0 {
-		ret.Add(maxUint256, big.NewInt(0).Neg(ret)).Add(ret, big.NewInt(1))
-		ret.Neg(ret)
-	}
-	return ret
-}
-
-func (bc *Blockchain) getDetailStepFunctionData(opts blockchain.CallOpts, token ethereum.Address, command *big.Int) ([]*big.Int, error) {
-	var result []*big.Int
-	paramLength, err := bc.GeneratedGetStepFunctionData(opts, token, command, big.NewInt(0))
-	if err != nil {
-		return result, err
-	}
-	command.Add(command, big.NewInt(1))
-	for index := int64(0); index < paramLength.Int64(); index++ {
-		response, err := bc.GeneratedGetStepFunctionData(opts, token, command, big.NewInt(index))
-		if err != nil {
-			return result, err
-		}
-		ret := processBigIntOutput(response)
-		result = append(result, ret)
-	}
-	return result, nil
-}
-
-//GetStepFunctionData return step function for a token from blockchain
-func (bc *Blockchain) GetStepFunctionData(atBlock uint64, token ethereum.Address) (common.StepFunctionResponse, error) {
-	var result common.StepFunctionResponse
-	var err error
-	opts := bc.GetCallOpts(atBlock)
-
-	/// Get xBuy quantity step function data
-	result.QuantityStepResponse.XBuy, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(0))
-	if err != nil {
-		return result, err
-	}
-
-	/// Get yBuy quatity step function data
-	result.QuantityStepResponse.YBuy, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(2))
-	if err != nil {
-		return result, err
-	}
-	/// get xSell quantity step function data
-	result.QuantityStepResponse.XSell, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(4))
-	if err != nil {
-		return result, err
-	}
-	/// get ySell quantity step function data
-	result.QuantityStepResponse.YSell, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(6))
-	if err != nil {
-		return result, err
-	}
-	/// get xBuy imbalance step function data
-	result.ImbalanceStepResponse.XBuy, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(8))
-	if err != nil {
-		return result, err
-	}
-	/// get yBuy imbalance step function data
-	result.ImbalanceStepResponse.YBuy, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(10))
-	if err != nil {
-		return result, err
-	}
-	/// get xSell imbalance step function data
-	result.ImbalanceStepResponse.XSell, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(12))
-	if err != nil {
-		return result, err
-	}
-	/// get ySell imbalance step function data
-	result.ImbalanceStepResponse.YSell, err = bc.getDetailStepFunctionData(opts, token, big.NewInt(14))
-	if err != nil {
-		return result, err
-	}
-	return result, nil
 }
