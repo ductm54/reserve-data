@@ -1,6 +1,7 @@
 package common
 
 import (
+	"fmt"
 	"math"
 	"math/big"
 	"path"
@@ -89,3 +90,11 @@ func EthToWei(n float64) *big.Int {
 // 	}
 // 	return true
 // }
+
+// CombineErr return a combination of error between action error and storage error
+func CombineErr(err, sErr error) error {
+	if err == nil && sErr == nil {
+		return nil
+	}
+	return fmt.Errorf("action error: %s, storage error: %s", ErrorToString(err), ErrorToString(sErr))
+}
