@@ -20,6 +20,10 @@ import (
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 )
 
+const (
+	logFileName = "core.log"
+)
+
 func backupLog(arch archive.Archive, cronTimeExpression string, fileNameRegrexPattern string) {
 	c := cron.New()
 	err := c.AddFunc(cronTimeExpression, func() {
