@@ -24,10 +24,8 @@ import (
 )
 
 const (
-	maxTimespot   uint64 = 18446744073709551615
-	maxDataSize   int    = 1000000 //1 Megabyte in byte
-	startTimezone int64  = -11
-	endTimezone   int64  = 14
+	maxTimespot uint64 = 18446744073709551615
+	maxDataSize int    = 1000000 //1 Megabyte in byte
 )
 
 var (

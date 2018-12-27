@@ -16,7 +16,6 @@ import (
 const (
 	remoteLogPath  string = "core-log"
 	defaultBaseURL        = "http://127.0.0.1"
-	coreDefaultURL string = "http://127.0.0.1:8000"
 )
 
 // logDir is located at base of this repository.
@@ -28,7 +27,6 @@ var base_url string
 var noCore bool
 var stdoutLog bool
 var dryrun bool
-var coreURL string
 
 func serverStart(_ *cobra.Command, _ []string) {
 	numCPU := runtime.NumCPU()

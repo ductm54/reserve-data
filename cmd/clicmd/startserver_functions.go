@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"time"
 
 	"github.com/KyberNetwork/reserve-data/blockchain"
 	"github.com/KyberNetwork/reserve-data/cmd/configuration"
@@ -19,25 +18,6 @@ import (
 	"github.com/KyberNetwork/reserve-data/data/fetcher"
 	"github.com/robfig/cron"
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
-)
-
-const (
-	// startingBlockProduction is the block the first version of
-	// production network contract is created.
-	startingBlockProduction = 5069586
-	// startingBlockStaging is the block the first version of
-	// staging network contract is created.
-	startingBlockStaging = 5042909
-	logFileName          = "core.log"
-	// defaultTimeOut is the default time out for requesting to core for setting
-	defaultTimeOut = time.Duration(10 * time.Second)
-)
-
-var (
-	oldBurners        = [2]string{"0x4E89bc8484B2c454f2F7B25b612b648c45e14A8e", "0x07f6e905f2a1559cd9fd43cb92f8a1062a3ca706"}
-	oldNetwork        = [1]string{"0x964F35fAe36d75B1e72770e244F6595B68508CF5"}
-	stagingOldBurners = [1]string{"0xB2cB365D803Ad914e63EA49c95eC663715c2F673"}
-	stagingOldNetwork = [1]string{"0xD2D21FdeF0D054D2864ce328cc56D1238d6b239e"}
 )
 
 func backupLog(arch archive.Archive, cronTimeExpression string, fileNameRegrexPattern string) {

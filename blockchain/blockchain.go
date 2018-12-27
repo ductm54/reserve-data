@@ -21,18 +21,6 @@ import (
 const (
 	pricingOP = "pricingOP"
 	depositOP = "depositOP"
-
-	// feeToWalletEvent is the topic of event AssignFeeToWallet(address reserve, address wallet, uint walletFee).
-	feeToWalletEvent = "0x366bc34352215bf0bd3b527cfd6718605e1f5938777e42bcd8ed92f578368f52"
-	// burnFeeEvent is the topic of event AssignBurnFees(address reserve, uint burnFee).
-	burnFeeEvent = "0xf838f6ddc89706878e3c3e698e9b5cbfbf2c0e3d3dcd0bd2e00f1ccf313e0185"
-	// tradeEvent is the topic of event
-	// ExecuteTrade(address indexed sender, ERC20 src, ERC20 dest, uint actualSrcAmount, uint actualDestAmount).
-	tradeEvent = "0x1849bd6a030a1bca28b83437fd3de96f3d27a5d172fa7e9c78e7b61468928a39"
-	// etherReceivalEvent is the topic of event EtherReceival(address indexed sender, uint amount).
-	etherReceivalEvent = "0x75f33ed68675112c77094e7c5b073890598be1d23e27cd7f6907b4a7d98ac619"
-	// userCatEvent is the topic of event UserCategorySet(address user, uint category).
-	userCatEvent = "0x0aeb0f7989a09b8cccf58cea1aefa196ccf738cb14781d6910448dd5649d0e6e"
 )
 
 var (
