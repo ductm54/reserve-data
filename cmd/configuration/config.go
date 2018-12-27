@@ -20,10 +20,6 @@ import (
 	"github.com/KyberNetwork/reserve-data/http"
 	"github.com/KyberNetwork/reserve-data/metric"
 	"github.com/KyberNetwork/reserve-data/settings"
-	"github.com/KyberNetwork/reserve-data/stat"
-	"github.com/KyberNetwork/reserve-data/stat/statpruner"
-	statstorage "github.com/KyberNetwork/reserve-data/stat/storage"
-	statutil "github.com/KyberNetwork/reserve-data/stat/util"
 	"github.com/KyberNetwork/reserve-data/world"
 )
 
@@ -82,12 +78,6 @@ type Config struct {
 	ActivityStorage      core.ActivityStorage
 	DataStorage          data.Storage
 	DataGlobalStorage    data.GlobalStorage
-	StatStorage          stat.StatStorage
-	AnalyticStorage      stat.AnalyticStorage
-	UserStorage          stat.UserStorage
-	LogStorage           stat.LogStorage
-	RateStorage          stat.RateStorage
-	FeeSetRateStorage    stat.FeeSetRateStorage
 	FetcherStorage       fetcher.Storage
 	FetcherGlobalStorage fetcher.GlobalStorage
 	MetricStorage        metric.MetricStorage
@@ -96,8 +86,6 @@ type Config struct {
 	World                *world.TheWorld
 	FetcherRunner        fetcher.FetcherRunner
 	DataControllerRunner datapruner.StorageControllerRunner
-	StatFetcherRunner    stat.FetcherRunner
-	StatControllerRunner statpruner.ControllerRunner
 	FetcherExchanges     []fetcher.Exchange
 	Exchanges            []common.Exchange
 	BlockchainSigner     blockchain.Signer
@@ -116,75 +104,7 @@ type Config struct {
 
 	ChainType      string
 	Setting        *settings.Settings
-	IPlocator      *statutil.IPLocator
 	AddressSetting *settings.AddressSetting
-}
-
-// GetStatConfig: load config to run stat server only
-func (self *Config) AddStatConfig(settingPath SettingPaths) {
-
-	analyticStorage, err := statstorage.NewBoltAnalyticStorage(settingPath.analyticStoragePath)
-	if err != nil {
-		panic(err)
-	}
-
-	statStorage, err := statstorage.NewBoltStatStorage(settingPath.statStoragePath)
-	if err != nil {
-		panic(err)
-	}
-
-	logStorage, err := statstorage.NewBoltLogStorage(settingPath.logStoragePath)
-	if err != nil {
-		panic(err)
-	}
-
-	rateStorage, err := statstorage.NewBoltRateStorage(settingPath.rateStoragePath)
-	if err != nil {
-		panic(err)
-	}
-
-	userStorage, err := statstorage.NewBoltUserStorage(settingPath.userStoragePath)
-	if err != nil {
-		panic(err)
-	}
-
-	feeSetRateStorage, err := statstorage.NewBoltFeeSetRateStorage(settingPath.feeSetRateStoragePath)
-	if err != nil {
-		panic(err)
-	}
-
-	ipLocator, err := statutil.NewIPLocator()
-	if err != nil {
-		panic(err)
-	}
-	var statFetcherRunner stat.FetcherRunner
-	var statControllerRunner statpruner.ControllerRunner
-	if common.RunningMode() == common.SimulationMode {
-		if statFetcherRunner, err = http_runner.NewHttpRunner(http_runner.WithHttpRunnerPort(8002)); err != nil {
-			panic(err)
-		}
-	} else {
-		statFetcherRunner = stat.NewTickerRunner(
-			5*time.Second,  // block fetching interval
-			7*time.Second,  // log fetching interval
-			10*time.Second, // rate fetching interval
-			2*time.Second,  // tradelog processing interval
-			2*time.Second)  // catlog processing interval
-		statControllerRunner = statpruner.NewControllerTickerRunner(24*time.Hour, 24*time.Hour)
-	}
-
-	apiKey := GetEtherscanAPIKey(settingPath.secretPath)
-
-	self.StatStorage = statStorage
-	self.AnalyticStorage = analyticStorage
-	self.UserStorage = userStorage
-	self.LogStorage = logStorage
-	self.RateStorage = rateStorage
-	self.StatControllerRunner = statControllerRunner
-	self.FeeSetRateStorage = feeSetRateStorage
-	self.StatFetcherRunner = statFetcherRunner
-	self.EtherscanApiKey = apiKey
-	self.IPlocator = ipLocator
 }
 
 func (self *Config) AddCoreConfig(settingPath SettingPaths, kyberENV string) {

@@ -390,43 +390,6 @@ func (self *Blockchain) FetchRates(atBlock uint64, currentBlock uint64) (common.
 	return result, nil
 }
 
-func (self *Blockchain) GetReserveRates(
-	atBlock, currentBlock uint64, reserveAddress ethereum.Address,
-	tokens []common.Token) (common.ReserveRates, error) {
-	result := common.ReserveTokenRateEntry{}
-	rates := common.ReserveRates{}
-	rates.Timestamp = common.GetTimepoint()
-
-	ETH := self.setting.ETHToken()
-	srcAddresses := []ethereum.Address{}
-	destAddresses := []ethereum.Address{}
-	for _, token := range tokens {
-		srcAddresses = append(srcAddresses, ethereum.HexToAddress(token.Address), ethereum.HexToAddress(ETH.Address))
-		destAddresses = append(destAddresses, ethereum.HexToAddress(ETH.Address), ethereum.HexToAddress(token.Address))
-	}
-
-	opts := self.GetCallOpts(atBlock)
-	reserveRate, sanityRate, err := self.GeneratedGetReserveRates(opts, reserveAddress, srcAddresses, destAddresses)
-	if err != nil {
-		return rates, err
-	}
-
-	rates.BlockNumber = atBlock
-	rates.ToBlockNumber = currentBlock
-	rates.ReturnTime = common.GetTimepoint()
-	for index, token := range tokens {
-		rateEntry := common.ReserveRateEntry{}
-		rateEntry.BuyReserveRate = common.BigToFloat(reserveRate[index*2+1], 18)
-		rateEntry.BuySanityRate = common.BigToFloat(sanityRate[index*2+1], 18)
-		rateEntry.SellReserveRate = common.BigToFloat(reserveRate[index*2], 18)
-		rateEntry.SellSanityRate = common.BigToFloat(sanityRate[index*2], 18)
-		result[fmt.Sprintf("ETH-%s", token.ID)] = rateEntry
-	}
-	rates.Data = result
-
-	return rates, err
-}
-
 func (self *Blockchain) GetPrice(token ethereum.Address, block *big.Int, priceType string, qty *big.Int, atBlock uint64) (*big.Int, error) {
 	opts := self.GetCallOpts(atBlock)
 	if priceType == "buy" {

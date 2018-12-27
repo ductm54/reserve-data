@@ -19,33 +19,12 @@ type HttpRunner struct {
 	bticker          chan time.Time
 	globalDataTicker chan time.Time
 
-	// unused tickers, keep for compatibility
-	rsticker                chan time.Time
-	lticker                 chan time.Time
-	tradeLogProcessorTicker chan time.Time
-	catLogProcessorTicker   chan time.Time
-
 	server *HttpRunnerServer
 }
 
 // GetGlobalDataTicker returns the global data ticker.
 func (self *HttpRunner) GetGlobalDataTicker() <-chan time.Time {
 	return self.globalDataTicker
-}
-
-// GetTradeLogProcessorTicker returns the trade log processor ticker.
-func (self *HttpRunner) GetTradeLogProcessorTicker() <-chan time.Time {
-	return self.tradeLogProcessorTicker
-}
-
-// GetCatLogProcessorTicker returns the cat log processor ticker.
-func (self *HttpRunner) GetCatLogProcessorTicker() <-chan time.Time {
-	return self.catLogProcessorTicker
-}
-
-// GetLogTicker returns the log ticker.
-func (self *HttpRunner) GetLogTicker() <-chan time.Time {
-	return self.lticker
 }
 
 // GetBlockTicker returns the block ticker.
@@ -66,11 +45,6 @@ func (self *HttpRunner) GetAuthDataTicker() <-chan time.Time {
 // GetRateTicker returns the rate ticker.
 func (self *HttpRunner) GetRateTicker() <-chan time.Time {
 	return self.rticker
-}
-
-// GetReserveRatesTicker returns the reserve rates ticker.
-func (self *HttpRunner) GetReserveRatesTicker() <-chan time.Time {
-	return self.rsticker
 }
 
 // waitPingResponse waits until HTTP ticker server responses to request.
@@ -158,23 +132,15 @@ func NewHttpRunner(options ...HttpRunnerOption) (*HttpRunner, error) {
 	achan := make(chan time.Time)
 	rchan := make(chan time.Time)
 	bchan := make(chan time.Time)
-	rschan := make(chan time.Time)
-	lchan := make(chan time.Time)
-	tradeLogProcessorChan := make(chan time.Time)
-	catLogProcessorChan := make(chan time.Time)
 	globalDataChan := make(chan time.Time)
 
 	runner := &HttpRunner{
-		oticker:                 ochan,
-		aticker:                 achan,
-		rticker:                 rchan,
-		bticker:                 bchan,
-		rsticker:                rschan,
-		lticker:                 lchan,
-		tradeLogProcessorTicker: tradeLogProcessorChan,
-		catLogProcessorTicker:   catLogProcessorChan,
-		globalDataTicker:        globalDataChan,
-		server:                  nil,
+		oticker:          ochan,
+		aticker:          achan,
+		rticker:          rchan,
+		bticker:          bchan,
+		globalDataTicker: globalDataChan,
+		server:           nil,
 	}
 
 	for _, option := range options {

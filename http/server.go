@@ -16,7 +16,6 @@ import (
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/metric"
-	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	raven "github.com/getsentry/raven-go"
 	"github.com/gin-contrib/cors"
@@ -39,7 +38,6 @@ var (
 type HTTPServer struct {
 	app         reserve.ReserveData
 	core        reserve.ReserveCore
-	stat        reserve.ReserveStats
 	metric      metric.MetricStorage
 	host        string
 	authEnabled bool
@@ -485,44 +483,6 @@ func (self *HTTPServer) GetActivities(c *gin.Context) {
 	}
 }
 
-func (self *HTTPServer) CatLogs(c *gin.Context) {
-	log.Printf("Getting cat logs")
-	fromTime, err := strconv.ParseUint(c.Query("fromTime"), 10, 64)
-	if err != nil {
-		fromTime = 0
-	}
-	toTime, err := strconv.ParseUint(c.Query("toTime"), 10, 64)
-	if err != nil || toTime == 0 {
-		toTime = common.GetTimepoint()
-	}
-
-	data, err := self.stat.GetCatLogs(fromTime, toTime)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-	} else {
-		httputil.ResponseSuccess(c, httputil.WithData(data))
-	}
-}
-
-func (self *HTTPServer) TradeLogs(c *gin.Context) {
-	log.Printf("Getting trade logs")
-	fromTime, err := strconv.ParseUint(c.Query("fromTime"), 10, 64)
-	if err != nil {
-		fromTime = 0
-	}
-	toTime, err := strconv.ParseUint(c.Query("toTime"), 10, 64)
-	if err != nil || toTime == 0 {
-		toTime = common.GetTimepoint()
-	}
-
-	data, err := self.stat.GetTradeLogs(fromTime, toTime)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-	} else {
-		httputil.ResponseSuccess(c, httputil.WithData(data))
-	}
-}
-
 func (self *HTTPServer) StopFetcher(c *gin.Context) {
 	err := self.app.Stop()
 	if err != nil {
@@ -820,101 +780,6 @@ func (self *HTTPServer) EnableSetrate(c *gin.Context) {
 	return
 }
 
-func (self *HTTPServer) GetAssetVolume(c *gin.Context) {
-	fromTime, _ := strconv.ParseUint(c.Query("fromTime"), 10, 64)
-	toTime, _ := strconv.ParseUint(c.Query("toTime"), 10, 64)
-	freq := c.Query("freq")
-	asset := c.Query("asset")
-	data, err := self.stat.GetAssetVolume(fromTime, toTime, freq, asset)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
-
-func (self *HTTPServer) GetBurnFee(c *gin.Context) {
-	fromTime, _ := strconv.ParseUint(c.Query("fromTime"), 10, 64)
-	toTime, _ := strconv.ParseUint(c.Query("toTime"), 10, 64)
-	freq := c.Query("freq")
-	reserveAddr := c.Query("reserveAddr")
-	if reserveAddr == "" {
-		httputil.ResponseFailure(c, httputil.WithReason("reserveAddr is required"))
-		return
-	}
-	data, err := self.stat.GetBurnFee(fromTime, toTime, freq, reserveAddr)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
-
-func (self *HTTPServer) GetWalletFee(c *gin.Context) {
-	fromTime, _ := strconv.ParseUint(c.Query("fromTime"), 10, 64)
-	toTime, _ := strconv.ParseUint(c.Query("toTime"), 10, 64)
-	freq := c.Query("freq")
-	reserveAddr := c.Query("reserveAddr")
-	walletAddr := c.Query("walletAddr")
-	data, err := self.stat.GetWalletFee(fromTime, toTime, freq, reserveAddr, walletAddr)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
-
-func (self *HTTPServer) ExceedDailyLimit(c *gin.Context) {
-	addr := c.Param("addr")
-	log.Printf("Checking daily limit for %s", addr)
-	address := ethereum.HexToAddress(addr)
-	if address.Big().Cmp(ethereum.Big0) == 0 {
-		httputil.ResponseFailure(c, httputil.WithReason("address is not valid"))
-		return
-	}
-	exceeded, err := self.stat.ExceedDailyLimit(address)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-	} else {
-		httputil.ResponseSuccess(c, httputil.WithData(exceeded))
-	}
-}
-
-func (self *HTTPServer) GetUserVolume(c *gin.Context) {
-	fromTime, _ := strconv.ParseUint(c.Query("fromTime"), 10, 64)
-	toTime, _ := strconv.ParseUint(c.Query("toTime"), 10, 64)
-	freq := c.Query("freq")
-	userAddr := c.Query("userAddr")
-	if userAddr == "" {
-		httputil.ResponseFailure(c, httputil.WithReason("User address is required"))
-		return
-	}
-	data, err := self.stat.GetUserVolume(fromTime, toTime, freq, userAddr)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
-
-func (self *HTTPServer) GetUsersVolume(c *gin.Context) {
-	fromTime, _ := strconv.ParseUint(c.Query("fromTime"), 10, 64)
-	toTime, _ := strconv.ParseUint(c.Query("toTime"), 10, 64)
-	freq := c.Query("freq")
-	userAddr := c.Query("userAddr")
-	if userAddr == "" {
-		httputil.ResponseFailure(c, httputil.WithReason("User address is required"))
-		return
-	}
-	userAddrs := strings.Split(userAddr, ",")
-	data, err := self.stat.GetUsersVolume(fromTime, toTime, freq, userAddrs)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
-
 func (self *HTTPServer) ValidateTimeInput(c *gin.Context) (uint64, uint64, bool) {
 	fromTime, ok := strconv.ParseUint(c.Query("fromTime"), 10, 64)
 	if ok != nil {
@@ -926,120 +791,6 @@ func (self *HTTPServer) ValidateTimeInput(c *gin.Context) (uint64, uint64, bool)
 		toTime = common.GetTimepoint()
 	}
 	return fromTime, toTime, true
-}
-
-func (self *HTTPServer) GetTradeSummary(c *gin.Context) {
-	fromTime, toTime, ok := self.ValidateTimeInput(c)
-	if !ok {
-		return
-	}
-	tzparam, _ := strconv.ParseInt(c.Query("timeZone"), 10, 64)
-	if (tzparam < startTimezone) || (tzparam > endTimezone) {
-		httputil.ResponseFailure(c, httputil.WithReason("Timezone is not supported"))
-		return
-	}
-	data, err := self.stat.GetTradeSummary(fromTime, toTime, tzparam)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
-
-func (self *HTTPServer) GetCapByAddress(c *gin.Context) {
-	addr := c.Param("addr")
-	address := ethereum.HexToAddress(addr)
-	if address.Big().Cmp(ethereum.Big0) == 0 {
-		httputil.ResponseFailure(c, httputil.WithReason("address is not valid"))
-		return
-	}
-	data, kyced, err := self.stat.GetTxCapByAddress(address)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-	} else {
-		httputil.ResponseSuccess(c, httputil.WithMultipleFields(
-			gin.H{
-				"data": data,
-				"kyc":  kyced,
-			},
-		))
-	}
-}
-
-func (self *HTTPServer) GetCapByUser(c *gin.Context) {
-	user := c.Param("user")
-	data, err := self.stat.GetCapByUser(user)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-	} else {
-		httputil.ResponseSuccess(c, httputil.WithData(data))
-	}
-}
-
-func (self *HTTPServer) GetPendingAddresses(c *gin.Context) {
-	data, err := self.stat.GetPendingAddresses()
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-	} else {
-		httputil.ResponseSuccess(c, httputil.WithData(data))
-	}
-}
-
-func (self *HTTPServer) GetWalletStats(c *gin.Context) {
-	fromTime, toTime, ok := self.ValidateTimeInput(c)
-	if !ok {
-		return
-	}
-	tzparam, _ := strconv.ParseInt(c.Query("timeZone"), 10, 64)
-	if (tzparam < startTimezone) || (tzparam > endTimezone) {
-		httputil.ResponseFailure(c, httputil.WithReason("Timezone is not supported"))
-		return
-	}
-	if toTime == 0 {
-		toTime = common.GetTimepoint()
-	}
-	walletAddr := ethereum.HexToAddress(c.Query("walletAddr"))
-	wcap := big.NewInt(0)
-	wcap.Exp(big.NewInt(2), big.NewInt(128), big.NewInt(0))
-	if walletAddr.Big().Cmp(wcap) < 0 {
-		httputil.ResponseFailure(c, httputil.WithReason("Wallet address is invalid, its integer form must be larger than 2^128"))
-		return
-	}
-
-	data, err := self.stat.GetWalletStats(fromTime, toTime, walletAddr.Hex(), tzparam)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
-
-func (self *HTTPServer) GetWalletAddresses(c *gin.Context) {
-	data, err := self.stat.GetWalletAddresses()
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
-
-func (self *HTTPServer) GetReserveRate(c *gin.Context) {
-	fromTime, _ := strconv.ParseUint(c.Query("fromTime"), 10, 64)
-	toTime, _ := strconv.ParseUint(c.Query("toTime"), 10, 64)
-	if toTime == 0 {
-		toTime = common.GetTimepoint()
-	}
-	reserveAddr := ethereum.HexToAddress(c.Query("reserveAddr"))
-	if reserveAddr.Big().Cmp(ethereum.Big0) == 0 {
-		httputil.ResponseFailure(c, httputil.WithReason("Reserve address is invalid"))
-		return
-	}
-	data, err := self.stat.GetReserveRates(fromTime, toTime, reserveAddr)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
 }
 
 func (self *HTTPServer) GetExchangesStatus(c *gin.Context) {
@@ -1080,92 +831,6 @@ func (self *HTTPServer) UpdateExchangeStatus(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
-func (self *HTTPServer) GetCountryStats(c *gin.Context) {
-	fromTime, toTime, ok := self.ValidateTimeInput(c)
-	if !ok {
-		return
-	}
-	country := c.Query("country")
-	tzparam, _ := strconv.ParseInt(c.Query("timeZone"), 10, 64)
-	if (tzparam < startTimezone) || (tzparam > endTimezone) {
-		httputil.ResponseFailure(c, httputil.WithReason("Timezone is not supported"))
-		return
-	}
-	data, err := self.stat.GetGeoData(fromTime, toTime, country, tzparam)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
-
-func (self *HTTPServer) GetHeatMap(c *gin.Context) {
-	fromTime, toTime, ok := self.ValidateTimeInput(c)
-	if !ok {
-		return
-	}
-	tzparam, _ := strconv.ParseInt(c.Query("timeZone"), 10, 64)
-	if (tzparam < startTimezone) || (tzparam > endTimezone) {
-		httputil.ResponseFailure(c, httputil.WithReason("Timezone is not supported"))
-		return
-	}
-
-	data, err := self.stat.GetHeatMap(fromTime, toTime, tzparam)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
-
-func (self *HTTPServer) GetCountries(c *gin.Context) {
-	data, _ := self.stat.GetCountries()
-	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
-
-func (self *HTTPServer) UpdatePriceAnalyticData(c *gin.Context) {
-	postForm, ok := self.Authenticated(c, []string{}, []Permission{RebalancePermission})
-	if !ok {
-		return
-	}
-	timestamp, err := strconv.ParseUint(postForm.Get("timestamp"), 10, 64)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	value := []byte(postForm.Get("value"))
-	if len(value) > maxDataSize {
-		httputil.ResponseFailure(c, httputil.WithReason(errDataSizeExceed.Error()))
-		return
-	}
-	err = self.stat.UpdatePriceAnalyticData(timestamp, value)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c)
-}
-func (self *HTTPServer) GetPriceAnalyticData(c *gin.Context) {
-	_, ok := self.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, ConfigurePermission, ConfirmConfPermission, RebalancePermission})
-	if !ok {
-		return
-	}
-	fromTime, toTime, ok := self.ValidateTimeInput(c)
-	if !ok {
-		return
-	}
-	if toTime == 0 {
-		toTime = common.GetTimepoint()
-	}
-
-	data, err := self.stat.GetPriceAnalyticData(fromTime, toTime)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
-
 func (self *HTTPServer) ExchangeNotification(c *gin.Context) {
 	postForm, ok := self.Authenticated(c, []string{
 		"exchange", "action", "token", "fromTime", "toTime", "isWarning"}, []Permission{RebalancePermission})
@@ -1195,51 +860,6 @@ func (self *HTTPServer) GetNotifications(c *gin.Context) {
 		return
 	}
 	data, err := self.app.GetNotifications()
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
-
-func (self *HTTPServer) GetUserList(c *gin.Context) {
-	_, ok := self.Authenticated(c, []string{"fromTime", "toTime", "timeZone"}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
-	if !ok {
-		return
-	}
-	fromTime, toTime, ok := self.ValidateTimeInput(c)
-	if !ok {
-		return
-	}
-	timeZone, err := strconv.ParseInt(c.Query("timeZone"), 10, 64)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("timeZone is required: %s", err.Error())))
-		return
-	}
-	data, err := self.stat.GetUserList(fromTime, toTime, timeZone)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
-
-func (self *HTTPServer) GetReserveVolume(c *gin.Context) {
-	fromTime, _ := strconv.ParseUint(c.Query("fromTime"), 10, 64)
-	toTime, _ := strconv.ParseUint(c.Query("toTime"), 10, 64)
-	freq := c.Query("freq")
-	reserveAddr := c.Query("reserveAddr")
-	if reserveAddr == "" {
-		httputil.ResponseFailure(c, httputil.WithReason("reserve address is required"))
-		return
-	}
-	tokenID := c.Query("token")
-	if tokenID == "" {
-		httputil.ResponseFailure(c, httputil.WithReason("token is required"))
-		return
-	}
-
-	data, err := self.stat.GetReserveVolume(fromTime, toTime, freq, reserveAddr, tokenID)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -1317,26 +937,6 @@ func (self *HTTPServer) GetStableTokenParams(c *gin.Context) {
 	}
 
 	data, err := self.metric.GetStableTokenParams()
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
-
-func (self *HTTPServer) GetTokenHeatmap(c *gin.Context) {
-	fromTime, toTime, ok := self.ValidateTimeInput(c)
-	if !ok {
-		return
-	}
-	freq := c.Query("freq")
-	token := c.Query("token")
-	if token == "" {
-		httputil.ResponseFailure(c, httputil.WithReason("token param is required"))
-		return
-	}
-
-	data, err := self.stat.GetTokenHeatmap(fromTime, toTime, token, freq)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -1435,19 +1035,6 @@ func (self *HTTPServer) GetTargetQtyV2(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(data))
 }
 
-func (self *HTTPServer) GetFeeSetRateByDay(c *gin.Context) {
-	fromTime, toTime, ok := self.ValidateTimeInput(c)
-	if !ok {
-		return
-	}
-	data, err := self.stat.GetFeeSetRateByDay(fromTime, toTime)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
-
 func (self *HTTPServer) register() {
 
 	if self.core != nil && self.app != nil {
@@ -1539,34 +1126,6 @@ func (self *HTTPServer) register() {
 		self.r.POST("/set-feed-configuration", self.UpdateFeedConfiguration)
 		self.r.GET("/get-feed-configuration", self.GetFeedConfiguration)
 	}
-
-	if self.stat != nil {
-		self.r.GET("/cap-by-address/:addr", self.GetCapByAddress)
-		self.r.GET("/cap-by-user/:user", self.GetCapByUser)
-		self.r.GET("/richguy/:addr", self.ExceedDailyLimit)
-		self.r.GET("/tradelogs", self.TradeLogs)
-		self.r.GET("/catlogs", self.CatLogs)
-		self.r.GET("/get-asset-volume", self.GetAssetVolume)
-		self.r.GET("/get-burn-fee", self.GetBurnFee)
-		self.r.GET("/get-wallet-fee", self.GetWalletFee)
-		self.r.GET("/get-user-volume", self.GetUserVolume)
-		self.r.GET("/get-users-volume", self.GetUsersVolume)
-		self.r.GET("/get-trade-summary", self.GetTradeSummary)
-		self.r.POST("/update-user-addresses", self.UpdateUserAddresses)
-		self.r.GET("/get-pending-addresses", self.GetPendingAddresses)
-		self.r.GET("/get-reserve-rate", self.GetReserveRate)
-		self.r.GET("/get-wallet-stats", self.GetWalletStats)
-		self.r.GET("/get-wallet-address", self.GetWalletAddresses)
-		self.r.GET("/get-country-stats", self.GetCountryStats)
-		self.r.GET("/get-heat-map", self.GetHeatMap)
-		self.r.GET("/get-countries", self.GetCountries)
-		self.r.POST("/update-price-analytic-data", self.UpdatePriceAnalyticData)
-		self.r.GET("/get-price-analytic-data", self.GetPriceAnalyticData)
-		self.r.GET("/get-reserve-volume", self.GetReserveVolume)
-		self.r.GET("/get-user-list", self.GetUserList)
-		self.r.GET("/get-token-heatmap", self.GetTokenHeatmap)
-		self.r.GET("/get-fee-setrate", self.GetFeeSetRateByDay)
-	}
 }
 
 func (self *HTTPServer) Run() {
@@ -1579,7 +1138,6 @@ func (self *HTTPServer) Run() {
 func NewHTTPServer(
 	app reserve.ReserveData,
 	core reserve.ReserveCore,
-	stat reserve.ReserveStats,
 	metric metric.MetricStorage,
 	host string,
 	enableAuth bool,
@@ -1608,6 +1166,6 @@ func NewHTTPServer(
 	r.Use(cors.New(corsConfig))
 
 	return &HTTPServer{
-		app, core, stat, metric, host, enableAuth, authEngine, r, bc, setting,
+		app, core, metric, host, enableAuth, authEngine, r, bc, setting,
 	}
 }

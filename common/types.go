@@ -595,148 +595,6 @@ type KNLog interface {
 	Type() string
 }
 
-type SetCatLog struct {
-	Timestamp       uint64
-	BlockNumber     uint64
-	TransactionHash ethereum.Hash
-	Index           uint
-
-	Address  ethereum.Address
-	Category string
-}
-
-func (self SetCatLog) BlockNo() uint64       { return self.BlockNumber }
-func (self SetCatLog) Type() string          { return "SetCatLog" }
-func (self SetCatLog) TxHash() ethereum.Hash { return self.TransactionHash }
-
-type TradeLog struct {
-	Timestamp       uint64
-	BlockNumber     uint64
-	TransactionHash ethereum.Hash
-	Index           uint
-
-	EtherReceivalSender ethereum.Address
-	EtherReceivalAmount *big.Int
-
-	UserAddress ethereum.Address
-	SrcAddress  ethereum.Address
-	DestAddress ethereum.Address
-	SrcAmount   *big.Int
-	DestAmount  *big.Int
-	FiatAmount  float64
-
-	ReserveAddress ethereum.Address
-	WalletAddress  ethereum.Address
-	WalletFee      *big.Int
-	BurnFee        *big.Int
-	IP             string
-	Country        string
-}
-
-type ReserveRateEntry struct {
-	BuyReserveRate  float64
-	BuySanityRate   float64
-	SellReserveRate float64
-	SellSanityRate  float64
-}
-
-type ReserveTokenRateEntry map[string]ReserveRateEntry
-
-type ReserveRates struct {
-	Timestamp     uint64
-	ReturnTime    uint64
-	BlockNumber   uint64
-	ToBlockNumber uint64
-	Data          ReserveTokenRateEntry
-}
-
-func (self TradeLog) BlockNo() uint64       { return self.BlockNumber }
-func (self TradeLog) Type() string          { return "TradeLog" }
-func (self TradeLog) TxHash() ethereum.Hash { return self.TransactionHash }
-
-type StatTicks map[uint64]interface{}
-
-type TradeStats map[string]float64
-
-type VolumeStats struct {
-	ETHVolume float64 `json:"eth_amount"`
-	USDAmount float64 `json:"usd_amount"`
-	Volume    float64 `json:"volume"`
-}
-
-// NewVolumeStats creates a new instance of VolumeStats.
-func NewVolumeStats(ethVolume, usdAmount, volume float64) VolumeStats {
-	return VolumeStats{
-		ETHVolume: ethVolume,
-		USDAmount: usdAmount,
-		Volume:    volume,
-	}
-}
-
-type BurnFeeStats struct {
-	TotalBurnFee float64
-}
-
-// NewBurnFeeStats creates a new instance of BurnFeeStats.
-func NewBurnFeeStats(totalBurnFee float64) BurnFeeStats {
-	return BurnFeeStats{TotalBurnFee: totalBurnFee}
-}
-
-type BurnFeeStatsTimeZone map[string]map[uint64]BurnFeeStats
-
-type VolumeStatsTimeZone map[string]map[uint64]VolumeStats
-
-type FeeStats map[int64]map[uint64]float64
-
-type MetricStats struct {
-	ETHVolume          float64 `json:"total_eth_volume"`
-	USDVolume          float64 `json:"total_usd_amount"`
-	BurnFee            float64 `json:"total_burn_fee"`
-	TradeCount         int     `json:"total_trade"`
-	UniqueAddr         int     `json:"unique_addresses"`
-	KYCEd              int     `json:"kyced_addresses"`
-	NewUniqueAddresses int     `json:"new_unique_addresses"`
-	USDPerTrade        float64 `json:"usd_per_trade"`
-	ETHPerTrade        float64 `json:"eth_per_trade"`
-}
-
-// NewMetricStats creates a new instance of MetricStats.
-func NewMetricStats(ethVolume, usdVolume, burnFee float64,
-	tradeCount, uniqueAddr, kycEd, newUniqueAddresses int,
-	usdPerTrade, ethPerTrade float64) MetricStats {
-	return MetricStats{
-		ETHVolume:          ethVolume,
-		USDVolume:          usdVolume,
-		BurnFee:            burnFee,
-		TradeCount:         tradeCount,
-		UniqueAddr:         uniqueAddr,
-		KYCEd:              kycEd,
-		NewUniqueAddresses: newUniqueAddresses,
-		USDPerTrade:        usdPerTrade,
-		ETHPerTrade:        ethPerTrade,
-	}
-}
-
-type MetricStatsTimeZone map[int64]map[uint64]MetricStats
-
-type UserInfo struct {
-	Addr      string  `json:"user_address"`
-	Email     string  `json:"email"`
-	ETHVolume float64 `json:"total_eth_volume"`
-	USDVolume float64 `json:"total_usd_volume"`
-}
-
-type UserListResponse []UserInfo
-
-func (h UserListResponse) Less(i, j int) bool {
-	return h[i].ETHVolume < h[j].ETHVolume
-}
-
-func (h UserListResponse) Len() int      { return len(h) }
-func (h UserListResponse) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
-
-type UserInfoTimezone map[int64]map[uint64]UserInfo
-
 type TradeHistory struct {
 	ID        string
 	Price     float64
@@ -779,44 +637,6 @@ type ExStatus struct {
 
 type ExchangesStatus map[string]ExStatus
 
-type TradeLogGeoInfoResp struct {
-	Success bool `json:"success"`
-	Data    struct {
-		IP      string `json:"IP"`
-		Country string `json:"Country"`
-	} `json:"data"`
-}
-
-type HeatmapType struct {
-	TotalETHValue        float64 `json:"total_eth_value"`
-	TotalFiatValue       float64 `json:"total_fiat_value"`
-	ToTalBurnFee         float64 `json:"total_burn_fee"`
-	TotalTrade           int     `json:"total_trade"`
-	TotalUniqueAddresses int     `json:"total_unique_addr"`
-	TotalKYCUser         int     `json:"total_kyc_user"`
-}
-
-type Heatmap map[string]HeatmapType
-
-type HeatmapObject struct {
-	Country              string  `json:"country"`
-	TotalETHValue        float64 `json:"total_eth_value"`
-	TotalFiatValue       float64 `json:"total_fiat_value"`
-	ToTalBurnFee         float64 `json:"total_burn_fee"`
-	TotalTrade           int     `json:"total_trade"`
-	TotalUniqueAddresses int     `json:"total_unique_addr"`
-	TotalKYCUser         int     `json:"total_kyc_user"`
-}
-
-type HeatmapResponse []HeatmapObject
-
-func (h HeatmapResponse) Less(i, j int) bool {
-	return h[i].TotalETHValue < h[j].TotalETHValue
-}
-
-func (h HeatmapResponse) Len() int      { return len(h) }
-func (h HeatmapResponse) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
-
 type AnalyticPriceResponse struct {
 	Timestamp uint64
 	Data      map[string]interface{}
@@ -839,26 +659,6 @@ type ExchangeTokenNoti map[string]ExchangeNotiContent
 type ExchangeActionNoti map[string]ExchangeTokenNoti
 
 type ExchangeNotifications map[string]ExchangeActionNoti
-
-type CountryTokenHeatmap map[string]VolumeStats
-
-type TokenHeatmap struct {
-	Country   string  `json:"country"`
-	Volume    float64 `json:"volume"`
-	ETHVolume float64 `json:"total_eth_value"`
-	USDVolume float64 `json:"total_fiat_value"`
-}
-
-type TokenHeatmapResponse []TokenHeatmap
-
-func (t TokenHeatmapResponse) Less(i, j int) bool {
-	return t[i].Volume < t[j].Volume
-}
-
-func (t TokenHeatmapResponse) Len() int      { return len(t) }
-func (t TokenHeatmapResponse) Swap(i, j int) { t[i], t[j] = t[j], t[i] }
-
-type UsersVolume map[string]StatTicks
 
 // NewFilterQuery creates a new ether.FilterQuery instance.
 func NewFilterQuery(fromBlock, toBlock *big.Int, addresses []ethereum.Address, topics [][]ethereum.Hash) ether.FilterQuery {
@@ -969,41 +769,5 @@ func NewAllSettings(addrs *AddressesResponse, toks *TokenResponse, exs *Exchange
 		Addresses: addrs,
 		Tokens:    toks,
 		Exchanges: exs,
-	}
-}
-
-//QuantityStepFunction represent a quatity step function for a token
-type QuantityStepFunction struct {
-	XBuy  []*big.Int `json:"x_buy"`
-	YBuy  []*big.Int `json:"y_buy"`
-	XSell []*big.Int `json:"x_sell"`
-	YSell []*big.Int `json:"y_sell"`
-}
-
-//ImbalanceStepFunction represent an imbalance step function for a token
-type ImbalanceStepFunction struct {
-	XBuy  []*big.Int `json:"x_buy"`
-	YBuy  []*big.Int `json:"y_buy"`
-	XSell []*big.Int `json:"x_sell"`
-	YSell []*big.Int `json:"y_sell"`
-}
-
-//StepFunctionResponse api response about a token step function
-type StepFunctionResponse struct {
-	QuantityStepResponse  QuantityStepFunction  `json:"quantity_step_function"`
-	ImbalanceStepResponse ImbalanceStepFunction `json:"imbalance_step_function"`
-}
-
-type ExportedReserverRateRecord struct {
-	ReserveAddress string
-	Rate           ReserveRates
-	Timestamp      uint64
-}
-
-func NewExportedReserverRateRecord(addr ethereum.Address, rate ReserveRates, timestamp uint64) ExportedReserverRateRecord {
-	return ExportedReserverRateRecord{
-		ReserveAddress: addr.Hex(),
-		Rate:           rate,
-		Timestamp:      timestamp,
 	}
 }

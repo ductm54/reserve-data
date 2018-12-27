@@ -13,14 +13,10 @@ import (
 	"github.com/KyberNetwork/reserve-data/cmd/configuration"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/archive"
-	baseblockchain "github.com/KyberNetwork/reserve-data/common/blockchain"
 	"github.com/KyberNetwork/reserve-data/common/blockchain/nonce"
 	"github.com/KyberNetwork/reserve-data/core"
 	"github.com/KyberNetwork/reserve-data/data"
 	"github.com/KyberNetwork/reserve-data/data/fetcher"
-	"github.com/KyberNetwork/reserve-data/settings"
-	"github.com/KyberNetwork/reserve-data/stat"
-	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/robfig/cron"
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 )
@@ -128,8 +124,7 @@ func GetConfigFromENV(kyberENV string) *configuration.Config {
 	config = configuration.GetConfig(kyberENV,
 		!noAuthEnable,
 		endpointOW,
-		noCore,
-		enableStat)
+		noCore)
 	return config
 }
 
@@ -154,32 +149,6 @@ func CreateBlockchain(config *configuration.Config, kyberENV string) (bc *blockc
 		log.Panicf("Can't load and set token indices: %s", err)
 	}
 	return
-}
-
-func CreateStatBlockChain(base *baseblockchain.BaseBlockchain, addrSetting *settings.AddressSetting, kyberENV string) (*blockchain.StatBlockchain, error) {
-	stbc, err := blockchain.NewStatBlockchain(base, addrSetting)
-	if err != nil {
-		return nil, err
-	}
-	switch kyberENV {
-	case common.ProductionMode, common.MainnetMode, common.DevMode:
-		for _, addr := range oldBurners {
-			stbc.AddOldBurners(ethereum.HexToAddress(addr))
-		}
-		for _, addr := range oldNetwork {
-			stbc.AddOldNetwork(ethereum.HexToAddress(addr))
-		}
-
-	case common.StagingMode:
-		// contract v1
-		for _, addr := range stagingOldNetwork {
-			stbc.AddOldNetwork(ethereum.HexToAddress(addr))
-		}
-		for _, addr := range stagingOldBurners {
-			stbc.AddOldBurners(ethereum.HexToAddress(addr))
-		}
-	}
-	return stbc, nil
 }
 
 func CreateDataCore(config *configuration.Config, kyberENV string, bc *blockchain.Blockchain) (*data.ReserveData, *core.ReserveCore) {
@@ -212,44 +181,4 @@ func CreateDataCore(config *configuration.Config, kyberENV string, bc *blockchai
 
 	rCore := core.NewReserveCore(bc, config.ActivityStorage, config.Setting)
 	return rData, rCore
-}
-
-func CreateStat(config *configuration.Config, kyberENV string, bc *blockchain.StatBlockchain) *stat.ReserveStats {
-	var deployBlock uint64
-
-	switch kyberENV {
-	case common.MainnetMode, common.ProductionMode, common.DevMode:
-		deployBlock = startingBlockProduction
-	case common.StagingMode:
-		deployBlock = startingBlockStaging
-	}
-	settingClient := settings.NewSettingClient(config.AuthEngine, defaultTimeOut, coreURL)
-	statFetcher := stat.NewFetcher(
-		config.StatStorage,
-		config.LogStorage,
-		config.RateStorage,
-		config.UserStorage,
-		config.FeeSetRateStorage,
-		config.StatFetcherRunner,
-		deployBlock,
-		deployBlock,
-		config.EtherscanApiKey,
-		settingClient,
-		config.IPlocator,
-	)
-	statFetcher.SetBlockchain(bc)
-	rStat := stat.NewReserveStats(
-		config.AnalyticStorage,
-		config.StatStorage,
-		config.LogStorage,
-		config.RateStorage,
-		config.UserStorage,
-		config.FeeSetRateStorage,
-		config.StatControllerRunner,
-		statFetcher,
-		config.Archive,
-		baseblockchain.NewCMCEthUSDRate(),
-		settingClient,
-	)
-	return rStat
 }

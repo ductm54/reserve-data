@@ -91,7 +91,7 @@ func GetSetting(setPath SettingPaths, kyberENV string, addressSetting *settings.
 	return setting, err
 }
 
-func GetConfig(kyberENV string, authEnbl bool, endpointOW string, noCore, enableStat bool) *Config {
+func GetConfig(kyberENV string, authEnbl bool, endpointOW string, noCore bool) *Config {
 	setPath := GetConfigPaths(kyberENV)
 
 	theWorld, err := world.NewTheWorld(kyberENV, setPath.secretPath)
@@ -162,9 +162,6 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string, noCore, enable
 		AddressSetting:          addressSetting,
 	}
 
-	if enableStat {
-		config.AddStatConfig(setPath)
-	}
 	if !noCore {
 		config.AddCoreConfig(setPath, kyberENV)
 	}

@@ -25,7 +25,6 @@ var noAuthEnable bool
 var servPort int = 8000
 var endpointOW string
 var base_url string
-var enableStat bool
 var noCore bool
 var stdoutLog bool
 var dryrun bool
@@ -47,7 +46,6 @@ func serverStart(_ *cobra.Command, _ []string) {
 	var (
 		rData reserve.ReserveData
 		rCore reserve.ReserveCore
-		rStat reserve.ReserveStats
 		bc    *blockchain.Blockchain
 	)
 	//Create Data and Core, run if not in dry mode
@@ -75,29 +73,10 @@ func serverStart(_ *cobra.Command, _ []string) {
 		}
 	}
 
-	//Create Stat, run if not in dry mode
-	if enableStat {
-		stbc, err := CreateStatBlockChain(config.Blockchain, config.AddressSetting, kyberENV)
-		if err != nil {
-			log.Panic(err)
-		}
-		rStat = CreateStat(config, kyberENV, stbc)
-		if !dryrun {
-			if kyberENV != common.SimulationMode {
-				if err := rStat.RunStorageController(); err != nil {
-					log.Panic(err)
-				}
-			}
-			if err := rStat.Run(); err != nil {
-				log.Panic(err)
-			}
-		}
-	}
-
 	//Create Server
 	servPortStr := fmt.Sprintf(":%d", servPort)
 	server := http.NewHTTPServer(
-		rData, rCore, rStat,
+		rData, rCore,
 		config.MetricStorage,
 		servPortStr,
 		config.EnableAuthentication,
@@ -128,10 +107,7 @@ func init() {
 	startServer.Flags().IntVarP(&servPort, "port", "p", 8000, "server port")
 	startServer.Flags().StringVar(&endpointOW, "endpoint", "", "endpoint, default to configuration file")
 	startServer.PersistentFlags().StringVar(&base_url, "base_url", defaultBaseURL, "base_url for authenticated enpoint")
-	startServer.Flags().BoolVarP(&enableStat, "enable-stat", "", false, "enable stat related fetcher and api, event logs will not be fetched")
-	startServer.Flags().BoolVarP(&noCore, "no-core", "", false, "disable core related fetcher and api, this should be used only when we want to run an independent stat server")
 	startServer.Flags().BoolVarP(&stdoutLog, "log-to-stdout", "", false, "send log to both log file and stdout terminal")
 	startServer.Flags().BoolVarP(&dryrun, "dryrun", "", false, "only test if all the configs are set correctly, will not actually run core")
-	startServer.Flags().StringVar(&coreURL, "core-url", coreDefaultURL, "core url from which stat can call for setting APis")
 	RootCmd.AddCommand(startServer)
 }
