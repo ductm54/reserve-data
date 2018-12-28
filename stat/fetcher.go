@@ -1070,7 +1070,7 @@ func (f *Fetcher) aggregateCountryStats(trade common.TradeLog,
 		trade.Country = statutil.UnknownCountry
 	}
 
-	err := self.statStorage.SetCountry(trade.Country)
+	err := f.statStorage.SetCountry(trade.Country)
 	if err != nil {
 		log.Printf("Cannot store country: %s", err.Error())
 		return err
