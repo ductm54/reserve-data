@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	ether "github.com/ethereum/go-ethereum"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
@@ -637,16 +636,6 @@ type ExStatus struct {
 
 type ExchangesStatus map[string]ExStatus
 
-type AnalyticPriceResponse struct {
-	Timestamp uint64
-	Data      map[string]interface{}
-}
-
-// NewAnalyticPriceResponse creates a new instance of AnalyticPriceResponse.
-func NewAnalyticPriceResponse(timestamp uint64, data map[string]interface{}) AnalyticPriceResponse {
-	return AnalyticPriceResponse{Timestamp: timestamp, Data: data}
-}
-
 type ExchangeNotiContent struct {
 	FromTime  uint64 `json:"fromTime"`
 	ToTime    uint64 `json:"toTime"`
@@ -659,16 +648,6 @@ type ExchangeTokenNoti map[string]ExchangeNotiContent
 type ExchangeActionNoti map[string]ExchangeTokenNoti
 
 type ExchangeNotifications map[string]ExchangeActionNoti
-
-// NewFilterQuery creates a new ether.FilterQuery instance.
-func NewFilterQuery(fromBlock, toBlock *big.Int, addresses []ethereum.Address, topics [][]ethereum.Hash) ether.FilterQuery {
-	return ether.FilterQuery{
-		FromBlock: fromBlock,
-		ToBlock:   toBlock,
-		Addresses: addresses,
-		Topics:    topics,
-	}
-}
 
 type TransactionInfo struct {
 	BlockNumber string `json:"blockNumber"`

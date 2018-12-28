@@ -3,7 +3,12 @@
   "DisableAll": true,
   "Enable": [
     "gofmt",
-    "unused"
+    "gotype",
+    "gotypex",	
+    "vet",	
+    "unused",	
+    "errcheck",	
+    "vetshadow"
   ],
   "Deadline": "5m"
 }
