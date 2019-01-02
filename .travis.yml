@@ -1,8 +1,7 @@
-sudo: required
-
-go_import_path: github.com/KyberNetwork/reserve-data
-
 language: go
+
+go:
+  - "1.11.x"
 
 services:
   - docker
@@ -36,5 +35,3 @@ deploy:
   on:
     all_branches: true
 
-go:
-  - "1.10.x"
