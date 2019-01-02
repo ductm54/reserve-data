@@ -3,8 +3,7 @@
   "DisableAll": true,
   "Enable": [
     "gofmt",
-    "vet",	
-    "vetshadow"
+    "vet"
   ],
   "Deadline": "5m"
 }
