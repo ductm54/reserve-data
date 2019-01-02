@@ -220,7 +220,7 @@ func (self *UserStorageTest) TestUpdateAddressCategoryThenUpdateUserAddresses() 
 	}
 	expectedAddresses := map[ethereum.Address]uint64{
 		ethereum.HexToAddress(lowercaseAddr1): time1,
-		addr2: time2,
+		addr2:                                 time2,
 	}
 	if len(gotAddresses) != len(expectedAddresses) {
 		return fmt.Errorf("Expected to get %d addresses, got %d addresses", len(expectedAddresses), len(gotAddresses))

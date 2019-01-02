@@ -19,6 +19,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jinzhu/now v0.0.0-20181116074157-8ec929ed50c3
 	github.com/json-iterator/go v1.1.5 // indirect
+	github.com/kisielk/errcheck v1.1.0 // indirect
 	github.com/mattn/go-isatty v0.0.0-20170925054904-a5cdd64afdee // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
@@ -36,13 +37,14 @@ require (
 	github.com/ugorji/go v0.0.0-20170918222552-54210f4e076c // indirect
 	golang.org/x/crypto v0.0.0-20171023145632-2509b142fb2b // indirect
 	golang.org/x/net v0.0.0-20171024115130-4b14673ba32b // indirect
-	golang.org/x/tools v0.0.0-20171013181403-9bd2f442688b // indirect
+	golang.org/x/tools v0.0.0-20181221235234-d00ac6d27372 // indirect
 	gopkg.in/fatih/set.v0 v0.2.1 // indirect
 	gopkg.in/go-playground/validator.v8 v8.18.2 // indirect
 	gopkg.in/karalabe/cookiejar.v2 v2.0.0-20150724131613-8dcd6a7f4951 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v2 v2.0.0-20170125143719-4c78c975fe7c // indirect
+	honnef.co/go/tools v0.0.0-20180920025451-e3ad64cb4ed3 // indirect
 )
 
 replace github.com/ethereum/go-ethereum => github.com/favadi/go-ethereum v1.8.16-fork
