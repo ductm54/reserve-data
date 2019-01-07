@@ -1,7 +1,6 @@
 package blockchain
 
 import (
-	"log"
 	"math/big"
 	"time"
 
@@ -51,25 +50,4 @@ func (self *Blockchain) GeneratedGetTokenRates(
 	timeOut := 2 * time.Second
 	err := self.Call(timeOut, opts, self.wrapper, out, "getTokenRates", ratesContract, tokenList)
 	return *ret0, *ret1, *ret2, *ret3, *ret4, err
-}
-
-func (self *Blockchain) GeneratedGetReserveRates(
-	opts blockchain.CallOpts,
-	reserveAddress ethereum.Address,
-	srcAddresses []ethereum.Address,
-	destAddresses []ethereum.Address) ([]*big.Int, []*big.Int, error) {
-	var (
-		ret0 = new([]*big.Int)
-		ret1 = new([]*big.Int)
-	)
-	out := &[]interface{}{
-		ret0,
-		ret1,
-	}
-	timeOut := 2 * time.Second
-	err := self.Call(timeOut, opts, self.wrapper, out, "getReserveRate", reserveAddress, srcAddresses, destAddresses)
-	if err != nil {
-		log.Println("cannot get reserve rates: ", err.Error())
-	}
-	return *ret0, *ret1, err
 }

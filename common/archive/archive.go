@@ -14,9 +14,6 @@ type Archive interface {
 	// GetReserveDataBucketName: return pre-configured remote Bucket to store Reserve Data
 	GetReserveDataBucketName() string
 
-	// GetStatDataBucketName: return pre-configured remote Bucket to store stats
-	GetStatDataBucketName() string
-
 	// GetLogBucketName: return pre-configured remote Bucket to store logs
 	GetLogBucketName() string
 }

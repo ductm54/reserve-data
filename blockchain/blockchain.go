@@ -12,9 +12,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
 	huobiblockchain "github.com/KyberNetwork/reserve-data/exchange/huobi/blockchain"
 	"github.com/KyberNetwork/reserve-data/settings"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -424,20 +422,6 @@ func (self *Blockchain) SetRateMinedNonce() (uint64, error) {
 		self.setRateNonceTimestamp = common.GetTimepoint()
 		return nonceFromNode, nil
 	}
-}
-
-func (self *Blockchain) GetPricingMethod(inputData string) (*abi.Method, error) {
-	abiPricing := &self.pricing.ABI
-	inputDataByte, err := hexutil.Decode(inputData)
-	if err != nil {
-		log.Printf("Cannot decode data: %v", err)
-		return nil, err
-	}
-	method, err := abiPricing.MethodById(inputDataByte)
-	if err != nil {
-		return nil, err
-	}
-	return method, nil
 }
 
 func NewBlockchain(base *blockchain.BaseBlockchain, setting Setting) (*Blockchain, error) {

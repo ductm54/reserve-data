@@ -96,12 +96,6 @@ func (archive *s3Archive) GetReserveDataBucketName() string {
 	return archive.awsConf.ExpiredReserveDataBucketName
 }
 
-//GetStatDataBucketName returns the bucket in which the backup Data is stored.
-//This should be passed in from JSON configure file
-func (archive *s3Archive) GetStatDataBucketName() string {
-	return archive.awsConf.ExpiredStatDataBucketName
-}
-
 func (archive *s3Archive) GetLogBucketName() string {
 	return archive.awsConf.LogBucketName
 }

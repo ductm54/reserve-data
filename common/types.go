@@ -587,13 +587,6 @@ type AllRateResponse struct {
 	ToBlockNumber uint64
 }
 
-// KNLog is the common interface of some important logging events.
-type KNLog interface {
-	TxHash() ethereum.Hash
-	BlockNo() uint64
-	Type() string
-}
-
 type TradeHistory struct {
 	ID        string
 	Price     float64

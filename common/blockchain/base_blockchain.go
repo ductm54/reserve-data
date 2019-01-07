@@ -376,12 +376,6 @@ func (self *BaseBlockchain) TxStatus(hash ethereum.Hash) (string, uint64, error)
 	return common.MiningStatusFailed, tx.BlockNumber().Uint64(), nil
 }
 
-func (self *BaseBlockchain) GetEthRate(timepoint uint64) float64 {
-	rate := self.ethRate.GetUSDRate(timepoint)
-	log.Printf("ETH-USD rate: %f", rate)
-	return rate
-}
-
 func NewMinimalBaseBlockchain(
 	endpoints []string, operators map[string]*Operator, chainType string) (*BaseBlockchain, error) {
 
